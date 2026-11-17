@@ -11,11 +11,11 @@ export function HeroSection() {
       className="relative overflow-hidden bg-brand-deep text-white"
     >
       <img
-        src="/hero-kupang.jpg"
-        alt="Mobil rental di jalan pesisir Kota Kupang, Nusa Tenggara Timur"
+        src="/hero.jpeg"
+        alt="Unit Toyota Hilux rental mobil di Kota Kupang, Nusa Tenggara Timur"
         fetchPriority="high"
-        width={1440}
-        height={620}
+        width={1280}
+        height={720}
         className="absolute inset-0 h-full w-full object-cover object-center"
       />
 

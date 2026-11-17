@@ -13,12 +13,12 @@ export function AboutSection() {
       <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-14 lg:px-8">
         <div className="overflow-hidden rounded-2xl bg-brand-navy shadow-md">
           <img
-            src="/hero-kupang.jpg"
-            alt="Rental mobil Kupang untuk wisata dan perjalanan bisnis"
+            src="/about.jpeg"
+            alt="Unit Toyota Avanza rental mobil Kupang siap antar jemput"
             loading="lazy"
-            width={640}
-            height={380}
-            className="aspect-[16/10] w-full object-cover"
+            width={960}
+            height={720}
+            className="aspect-[4/3] w-full object-cover object-center"
           />
         </div>
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Car, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -39,9 +39,13 @@ export function Navbar() {
           href="#beranda"
           className="flex items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
         >
-          <span className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-brand-navy text-brand-yellow">
-            <Car className="h-5 w-5" aria-hidden="true" />
-          </span>
+          <img
+            src="/logo-v4.svg"
+            alt="Logo Rental Mobil Kupang"
+            width={128}
+            height={42}
+            className="h-8 w-auto object-contain lg:h-9"
+          />
           <span className="flex flex-col leading-tight">
             <span className="text-sm font-bold tracking-wide text-brand-navy sm:text-base">
               RENTAL MOBIL
@@ -99,9 +103,13 @@ export function Navbar() {
             </SheetTrigger>
             <SheetContent>
               <SheetTitle className="flex items-center gap-2.5">
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-navy text-brand-yellow">
-                  <Car className="h-4 w-4" aria-hidden="true" />
-                </span>
+                <img
+                  src="/logo-v4.svg"
+                  alt="Logo Rental Mobil Kupang"
+                  width={128}
+                  height={42}
+                  className="h-7 w-auto object-contain"
+                />
                 RENTAL MOBIL
               </SheetTitle>
               <nav
