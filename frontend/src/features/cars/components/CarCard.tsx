@@ -37,10 +37,7 @@ export function CarCard({ car, prioritizeImage = false }: CarCardProps) {
         )}
       </div>
       <CardContent className="flex flex-1 flex-col p-5 pt-2">
-        <span className="text-xs font-semibold text-brand-blue">
-          {car.category}
-        </span>
-        <h3 className="mt-1 line-clamp-2 text-lg font-bold text-brand-text">
+        <h3 className="line-clamp-2 text-lg font-bold text-brand-text">
           {car.name}
         </h3>
 

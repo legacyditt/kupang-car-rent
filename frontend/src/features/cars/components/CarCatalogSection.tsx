@@ -98,7 +98,7 @@ export function CarCatalogSection() {
         </div>
 
         {/* Desktop & Tablet: 1-4 Column Grid */}
-        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-10 hidden gap-6 md:grid md:grid-cols-2 lg:grid-cols-4">
           {INITIAL_CARS.map((car) => (
             <CarCard key={car.id} car={car} />
           ))}
