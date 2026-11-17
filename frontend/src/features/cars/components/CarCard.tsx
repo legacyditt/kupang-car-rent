@@ -12,10 +12,14 @@ interface CarCardProps {
 
 export function CarCard({ car, prioritizeImage = false }: CarCardProps) {
   const detailMessage = `Halo, saya tertarik menyewa ${car.name} (${car.category}). Mohon info ketersediaannya.`;
+  const metadata = [
+    car.capacityLabel !== "—" ? `Kapasitas: ${car.capacityLabel}` : null,
+    car.transmissionLabel !== "—" ? `Transmisi: ${car.transmissionLabel}` : null,
+  ].filter(Boolean);
 
   return (
     <Card className="flex h-full flex-col overflow-hidden rounded-[14px] border-border bg-white shadow-sm transition-shadow hover:shadow-md">
-      <div className="relative flex aspect-[16/10] w-full items-center justify-center bg-white p-4">
+      <div className="relative flex aspect-[16/10] w-full items-center justify-center bg-white p-3">
         <img
           src={car.imageUrl}
           alt={`${car.name} - ${car.category}`}
@@ -35,12 +39,15 @@ export function CarCard({ car, prioritizeImage = false }: CarCardProps) {
         <span className="text-xs font-semibold text-brand-blue">
           {car.category}
         </span>
-        <h3 className="mt-1 text-lg font-bold text-brand-text">{car.name}</h3>
+        <h3 className="mt-1 line-clamp-2 min-h-[3.5rem] text-lg font-bold text-brand-text">
+          {car.name}
+        </h3>
 
-        <p className="mt-1.5 text-xs text-brand-muted">
-          Kapasitas: {car.capacityLabel} &nbsp;•&nbsp; Transmisi:{" "}
-          {car.transmissionLabel}
-        </p>
+        {metadata.length > 0 && (
+          <p className="mt-1.5 min-h-[1.25rem] text-xs text-brand-muted">
+            {metadata.join(" • ")}
+          </p>
+        )}
 
         <div className="mt-5 flex items-baseline gap-1.5">
           <span className="text-xl font-bold text-brand-navy">
@@ -49,17 +56,18 @@ export function CarCard({ car, prioritizeImage = false }: CarCardProps) {
           <span className="text-xs text-brand-muted">/ hari</span>
         </div>
 
-        <Button asChild className="mt-4 w-full">
-          <a
-            href={buildWhatsAppUrl(detailMessage)}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Lihat Detail
-          </a>
-        </Button>
+        <div className="mt-auto pt-4">
+          <Button asChild className="w-full">
+            <a
+              href={buildWhatsAppUrl(detailMessage)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Lihat Detail
+            </a>
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
 }
-
