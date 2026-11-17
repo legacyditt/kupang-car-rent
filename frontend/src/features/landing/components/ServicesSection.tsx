@@ -28,7 +28,7 @@ export function ServicesSection() {
           Layanan Kami
         </p>
         <h2 className="mt-2 text-2xl font-bold tracking-tight text-brand-navy sm:text-3xl lg:text-[34px]">
-          Pilihan Layanan Sesuai Kebutuhan Anda
+          Rental Mobil Kupang Lepas Kunci &amp; Dengan Sopir
         </h2>
 
         <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2">

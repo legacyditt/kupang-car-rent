@@ -32,12 +32,12 @@ export function HeroSection() {
           </Badge>
 
           <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-[52px] lg:leading-[1.15]">
-            {BUSINESS_INFO.tagline}
+            Rental Mobil Kupang Murah, Lepas Kunci &amp; Dengan Sopir
           </h1>
 
           <p className="mt-4 max-w-lg text-base leading-relaxed text-slate-200 sm:text-lg">
-            Pilihan rental mobil terpercaya untuk menemani perjalanan wisata,
-            bisnis, dan kebutuhan keluarga Anda.
+            Sewa mobil Kupang harian: Avanza, Innova Reborn, Brio, dan Hilux. Mobil bersih dan terawat untuk wisata,
+            bisnis, dan keluarga.
           </p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">

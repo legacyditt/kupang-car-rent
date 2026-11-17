@@ -24,7 +24,7 @@ export function CarCard({ car, prioritizeImage = false }: CarCardProps) {
       <div className="relative flex aspect-[16/10] w-full items-center justify-center bg-white p-3">
         <img
           src={car.imageUrl}
-          alt={`${car.name} - ${car.category}`}
+          alt={`Sewa ${car.name} Kupang - ${car.category}`}
           loading={prioritizeImage ? undefined : "lazy"}
           width={320}
           height={200}

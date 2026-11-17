@@ -14,7 +14,7 @@ export function AboutSection() {
         <div className="overflow-hidden rounded-2xl bg-brand-navy shadow-md">
           <img
             src="/hero-kupang.jpg"
-            alt="Layanan transportasi nyaman di Kota Kupang"
+            alt="Rental mobil Kupang untuk wisata dan perjalanan bisnis"
             loading="lazy"
             width={640}
             height={380}
@@ -27,7 +27,7 @@ export function AboutSection() {
             Tentang Kami
           </p>
           <h2 className="mt-2 text-2xl font-bold tracking-tight text-brand-navy sm:text-3xl lg:text-[34px]">
-            Perjalanan Anda, Prioritas Kami
+            Rental Mobil Terpercaya di Kupang
           </h2>
           <p className="mt-4 text-base leading-relaxed text-brand-muted">
             Kami hadir untuk memberikan solusi transportasi yang aman, nyaman,
