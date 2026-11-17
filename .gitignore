@@ -25,3 +25,5 @@ Thumbs.db
 # Prisma
 backend/prisma/migrations/*.sql.bak
 
+# public 
+public/
