@@ -29,4 +29,5 @@ rental-mobil/
    - `backend/.env.example` → `backend/.env`
    - `frontend/.env.example` → `frontend/.env`
 2. Isi kredensial Neon PostgreSQL, session secret, dan Cloudinary.
-3. Install dependencies dan jalankan migrasi Prisma (Phase 1).
+3. Install dependencies dan jalankan migrasi Prisma.
+
