@@ -13,5 +13,6 @@ export interface CarItem {
   transmissionLabel: string;
   pricePerDay: number;
   status: CarStatus;
+  bookedDates?: string[];
 }
 

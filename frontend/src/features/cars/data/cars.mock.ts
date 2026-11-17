@@ -12,6 +12,7 @@ export const INITIAL_CARS: CarItem[] = [
     transmissionLabel: "—",
     pricePerDay: 300000,
     status: "AVAILABLE",
+    bookedDates: ["20-11-2026", "21-11-2026", "25-11-2026"],
   },
   {
     id: "car-innova-reborn",
@@ -50,4 +51,3 @@ export const INITIAL_CARS: CarItem[] = [
     status: "AVAILABLE",
   },
 ];
-
