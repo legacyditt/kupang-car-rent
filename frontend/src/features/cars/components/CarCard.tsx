@@ -1,9 +1,10 @@
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatRupiah } from "@/lib/utils";
-import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import type { CarItem } from "../types/car.types";
+import { BookingModal } from "./BookingModal";
 
 interface CarCardProps {
   car: CarItem;
@@ -11,12 +12,13 @@ interface CarCardProps {
 }
 
 export function CarCard({ car, prioritizeImage = false }: CarCardProps) {
-  const detailMessage = `Halo, saya tertarik menyewa ${car.name} (${car.category}). Mohon info ketersediaannya.`;
   const metadata = [
     car.capacityLabel !== "—" ? `Kapasitas: ${car.capacityLabel}` : null,
-    car.transmissionLabel !== "—" ? `Transmisi: ${car.transmissionLabel}` : null,
+    car.transmissionLabel !== "—"
+      ? `Transmisi: ${car.transmissionLabel}`
+      : null,
   ].filter(Boolean);
-
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
   return (
     <Card className="flex h-full flex-col overflow-hidden rounded-[14px] border-border bg-white shadow-sm transition-shadow hover:shadow-md">
       <div className="relative flex aspect-[16/10] w-full items-center justify-center bg-white p-3">
@@ -34,7 +36,6 @@ export function CarCard({ car, prioritizeImage = false }: CarCardProps) {
           </Badge>
         )}
       </div>
-
       <CardContent className="flex flex-1 flex-col p-5 pt-2">
         <span className="text-xs font-semibold text-brand-blue">
           {car.category}
@@ -57,17 +58,21 @@ export function CarCard({ car, prioritizeImage = false }: CarCardProps) {
         </div>
 
         <div className="mt-auto pt-4">
-          <Button asChild className="w-full">
-            <a
-              href={buildWhatsAppUrl(detailMessage)}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Booking
-            </a>
+          <Button
+            type="button"
+            className="w-full"
+            onClick={() => setIsBookingOpen(true)}
+          >
+            Booking
           </Button>
         </div>
       </CardContent>
+      <BookingModal
+        car={car}
+        open={isBookingOpen}
+        onOpenChange={setIsBookingOpen}
+      />
+      ;
     </Card>
   );
 }
