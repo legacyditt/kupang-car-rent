@@ -39,7 +39,7 @@ export function CarCard({ car, prioritizeImage = false }: CarCardProps) {
         <span className="text-xs font-semibold text-brand-blue">
           {car.category}
         </span>
-        <h3 className="mt-1 line-clamp-2 min-h-[3.5rem] text-lg font-bold text-brand-text">
+        <h3 className="mt-1 line-clamp-2 text-lg font-bold text-brand-text">
           {car.name}
         </h3>
 
@@ -63,7 +63,7 @@ export function CarCard({ car, prioritizeImage = false }: CarCardProps) {
               target="_blank"
               rel="noopener noreferrer"
             >
-              Lihat Detail
+              Booking
             </a>
           </Button>
         </div>

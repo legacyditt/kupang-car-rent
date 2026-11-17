@@ -37,7 +37,7 @@ export function CarCatalogSection() {
 
         slides.forEach((slide, idx) => {
           const distance = Math.abs(
-            slide.offsetLeft - track.offsetLeft - track.scrollLeft
+            slide.offsetLeft - track.offsetLeft - track.scrollLeft,
           );
           if (distance < minDistance) {
             minDistance = distance;
@@ -152,21 +152,14 @@ export function CarCatalogSection() {
                     "h-2.5 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer",
                     isActive
                       ? "w-6 bg-brand-navy"
-                      : "w-2.5 bg-slate-300 hover:bg-slate-400"
+                      : "w-2.5 bg-slate-300 hover:bg-slate-400",
                   )}
                 />
               );
             })}
           </nav>
         </div>
-
-        <div className="mt-10 flex justify-center">
-          <Button asChild variant="outline" size="lg" className="border-brand-navy text-brand-navy hover:bg-brand-light">
-            <a href="#katalog">Lihat Semua Mobil</a>
-          </Button>
-        </div>
       </div>
     </section>
   );
 }
-
