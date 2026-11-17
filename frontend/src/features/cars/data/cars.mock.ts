@@ -1,0 +1,53 @@
+import type { CarItem } from "../types/car.types";
+
+export const INITIAL_CARS: CarItem[] = [
+  {
+    id: "car-avanza",
+    slug: "toyota-avanza",
+    name: "Toyota Avanza",
+    brand: "Toyota",
+    category: "MPV",
+    imageUrl: "/Toyota Avanza.webp",
+    capacityLabel: "— Kursi",
+    transmissionLabel: "—",
+    pricePerDay: 300000,
+    status: "AVAILABLE",
+  },
+  {
+    id: "car-innova-reborn",
+    slug: "toyota-innova-reborn",
+    name: "Toyota Innova Reborn",
+    brand: "Toyota",
+    category: "MPV",
+    imageUrl: "/Toyota Innova Reborn.png",
+    capacityLabel: "— Kursi",
+    transmissionLabel: "—",
+    pricePerDay: 300000,
+    status: "AVAILABLE",
+  },
+  {
+    id: "car-brio",
+    slug: "honda-brio",
+    name: "Honda Brio",
+    brand: "Honda",
+    category: "City Car",
+    imageUrl: "/Honda Brio.jpeg",
+    capacityLabel: "— Kursi",
+    transmissionLabel: "—",
+    pricePerDay: 300000,
+    status: "AVAILABLE",
+  },
+  {
+    id: "car-hilux",
+    slug: "toyota-hilux",
+    name: "Toyota Hilux",
+    brand: "Toyota",
+    category: "Double Cabin",
+    imageUrl: "/Toyota Hilux.webp",
+    capacityLabel: "— Kursi",
+    transmissionLabel: "—",
+    pricePerDay: 300000,
+    status: "AVAILABLE",
+  },
+];
+
