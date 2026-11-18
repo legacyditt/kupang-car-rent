@@ -1,55 +1,157 @@
-import { Check } from "lucide-react";
+import { useRef } from "react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+import * as m from "motion/react-m";
+import { Button } from "@/components/ui/button";
+import { BUSINESS_INFO } from "@/lib/constants";
+import {
+  MOTION_EASE,
+  MOTION_MEDIA,
+  TAP_SPRING,
+  registerMotionPlugins,
+} from "@/lib/motion";
+import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
-const REASONS = [
-  "Kendaraan bersih dan terawat",
-  "Pilihan layanan fleksibel",
-  "Proses pemesanan mudah",
-  "Komunikasi langsung melalui WhatsApp",
+registerMotionPlugins();
+
+const BRAND_PILLARS = [
+  {
+    title: "Nyaman, Aman & Berkesan",
+    description:
+      "Bukan sekadar sampai tujuan, tapi pengalaman berkendara yang nyaman dan berkesan.",
+  },
+  {
+    title: "Kendaraan Terawat & Profesional",
+    description:
+      "Unit prima dengan standar servis terjaga dan pelayanan yang ramah.",
+  },
+  {
+    title: "Mudah & Dapat Diandalkan",
+    description:
+      "Bagian dari setiap perjalanan Anda—booking cepat dan transparan via WhatsApp.",
+    highlight: true,
+  },
 ] as const;
 
 export function AboutSection() {
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useGSAP(
+    () => {
+      const mm = gsap.matchMedia();
+
+      mm.add(MOTION_MEDIA.desktop, () => {
+        gsap.from("[data-about-img]", {
+          scale: 1.06,
+          duration: 0.85,
+          ease: MOTION_EASE.precision,
+          force3D: true,
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: "top 80%",
+            once: true,
+          },
+        });
+
+        gsap.from("[data-about-pillar]", {
+          y: 16,
+          opacity: 0,
+          duration: 0.45,
+          stagger: 0.09,
+          ease: MOTION_EASE.ignition,
+          force3D: true,
+          clearProps: "transform,opacity",
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: "top 75%",
+            once: true,
+          },
+        });
+      });
+
+      mm.add(MOTION_MEDIA.mobile, () => {
+        gsap.from("[data-about-pillar]", {
+          y: 10,
+          opacity: 0,
+          duration: 0.3,
+          stagger: 0.05,
+          ease: MOTION_EASE.precision,
+          force3D: true,
+          clearProps: "transform,opacity",
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: "top 82%",
+            once: true,
+          },
+        });
+      });
+    },
+    { scope: sectionRef }
+  );
+
   return (
-    <section id="tentang" className="bg-brand-light py-16 lg:py-20">
-      <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-14 lg:px-8">
-        <div className="overflow-hidden rounded-2xl bg-brand-navy shadow-md">
+    <section
+      ref={sectionRef}
+      id="tentang"
+      className="border-t border-hairline bg-obsidian py-14 lg:py-20"
+    >
+      <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-5 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8">
+        <div className="overflow-hidden rounded-xl border border-hairline bg-carbon">
           <img
+            data-about-img
             src="/about.jpeg"
-            alt="Unit Toyota Avanza rental mobil Kupang siap antar jemput"
+            alt="Unit Toyota Avanza Aventra Rental Kupang siap antar jemput"
             loading="lazy"
             width={960}
             height={720}
-            className="aspect-[4/3] w-full object-cover object-center"
+            className="aspect-[16/10] w-full object-cover object-center lg:aspect-[4/3]"
           />
         </div>
 
         <div>
-          <p className="text-xs font-bold tracking-[0.14em] text-brand-blue uppercase">
-            Tentang Kami
+          <p className="font-mono text-[11px] font-medium tracking-[0.16em] text-gold uppercase">
+            03 / Tentang {BUSINESS_INFO.name}
           </p>
-          <h2 className="mt-2 text-2xl font-bold tracking-tight text-brand-navy sm:text-3xl lg:text-[34px]">
-            Rental Mobil Terpercaya di Kupang
+          <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">
+            {BUSINESS_INFO.tagline}.
           </h2>
-          <p className="mt-4 text-base leading-relaxed text-brand-muted">
-            Kami hadir untuk memberikan solusi transportasi yang aman, nyaman,
-            dan terpercaya selama Anda berada di Kupang.
-          </p>
 
-          <ul className="mt-6 space-y-3">
-            {REASONS.map((reason) => (
-              <li
-                key={reason}
-                className="flex items-center gap-3 text-sm font-semibold text-brand-text sm:text-[15px]"
-              >
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-navy text-brand-yellow">
-                  <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                </span>
-                <span>{reason}</span>
-              </li>
+          <div className="mt-8 divide-y divide-hairline border-y border-hairline">
+            {BRAND_PILLARS.map((pillar) => (
+              <div key={pillar.title} data-about-pillar className="py-4">
+                <h3
+                  className={`font-display text-base font-bold sm:text-lg ${
+                    "highlight" in pillar && pillar.highlight
+                      ? "text-gold"
+                      : "text-white"
+                  }`}
+                >
+                  {pillar.title}
+                </h3>
+                <p className="mt-1 text-sm leading-relaxed text-brand-muted">
+                  {pillar.description}
+                </p>
+              </div>
             ))}
-          </ul>
+          </div>
+
+          <m.div whileHover={{ y: -1 }} whileTap={TAP_SPRING} className="mt-8">
+            <Button
+              asChild
+              variant="accent"
+              className="h-12 w-full rounded-md px-6 font-display text-xs tracking-wider uppercase sm:w-auto"
+            >
+              <a
+                href={buildWhatsAppUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Hubungi Admin: {BUSINESS_INFO.whatsappDisplay}
+              </a>
+            </Button>
+          </m.div>
         </div>
       </div>
     </section>
   );
 }
-

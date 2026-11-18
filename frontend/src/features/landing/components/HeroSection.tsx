@@ -1,178 +1,244 @@
 import { useRef } from "react";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import * as m from "motion/react-m";
-import { MapPin } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BUSINESS_INFO } from "@/lib/constants";
-import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import {
+  MOTION_EASE,
+  MOTION_MEDIA,
+  TAP_SPRING,
+  registerMotionPlugins,
+} from "@/lib/motion";
 
-gsap.registerPlugin(ScrollTrigger, useGSAP);
+registerMotionPlugins();
 
 export function HeroSection() {
-  const wrapperRef = useRef<HTMLDivElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
-  const bgRef = useRef<HTMLImageElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
+  const desktopImgRef = useRef<HTMLImageElement>(null);
 
   useGSAP(
     () => {
       const mm = gsap.matchMedia();
 
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
-        // Keep LCP image at opacity: 1 from frame 0; only settle scale smoothly.
+      mm.add(MOTION_MEDIA.desktop, () => {
+        const section = sectionRef.current;
+        const img = desktopImgRef.current;
+
         gsap.fromTo(
-          bgRef.current,
-          { scale: 1.08 },
+          img,
+          { scale: 1.05 },
           {
-            scale: 1.02,
-            duration: 1.1,
-            ease: "power2.out",
+            scale: 1,
+            duration: 1.0,
+            ease: MOTION_EASE.precision,
             force3D: true,
           }
         );
 
+        gsap.from("[data-hero-beam]", {
+          scaleX: 0,
+          transformOrigin: "left center",
+          duration: 0.7,
+          ease: MOTION_EASE.ignition,
+          force3D: true,
+          clearProps: "transform",
+        });
+
+        gsap.from("[data-hero-headline]", {
+          clipPath: "inset(0 0 100% 0)",
+          y: 16,
+          duration: 0.75,
+          ease: MOTION_EASE.ignition,
+          force3D: true,
+          clearProps: "clipPath,transform",
+        });
+
         gsap.from("[data-hero-item]", {
-          y: 22,
+          y: 16,
           opacity: 0,
-          duration: 0.6,
-          stagger: 0.09,
-          ease: "power3.out",
+          duration: 0.5,
+          stagger: 0.08,
+          delay: 0.12,
+          ease: MOTION_EASE.ignition,
           force3D: true,
           clearProps: "transform,opacity",
         });
 
-        // Scroll-Morph: full-bleed hero morphs into rounded floating frame on scroll
-        const scrollTl = gsap.timeline({
+        gsap.to(img, {
+          yPercent: 8,
+          ease: "none",
+          force3D: true,
           scrollTrigger: {
-            trigger: wrapperRef.current,
+            trigger: section,
             start: "top top",
             end: "bottom top",
-            scrub: 0.5,
+            scrub: 0.4,
           },
         });
 
-        scrollTl
-          .to(
-            sectionRef.current,
-            {
-              scale: 0.94,
-              borderRadius: "28px",
-              transformOrigin: "center bottom",
-              ease: "none",
-              force3D: true,
-            },
-            0
-          )
-          .to(
-            bgRef.current,
-            {
-              yPercent: 12,
-              ease: "none",
-              force3D: true,
-            },
-            0
-          )
-          .to(
-            contentRef.current,
-            {
-              y: -24,
-              opacity: 0.35,
-              ease: "none",
-              force3D: true,
-            },
-            0
-          );
+        if (section && img) {
+          const quickX = gsap.quickTo(img, "x", {
+            duration: 0.6,
+            ease: "power2.out",
+          });
+          const quickY = gsap.quickTo(img, "y", {
+            duration: 0.6,
+            ease: "power2.out",
+          });
+
+          const handlePointerMove = (e: PointerEvent) => {
+            if (e.pointerType !== "mouse") return;
+            const rect = section.getBoundingClientRect();
+            const nx = (e.clientX - rect.left) / rect.width - 0.5;
+            const ny = (e.clientY - rect.top) / rect.height - 0.5;
+            quickX(nx * -16);
+            quickY(ny * -10);
+          };
+
+          const handlePointerLeave = () => {
+            quickX(0);
+            quickY(0);
+          };
+
+          section.addEventListener("pointermove", handlePointerMove, {
+            passive: true,
+          });
+          section.addEventListener("pointerleave", handlePointerLeave, {
+            passive: true,
+          });
+
+          return () => {
+            section.removeEventListener("pointermove", handlePointerMove);
+            section.removeEventListener("pointerleave", handlePointerLeave);
+          };
+        }
+      });
+
+      mm.add(MOTION_MEDIA.mobile, () => {
+        gsap.from("[data-hero-item]", {
+          y: 10,
+          opacity: 0,
+          duration: 0.35,
+          stagger: 0.05,
+          ease: MOTION_EASE.precision,
+          force3D: true,
+          clearProps: "transform,opacity",
+        });
       });
     },
-    { scope: wrapperRef }
+    { scope: sectionRef }
   );
 
   return (
-    <div ref={wrapperRef} className="bg-background">
-      <section
-        ref={sectionRef}
-        id="beranda"
-        className="relative overflow-hidden bg-brand-deep text-white will-change-transform"
-      >
+    <section
+      ref={sectionRef}
+      id="beranda"
+      className="relative overflow-hidden bg-obsidian text-white md:min-h-[680px] lg:min-h-[760px]"
+    >
+      {/* Mobile: 16:10 uncropped Hilux stage above thumb-zone content */}
+      <div className="relative aspect-[16/10] w-full overflow-hidden md:hidden">
         <img
-          ref={bgRef}
           src="/hero.jpeg"
-          alt="Unit Toyota Hilux rental mobil di Kota Kupang, Nusa Tenggara Timur"
+          alt="Unit Toyota Hilux Aventra Rental di Kota Kupang"
           fetchPriority="high"
           width={1280}
           height={720}
-          className="absolute inset-0 h-full w-full scale-[1.02] object-cover object-center will-change-transform"
+          className="h-full w-full object-cover object-center"
         />
-
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-gradient-to-b from-[#061B3AF2] via-[#092B59CC] to-[#092B5966] md:bg-gradient-to-r md:from-[#061B3AF2] md:via-[#092B59D9] md:to-transparent"
+          className="absolute inset-0 bg-gradient-to-b from-obsidian/20 via-obsidian/45 to-obsidian"
         />
+      </div>
 
+      {/* Desktop: Right-aligned 16:9 Hilux with left-to-right obsidian scrim */}
+      <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[78%] overflow-hidden md:block">
+        <img
+          ref={desktopImgRef}
+          src="/hero.jpeg"
+          alt="Unit Toyota Hilux Aventra Rental di Kota Kupang"
+          fetchPriority="high"
+          width={1280}
+          height={720}
+          className="h-full w-full object-cover object-[65%_center] will-change-transform"
+        />
         <div
-          ref={contentRef}
-          className="relative mx-auto flex min-h-[500px] max-w-7xl items-center px-4 py-16 sm:px-6 lg:min-h-[600px] lg:px-8 lg:py-24"
-        >
-          <div className="max-w-xl">
-            <div data-hero-item>
-              <Badge className="mb-5 gap-1.5 border border-brand-sky/40 bg-brand-navy/80 px-3.5 py-1.5 text-xs font-semibold text-brand-yellow">
-                <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
-                {BUSINESS_INFO.location}
-              </Badge>
+          aria-hidden="true"
+          className="absolute inset-0 bg-gradient-to-r from-obsidian via-obsidian/80 via-35% to-obsidian/15"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-gradient-to-t from-obsidian via-transparent via-30% to-transparent"
+        />
+      </div>
+
+      {/* Architectural 1px vertical rules (desktop) */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none mx-auto hidden max-w-7xl border-x border-white/[0.06] md:block md:absolute md:inset-0"
+      />
+
+      {/* Foreground Content */}
+      <div className="relative mx-auto flex max-w-7xl flex-col justify-end px-5 pb-10 pt-2 sm:px-6 md:min-h-[680px] md:justify-center md:py-24 lg:min-h-[760px] lg:px-8">
+        <div className="max-w-xl">
+          <div
+            data-hero-beam
+            aria-hidden="true"
+            className="mb-5 hidden h-[2px] w-16 bg-gradient-to-r from-gold to-gold/10 md:block"
+          />
+
+          <p
+            data-hero-headline
+            className="font-display text-[40px] font-bold leading-[1.05] tracking-[-0.03em] text-white sm:text-5xl lg:text-[68px]"
+          >
+            DRIVEN IN{" "}
+            <span className="block text-gold">GOLD STANDARD.</span>
+          </p>
+
+          <h1
+            data-hero-item
+            className="mt-4 max-w-md text-sm leading-relaxed font-normal text-slate-300 sm:text-base"
+          >
+            Sewa mobil harian di Kota Kupang. Avanza, Innova Reborn, Brio, dan Hilux—lepas kunci atau dengan sopir.
+          </h1>
+
+          {/* Compact Quick-Action Spec Strip */}
+          <div
+            data-hero-item
+            className="mt-7 flex flex-col gap-3 rounded-lg border border-hairline bg-carbon/90 p-3 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between sm:gap-0 sm:p-2.5"
+          >
+            <div className="grid grid-cols-2 divide-x divide-hairline sm:flex sm:items-center">
+              <div className="pr-3 sm:px-3">
+                <p className="font-mono text-[10px] tracking-wider text-brand-muted uppercase">
+                  Pickup
+                </p>
+                <p className="text-xs font-semibold text-white sm:text-[13px]">
+                  Bandara El Tari
+                </p>
+              </div>
+              <div className="pl-3 sm:px-4">
+                <p className="font-mono text-[10px] tracking-wider text-brand-muted uppercase">
+                  Layanan
+                </p>
+                <p className="text-xs font-semibold text-white sm:text-[13px]">
+                  Lepas Kunci / Sopir
+                </p>
+              </div>
             </div>
 
-            <h1
-              data-hero-item
-              className="text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-[52px] lg:leading-[1.15]"
-            >
-              Rental Mobil Kupang Murah, Lepas Kunci &amp; Dengan Sopir
-            </h1>
-
-            <p
-              data-hero-item
-              className="mt-4 max-w-lg text-base leading-relaxed text-slate-200 sm:text-lg"
-            >
-              Sewa mobil Kupang harian: Avanza, Innova Reborn, Brio, dan Hilux. Mobil bersih dan terawat untuk wisata,
-              bisnis, dan keluarga.
-            </p>
-
-            <div
-              data-hero-item
-              className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4"
-            >
-              <m.div
-                whileHover={{ y: -2, scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                transition={{ type: "spring", stiffness: 420, damping: 24 }}
+            <m.div whileHover={{ y: -1 }} whileTap={TAP_SPRING}>
+              <Button
+                asChild
+                variant="accent"
+                className="h-12 w-full rounded-md px-5 font-display text-xs tracking-wider uppercase sm:h-11 sm:w-auto"
               >
-                <Button asChild variant="accent" size="lg" className="w-full sm:w-auto">
-                  <a
-                    href={buildWhatsAppUrl()}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Booking Sekarang
-                  </a>
-                </Button>
-              </m.div>
-
-              <m.div
-                whileHover={{ y: -2, scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                transition={{ type: "spring", stiffness: 420, damping: 24 }}
-              >
-                <Button asChild variant="outlineLight" size="lg" className="w-full sm:w-auto">
-                  <a href="#katalog">Lihat Katalog</a>
-                </Button>
-              </m.div>
-            </div>
+                <a href="#katalog">Cek Ketersediaan →</a>
+              </Button>
+            </m.div>
           </div>
         </div>
-      </section>
-    </div>
+      </div>
+    </section>
   );
 }
 
