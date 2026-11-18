@@ -34,30 +34,35 @@ export function BookingModal({ car, open, onOpenChange }: BookingModalProps) {
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px]" />
-        <DialogPrimitive.Content className="booking-sheet fixed inset-x-0 bottom-0 z-50 max-h-[90dvh] w-full overflow-y-auto rounded-t-2xl border-t border-border bg-white p-6 shadow-xl md:inset-x-auto md:bottom-auto md:left-1/2 md:top-1/2 md:w-[92vw] md:max-w-md md:rounded-2xl md:border">
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-obsidian/80 backdrop-blur-sm" />
+        <DialogPrimitive.Content className="booking-sheet fixed inset-x-0 bottom-0 z-50 max-h-[90dvh] w-full overflow-y-auto rounded-t-2xl border-t border-gold/25 bg-carbon p-6 text-white shadow-2xl md:inset-x-auto md:bottom-auto md:left-1/2 md:top-1/2 md:w-[92vw] md:max-w-md md:rounded-2xl md:border md:border-gold/25">
+          <div
+            aria-hidden="true"
+            className="mx-auto mb-4 h-1 w-10 rounded-full bg-hairline md:hidden"
+          />
+
           <div className="flex items-start justify-between gap-4">
             <div>
-              <DialogPrimitive.Title className="text-lg font-bold text-brand-navy">
+              <DialogPrimitive.Title className="font-display text-lg font-bold tracking-tight text-white">
                 Booking {car.name}
               </DialogPrimitive.Title>
-              <p className="text-xs text-brand-muted">
+              <p className="mt-0.5 font-mono text-xs font-medium text-gold">
                 {formatRupiah(car.pricePerDay)} / hari
               </p>
             </div>
             <DialogPrimitive.Close
-              className="rounded-md p-1 text-brand-muted hover:bg-slate-100"
+              className="rounded-md p-1.5 text-brand-muted transition-colors hover:bg-obsidian hover:text-white"
               aria-label="Tutup form booking"
             >
               <X className="h-5 w-5" />
             </DialogPrimitive.Close>
           </div>
 
-          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+          <form onSubmit={handleSubmit} className="mt-5 space-y-4">
             <div>
               <label
                 htmlFor={`booking-name-${car.id}`}
-                className="mb-1 block text-xs font-semibold text-brand-text"
+                className="mb-1.5 block font-mono text-[11px] font-medium tracking-wider text-brand-muted uppercase"
               >
                 Nama Lengkap
               </label>
@@ -68,7 +73,7 @@ export function BookingModal({ car, open, onOpenChange }: BookingModalProps) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Masukkan nama Anda"
-                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-brand-navy focus:outline-none"
+                className="w-full rounded-lg border border-hairline bg-obsidian px-3 py-2.5 text-sm text-white placeholder:text-brand-muted/60 focus:border-gold focus:outline-none"
               />
             </div>
 
@@ -85,25 +90,31 @@ export function BookingModal({ car, open, onOpenChange }: BookingModalProps) {
             />
 
             {errorMsg && (
-              <p className="text-xs font-medium text-red-600">{errorMsg}</p>
+              <p className="font-mono text-xs font-medium text-red-400">
+                {errorMsg}
+              </p>
             )}
 
-            <div className="space-y-1 rounded-lg bg-slate-50 p-3 text-xs">
+            <div className="space-y-1.5 rounded-xl border border-hairline bg-obsidian p-3.5 text-xs">
               <div className="flex justify-between">
                 <span className="text-brand-muted">Tanggal Mulai</span>
-                <span className="font-semibold">{startDate ?? "—"}</span>
+                <span className="font-mono font-semibold text-white">
+                  {startDate ?? "—"}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-brand-muted">Tanggal Selesai</span>
-                <span className="font-semibold">{endDate ?? "—"}</span>
+                <span className="font-mono font-semibold text-white">
+                  {endDate ?? "—"}
+                </span>
               </div>
-              <div className="flex justify-between border-t border-border pt-1.5 text-sm">
-                <span className="font-semibold text-brand-text">
+              <div className="flex justify-between border-t border-hairline pt-2 text-sm">
+                <span className="font-semibold text-white">
                   Total ({totalDays} hari)
                 </span>
                 <span
                   key={totalPrice}
-                  className="price-flash font-bold text-brand-navy tabular-nums"
+                  className="price-flash font-mono font-bold text-gold tabular-nums"
                 >
                   {totalDays > 0 ? formatRupiah(totalPrice) : "—"}
                 </span>
@@ -112,10 +123,11 @@ export function BookingModal({ car, open, onOpenChange }: BookingModalProps) {
 
             <Button
               type="submit"
-              className="w-full"
+              variant="accent"
+              className="h-11 w-full rounded-md font-display text-xs tracking-wider uppercase"
               disabled={!startDate || !endDate}
             >
-              Konfirmasi Booking
+              Konfirmasi Booking →
             </Button>
           </form>
         </DialogPrimitive.Content>

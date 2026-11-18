@@ -27,34 +27,34 @@ export function AvailabilityCalendar({
 }: AvailabilityCalendarProps) {
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-semibold text-brand-text">
-          Pilih Tanggal Mulai & Selesai
+      <div className="mb-2.5 flex items-center justify-between">
+        <span className="font-mono text-[11px] font-medium tracking-wider text-brand-muted uppercase">
+          Pilih Tanggal
         </span>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={onPrevMonth}
-            className="rounded p-1 hover:bg-slate-100"
+            className="rounded-md border border-hairline bg-obsidian p-1.5 text-brand-muted transition-colors hover:border-gold/40 hover:text-gold"
             aria-label="Bulan sebelumnya"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-3.5 w-3.5" />
           </button>
-          <span className="min-w-[110px] text-center text-xs font-semibold">
+          <span className="min-w-[110px] text-center font-display text-xs font-bold text-white">
             {MONTH_NAMES[viewDate.getMonth()]} {viewDate.getFullYear()}
           </span>
           <button
             type="button"
             onClick={onNextMonth}
-            className="rounded p-1 hover:bg-slate-100"
+            className="rounded-md border border-hairline bg-obsidian p-1.5 text-brand-muted transition-colors hover:border-gold/40 hover:text-gold"
             aria-label="Bulan berikutnya"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-medium text-brand-muted">
+      <div className="grid grid-cols-7 gap-1 text-center font-mono text-[10px] font-medium text-brand-muted uppercase">
         {DAY_HEADERS.map((d) => (
           <div key={d} className="py-1">
             {d}
@@ -75,7 +75,7 @@ export function AvailabilityCalendar({
           const isDisabled = isPast || isBooked;
           const isEdge = iso === startDate || iso === endDate;
           const isInRange = Boolean(
-            startTime && endTime && cellTime > startTime && cellTime < endTime,
+            startTime && endTime && cellTime > startTime && cellTime < endTime
           );
 
           return (
@@ -85,15 +85,16 @@ export function AvailabilityCalendar({
               disabled={isDisabled}
               onClick={() => onSelectDate(iso)}
               className={cn(
-                "h-8 rounded-md text-xs font-medium transition-colors",
+                "h-9 rounded-md font-mono text-xs font-medium transition-colors",
                 isDisabled &&
-                  "cursor-not-allowed bg-slate-100 text-slate-400 line-through",
+                  "cursor-not-allowed bg-obsidian/50 text-slate-600 line-through",
                 !isDisabled &&
                   !isEdge &&
                   !isInRange &&
-                  "bg-emerald-50 text-emerald-800 hover:bg-emerald-100",
-                isInRange && "bg-brand-navy/15 text-brand-navy",
-                isEdge && "bg-brand-navy font-bold text-white",
+                  "border border-hairline bg-obsidian text-slate-200 hover:border-gold/50 hover:text-gold",
+                isInRange && "border border-gold/30 bg-gold/15 text-gold-light",
+                isEdge &&
+                  "border border-gold bg-gold font-bold text-obsidian shadow-[0_0_12px_rgba(245,184,46,0.25)]"
               )}
             >
               {Number(iso.slice(0, 2))}
@@ -102,17 +103,17 @@ export function AvailabilityCalendar({
         })}
       </div>
 
-      <div className="mt-2 flex items-center gap-4 text-[11px] text-brand-muted">
-        <span className="flex items-center gap-1">
-          <span className="inline-block h-2.5 w-2.5 rounded-sm border border-emerald-300 bg-emerald-100" />
-          Available
+      <div className="mt-3 flex items-center gap-4 font-mono text-[10px] text-brand-muted">
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-sm border border-hairline bg-obsidian" />
+          Tersedia
         </span>
-        <span className="flex items-center gap-1">
-          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-slate-200" />
-          Tidak Tersedia
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-obsidian/50 line-through ring-1 ring-hairline/50" />
+          Penuh
         </span>
-        <span className="flex items-center gap-1">
-          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-brand-navy" />
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-sm bg-gold" />
           Dipilih
         </span>
       </div>
