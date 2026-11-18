@@ -6,7 +6,7 @@ import { router } from "./app/router";
 import "./index.css";
 
 const loadMotionFeatures = () =>
-  import("motion/react").then((mod) => mod.domAnimation);
+  import("motion/react").then((mod) => mod.domMax);
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
