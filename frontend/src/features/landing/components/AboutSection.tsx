@@ -146,7 +146,7 @@ export function AboutSection() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Hubungi Admin: {BUSINESS_INFO.whatsappDisplay}
+                Tanya Ketersediaan Unit →
               </a>
             </Button>
           </m.div>

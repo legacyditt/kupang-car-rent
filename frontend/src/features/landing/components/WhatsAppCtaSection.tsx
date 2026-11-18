@@ -4,7 +4,6 @@ import { useGSAP } from "@gsap/react";
 import * as m from "motion/react-m";
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BUSINESS_INFO } from "@/lib/constants";
 import {
   MOTION_EASE,
   MOTION_MEDIA,
@@ -77,7 +76,7 @@ export function WhatsAppCtaSection() {
                 rel="noopener noreferrer"
               >
                 <MessageCircle className="h-4 w-4" aria-hidden="true" />
-                Chat WA: {BUSINESS_INFO.whatsappDisplay}
+                Mulai Chat WhatsApp →
               </a>
             </Button>
           </m.div>

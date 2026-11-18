@@ -133,21 +133,21 @@ export function HeroSection() {
     <section
       ref={sectionRef}
       id="beranda"
-      className="relative overflow-hidden bg-obsidian text-white md:min-h-[680px] lg:min-h-[760px]"
+      className="relative min-h-[78svh] overflow-hidden bg-obsidian text-white md:min-h-[680px] lg:min-h-[760px]"
     >
-      {/* Mobile: 16:10 uncropped Hilux stage above thumb-zone content */}
-      <div className="relative aspect-[16/10] w-full overflow-hidden md:hidden">
+      {/* Mobile: Seamless editorial stage melting Hilux photo into obsidian */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[58%] overflow-hidden md:hidden">
         <img
           src="/hero.jpeg"
           alt="Unit Toyota Hilux Aventra Rental di Kota Kupang"
           fetchPriority="high"
           width={1280}
           height={720}
-          className="h-full w-full object-cover object-center"
+          className="h-full w-full object-cover object-[58%_42%]"
         />
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-gradient-to-b from-obsidian/20 via-obsidian/45 to-obsidian"
+          className="absolute inset-0 bg-gradient-to-b from-obsidian/15 via-obsidian/55 via-60% to-obsidian"
         />
       </div>
 
@@ -179,7 +179,7 @@ export function HeroSection() {
       />
 
       {/* Foreground Content */}
-      <div className="relative mx-auto flex max-w-7xl flex-col justify-end px-5 pb-10 pt-2 sm:px-6 md:min-h-[680px] md:justify-center md:py-24 lg:min-h-[760px] lg:px-8">
+      <div className="relative mx-auto flex min-h-[78svh] max-w-7xl flex-col justify-end px-5 pb-10 pt-[36svh] sm:px-6 md:min-h-[680px] md:justify-center md:py-24 lg:min-h-[760px] lg:px-8">
         <div className="max-w-xl">
           <div
             data-hero-beam
@@ -210,10 +210,10 @@ export function HeroSection() {
             <div className="grid grid-cols-2 divide-x divide-hairline sm:flex sm:items-center">
               <div className="pr-3 sm:px-3">
                 <p className="font-mono text-[10px] tracking-wider text-brand-muted uppercase">
-                  Pickup
+                  Tarif
                 </p>
                 <p className="text-xs font-semibold text-white sm:text-[13px]">
-                  Bandara El Tari
+                  Mulai Rp 300rb/hari
                 </p>
               </div>
               <div className="pl-3 sm:px-4">
