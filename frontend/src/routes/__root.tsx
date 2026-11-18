@@ -1,6 +1,6 @@
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { Footer } from "@/components/layout/Footer";
-import { MobileStickyBar } from "@/components/layout/MobileStickyBar";
+import { MobileBottomDock } from "@/components/layout/MobileBottomDock";
 import { Navbar } from "@/components/layout/Navbar";
 
 export const rootRoute = createRootRoute({
@@ -15,8 +15,7 @@ function RootLayout() {
         <Outlet />
       </main>
       <Footer />
-      <MobileStickyBar />
+      <MobileBottomDock />
     </div>
   );
 }
-
