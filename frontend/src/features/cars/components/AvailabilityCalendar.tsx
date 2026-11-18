@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DAY_HEADERS, MONTH_NAMES, toTimestamp } from "../utils/booking";
+import { CalendarGuide } from "./CalendarGuide";
 
 interface AvailabilityCalendarProps {
   viewDate: Date;
@@ -53,6 +54,8 @@ export function AvailabilityCalendar({
           </button>
         </div>
       </div>
+
+      <CalendarGuide startDate={startDate} endDate={endDate} />
 
       <div className="grid grid-cols-7 gap-1 text-center font-mono text-[10px] font-medium text-brand-muted uppercase">
         {DAY_HEADERS.map((d) => (
