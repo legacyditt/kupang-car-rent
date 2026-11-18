@@ -1,22 +1,77 @@
+import { useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useGSAP } from "@gsap/react";
+import * as m from "motion/react-m";
 import { MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BUSINESS_INFO } from "@/lib/constants";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
+gsap.registerPlugin(ScrollTrigger, useGSAP);
+
 export function HeroSection() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const bgRef = useRef<HTMLImageElement>(null);
+
+  useGSAP(
+    () => {
+      const mm = gsap.matchMedia();
+
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        // Keep LCP image at opacity: 1 from frame 0; only settle scale smoothly.
+        gsap.fromTo(
+          bgRef.current,
+          { scale: 1.08 },
+          {
+            scale: 1.02,
+            duration: 1.1,
+            ease: "power2.out",
+            force3D: true,
+          }
+        );
+
+        gsap.from("[data-hero-item]", {
+          y: 22,
+          opacity: 0,
+          duration: 0.6,
+          stagger: 0.09,
+          ease: "power3.out",
+          force3D: true,
+          clearProps: "transform,opacity",
+        });
+
+        gsap.to(bgRef.current, {
+          yPercent: 12,
+          ease: "none",
+          force3D: true,
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: "top top",
+            end: "bottom top",
+            scrub: 0.5,
+          },
+        });
+      });
+    },
+    { scope: sectionRef }
+  );
+
   return (
     <section
+      ref={sectionRef}
       id="beranda"
       className="relative overflow-hidden bg-brand-deep text-white"
     >
       <img
+        ref={bgRef}
         src="/hero.jpeg"
         alt="Unit Toyota Hilux rental mobil di Kota Kupang, Nusa Tenggara Timur"
         fetchPriority="high"
         width={1280}
         height={720}
-        className="absolute inset-0 h-full w-full object-cover object-center"
+        className="absolute inset-0 h-full w-full scale-[1.02] object-cover object-center will-change-transform"
       />
 
       <div
@@ -26,34 +81,57 @@ export function HeroSection() {
 
       <div className="relative mx-auto flex min-h-[500px] max-w-7xl items-center px-4 py-16 sm:px-6 lg:min-h-[600px] lg:px-8 lg:py-24">
         <div className="max-w-xl">
-          <Badge className="mb-5 gap-1.5 border border-brand-sky/40 bg-brand-navy/80 px-3.5 py-1.5 text-xs font-semibold text-brand-yellow">
-            <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
-            {BUSINESS_INFO.location}
-          </Badge>
+          <div data-hero-item>
+            <Badge className="mb-5 gap-1.5 border border-brand-sky/40 bg-brand-navy/80 px-3.5 py-1.5 text-xs font-semibold text-brand-yellow">
+              <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
+              {BUSINESS_INFO.location}
+            </Badge>
+          </div>
 
-          <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-[52px] lg:leading-[1.15]">
+          <h1
+            data-hero-item
+            className="text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl lg:text-[52px] lg:leading-[1.15]"
+          >
             Rental Mobil Kupang Murah, Lepas Kunci &amp; Dengan Sopir
           </h1>
 
-          <p className="mt-4 max-w-lg text-base leading-relaxed text-slate-200 sm:text-lg">
+          <p
+            data-hero-item
+            className="mt-4 max-w-lg text-base leading-relaxed text-slate-200 sm:text-lg"
+          >
             Sewa mobil Kupang harian: Avanza, Innova Reborn, Brio, dan Hilux. Mobil bersih dan terawat untuk wisata,
             bisnis, dan keluarga.
           </p>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-            <Button asChild variant="accent" size="lg">
-              <a
-                href={buildWhatsAppUrl()}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Booking Sekarang
-              </a>
-            </Button>
+          <div
+            data-hero-item
+            className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4"
+          >
+            <m.div
+              whileHover={{ y: -2, scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 420, damping: 24 }}
+            >
+              <Button asChild variant="accent" size="lg" className="w-full sm:w-auto">
+                <a
+                  href={buildWhatsAppUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Booking Sekarang
+                </a>
+              </Button>
+            </m.div>
 
-            <Button asChild variant="outlineLight" size="lg">
-              <a href="#katalog">Lihat Katalog</a>
-            </Button>
+            <m.div
+              whileHover={{ y: -2, scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 420, damping: 24 }}
+            >
+              <Button asChild variant="outlineLight" size="lg" className="w-full sm:w-auto">
+                <a href="#katalog">Lihat Katalog</a>
+              </Button>
+            </m.div>
           </div>
         </div>
       </div>

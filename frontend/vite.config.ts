@@ -10,5 +10,16 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          gsap: ["gsap", "gsap/ScrollTrigger", "@gsap/react"],
+          motion: ["motion/react", "motion/react-m"],
+          router: ["@tanstack/react-router"],
+        },
+      },
+    },
+  },
 });
 
