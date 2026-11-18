@@ -97,7 +97,7 @@ export function buildBookingMessage(params: {
   return [
     "Halo, saya ingin booking mobil:",
     `- Nama: ${name}`,
-    `- Mobil: ${car.name} (${car.category})`,
+    `- Mobil: ${car.name}`,
     `- Tanggal Mulai: ${startDate}`,
     `- Tanggal Selesai: ${endDate}`,
     `- Durasi: ${totalDays} hari`,

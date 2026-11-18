@@ -14,9 +14,6 @@ interface CarCardProps {
 export function CarCard({ car, prioritizeImage = false }: CarCardProps) {
   const metadata = [
     car.capacityLabel !== "—" ? `Kapasitas: ${car.capacityLabel}` : null,
-    car.transmissionLabel !== "—"
-      ? `Transmisi: ${car.transmissionLabel}`
-      : null,
   ].filter(Boolean);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   return (
@@ -24,7 +21,7 @@ export function CarCard({ car, prioritizeImage = false }: CarCardProps) {
       <div className="relative flex aspect-[16/10] w-full items-center justify-center bg-white p-3">
         <img
           src={car.imageUrl}
-          alt={`Sewa ${car.name} Kupang - ${car.category}`}
+          alt={`Sewa ${car.name} Kupang`}
           loading={prioritizeImage ? undefined : "lazy"}
           width={320}
           height={200}
@@ -69,7 +66,6 @@ export function CarCard({ car, prioritizeImage = false }: CarCardProps) {
         open={isBookingOpen}
         onOpenChange={setIsBookingOpen}
       />
-      ;
     </Card>
   );
 }

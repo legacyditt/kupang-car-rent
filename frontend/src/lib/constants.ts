@@ -11,6 +11,5 @@ export const NAV_LINKS = [
   { label: "Katalog", href: "#katalog" },
   { label: "Layanan", href: "#layanan" },
   { label: "Tentang Kami", href: "#tentang" },
-  { label: "Kontak", href: "#kontak" },
 ] as const;
 
