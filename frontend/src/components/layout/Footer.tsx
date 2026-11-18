@@ -4,21 +4,27 @@ import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
 export function Footer() {
   return (
-    <footer id="kontak" className="bg-brand-deep text-white">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+    <footer id="kontak" className="border-t border-hairline bg-[#030406] text-white">
+      <div className="mx-auto max-w-7xl px-5 pb-24 pt-12 sm:px-6 md:pb-14 lg:px-8 lg:py-16">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
           <div>
-            <h2 className="text-lg font-bold tracking-wide text-white">
-              {BUSINESS_INFO.name.toUpperCase()}
-            </h2>
-            <p className="mt-3 max-w-xs text-sm leading-relaxed text-slate-400">
-              Layanan penyewaan mobil harian di Kota Kupang untuk kebutuhan
-              wisata, perjalanan bisnis, dan keluarga.
+            <img
+              src={BUSINESS_INFO.logoPath}
+              alt={`${BUSINESS_INFO.name} Logo`}
+              width={162}
+              height={48}
+              className="h-11 w-auto object-contain"
+            />
+            <p className="mt-4 font-mono text-xs tracking-wider text-gold uppercase">
+              {BUSINESS_INFO.tagline}
+            </p>
+            <p className="mt-2 max-w-xs text-sm leading-relaxed text-brand-muted">
+              Sewa mobil harian di Kota Kupang. Lepas kunci atau dengan sopir.
             </p>
           </div>
 
           <div>
-            <h3 className="text-xs font-bold tracking-widest text-brand-yellow uppercase">
+            <h3 className="font-mono text-xs font-bold tracking-widest text-gold uppercase">
               Navigasi
             </h3>
             <ul className="mt-4 space-y-2.5">
@@ -26,9 +32,9 @@ export function Footer() {
                 <li key={link.href}>
                   <a
                     href={link.href}
-                    className="text-sm text-slate-300 transition-colors hover:text-brand-yellow"
+                    className="font-mono text-xs tracking-wider text-slate-300 uppercase transition-colors hover:text-gold"
                   >
-                    {link.label}
+                    {link.code} {link.label}
                   </a>
                 </li>
               ))}
@@ -36,32 +42,32 @@ export function Footer() {
           </div>
 
           <div>
-            <h3 className="text-xs font-bold tracking-widest text-brand-yellow uppercase">
-              Kontak
+            <h3 className="font-mono text-xs font-bold tracking-widest text-gold uppercase">
+              Reservasi 24/7
             </h3>
             <ul className="mt-4 space-y-3 text-sm text-slate-300">
               <li className="flex items-center gap-2.5">
-                <Phone className="h-4 w-4 shrink-0 text-brand-yellow" aria-hidden="true" />
+                <Phone className="h-4 w-4 shrink-0 text-gold" aria-hidden="true" />
                 <a
                   href={buildWhatsAppUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-brand-yellow transition-colors"
+                  className="font-display text-lg font-bold text-white transition-colors hover:text-gold"
                 >
-                  WhatsApp: {BUSINESS_INFO.whatsappDisplay}
+                  {BUSINESS_INFO.whatsappDisplayIntl}
                 </a>
               </li>
               <li className="flex items-start gap-2.5">
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-brand-yellow" aria-hidden="true" />
-                <span>{BUSINESS_INFO.location}</span>
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gold" aria-hidden="true" />
+                <span className="text-brand-muted">{BUSINESS_INFO.location}</span>
               </li>
             </ul>
           </div>
         </div>
 
-        <div className="mt-12 border-t border-slate-800 pt-6">
-          <p className="text-xs text-slate-400">
-            © 2026 {BUSINESS_INFO.name}. Hak Cipta Dilindungi.
+        <div className="mt-10 border-t border-hairline pt-6">
+          <p className="font-mono text-[11px] tracking-wider text-slate-500 uppercase">
+            © 2026 {BUSINESS_INFO.name.toUpperCase()} KUPANG
           </p>
         </div>
       </div>

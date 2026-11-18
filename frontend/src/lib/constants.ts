@@ -1,15 +1,17 @@
 export const BUSINESS_INFO = {
-  name: "Rental Mobil Kupang",
-  tagline: "Jelajahi Kupang dengan Nyaman",
+  name: "Aventra Rental",
+  tagline: "Drive Your Journey",
   location: "Kota Kupang, Nusa Tenggara Timur",
-  whatsappDisplay: "0822 4786 3571",
-  whatsappNumber: "6282247863571",
+  whatsappDisplay: "0812 3898 9891",
+  whatsappDisplayIntl: "+62 812-3898-9891",
+  whatsappNumber: "6281238989891",
+  logoPath: "/logo-aventra.jpg",
 } as const;
 
 export const NAV_LINKS = [
-  { label: "Beranda", href: "#beranda" },
-  { label: "Katalog", href: "#katalog" },
-  { label: "Layanan", href: "#layanan" },
-  { label: "Tentang Kami", href: "#tentang" },
+  { code: "01", label: "Beranda", href: "#beranda" },
+  { code: "02", label: "Pilihan Mobil", href: "#katalog" },
+  { code: "03", label: "Layanan", href: "#layanan" },
+  { code: "04", label: "Tentang", href: "#tentang" },
 ] as const;
 
