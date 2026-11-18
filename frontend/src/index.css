@@ -85,5 +85,161 @@
   .carousel-track {
     scroll-behavior: smooth;
   }
+
+  .card-sheen {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card-sheen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      110deg,
+      transparent 35%,
+      rgba(245, 184, 46, 0.16) 50%,
+      transparent 65%
+    );
+    transform: translate3d(-120%, 0, 0);
+    transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .group:hover .card-sheen::after,
+  .card-sheen-auto::after {
+    transform: translate3d(120%, 0, 0);
+  }
+
+  .sticky-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      110deg,
+      transparent 35%,
+      rgba(255, 255, 255, 0.28) 50%,
+      transparent 65%
+    );
+    animation: aventra-sheen 6s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  }
+
+  .beacon-ring::before {
+    content: "";
+    position: absolute;
+    inset: -4px;
+    border-radius: inherit;
+    border: 1px solid rgba(245, 184, 46, 0.55);
+    pointer-events: none;
+    animation: aventra-beacon 2.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  }
+
+  .price-flash {
+    animation: aventra-price-flash 0.35s ease-out;
+  }
+
+  @media (max-width: 767px) {
+    .booking-sheet[data-state="open"] {
+      animation: aventra-sheet-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .booking-sheet[data-state="closed"] {
+      animation: aventra-sheet-out 0.22s ease-in forwards;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .booking-sheet[data-state="open"] {
+      animation: aventra-dialog-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .booking-sheet[data-state="closed"] {
+      animation: aventra-dialog-out 0.16s ease-in forwards;
+    }
+  }
+}
+
+@keyframes aventra-sheen {
+  0%,
+  82% {
+    transform: translate3d(-120%, 0, 0);
+  }
+  100% {
+    transform: translate3d(120%, 0, 0);
+  }
+}
+
+@keyframes aventra-beacon {
+  0% {
+    transform: scale(0.96);
+    opacity: 0.7;
+  }
+  70%,
+  100% {
+    transform: scale(1.12);
+    opacity: 0;
+  }
+}
+
+@keyframes aventra-price-flash {
+  0% {
+    transform: scale(1.06);
+    opacity: 0.75;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes aventra-sheet-in {
+  from {
+    transform: translate3d(0, 100%, 0);
+    opacity: 0.6;
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes aventra-sheet-out {
+  from {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+  to {
+    transform: translate3d(0, 100%, 0);
+    opacity: 0;
+  }
+}
+
+@keyframes aventra-dialog-in {
+  from {
+    transform: translate3d(-50%, -48%, 0) scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: translate3d(-50%, -50%, 0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes aventra-dialog-out {
+  from {
+    transform: translate3d(-50%, -50%, 0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translate3d(-50%, -48%, 0) scale(0.96);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
