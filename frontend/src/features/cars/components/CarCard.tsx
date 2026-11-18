@@ -1,7 +1,9 @@
 import { useState } from "react";
+import * as m from "motion/react-m";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { TAP_SPRING } from "@/lib/motion";
 import { formatRupiah } from "@/lib/utils";
 import type { CarItem } from "../types/car.types";
 import { BookingModal } from "./BookingModal";
@@ -13,54 +15,66 @@ interface CarCardProps {
 
 export function CarCard({ car, prioritizeImage = false }: CarCardProps) {
   const metadata = [
-    car.capacityLabel !== "—" ? `Kapasitas: ${car.capacityLabel}` : null,
+    car.capacityLabel !== "—" && car.capacityLabel !== "— Kursi"
+      ? car.capacityLabel
+      : null,
+    car.brand,
   ].filter(Boolean);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+
   return (
-    <Card className="flex h-full flex-col overflow-hidden rounded-[14px] border-border bg-white shadow-sm transition-shadow hover:shadow-md">
-      <div className="relative flex aspect-[16/10] w-full items-center justify-center bg-white p-3">
+    <Card className="group flex h-full flex-col overflow-hidden rounded-2xl border-hairline bg-carbon text-white transition-colors duration-200 hover:border-gold/50">
+      <div className="card-sheen relative flex aspect-[16/10] w-full items-center justify-center bg-white p-3">
         <img
           src={car.imageUrl}
           alt={`Sewa ${car.name} Kupang`}
           loading={prioritizeImage ? undefined : "lazy"}
           width={320}
           height={200}
-          className="h-full w-full object-contain"
+          className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-[1.04]"
         />
         {car.status === "AVAILABLE" && (
-          <Badge variant="available" className="absolute right-3 top-3">
+          <Badge className="absolute right-3 top-3 border border-gold/40 bg-obsidian/90 font-mono text-[10px] tracking-wider text-gold uppercase">
             Tersedia
           </Badge>
         )}
       </div>
-      <CardContent className="flex flex-1 flex-col p-5 pt-2">
-        <h3 className="line-clamp-2 text-lg font-bold text-brand-text">
-          {car.name}
-        </h3>
 
+      <CardContent className="flex flex-1 flex-col p-5">
         {metadata.length > 0 && (
-          <p className="mt-1.5 min-h-[1.25rem] text-xs text-brand-muted">
+          <p className="font-mono text-[10px] font-medium tracking-widest text-brand-muted uppercase">
             {metadata.join(" • ")}
           </p>
         )}
 
-        <div className="mt-5 flex items-baseline gap-1.5">
-          <span className="text-xl font-bold text-brand-navy">
+        <h3 className="mt-1.5 line-clamp-2 font-display text-lg font-bold tracking-tight text-white">
+          {car.name}
+        </h3>
+
+        <div className="mt-4 flex items-baseline gap-1.5">
+          <span className="font-mono text-lg font-bold text-gold">
             {formatRupiah(car.pricePerDay)}
           </span>
-          <span className="text-xs text-brand-muted">/ hari</span>
+          <span className="font-mono text-[11px] text-brand-muted uppercase">
+            / hari
+          </span>
         </div>
 
-        <div className="mt-auto pt-4">
+        <m.div whileTap={TAP_SPRING} className="mt-auto pt-5">
           <Button
             type="button"
-            className="w-full"
+            variant="outline"
+            className="h-11 w-full rounded-md border-gold/40 bg-obsidian font-mono text-xs tracking-wider text-gold uppercase hover:bg-gold hover:text-obsidian"
             onClick={() => setIsBookingOpen(true)}
           >
-            Booking
+            + Detail &amp; Kalender{" "}
+            <span className="inline-block transition-transform duration-200 group-hover:translate-x-1">
+              →
+            </span>
           </Button>
-        </div>
+        </m.div>
       </CardContent>
+
       <BookingModal
         car={car}
         open={isBookingOpen}

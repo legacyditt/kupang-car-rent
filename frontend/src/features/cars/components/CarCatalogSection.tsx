@@ -1,14 +1,45 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+import * as m from "motion/react-m";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MOTION_EASE, MOTION_MEDIA, registerMotionPlugins } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import { INITIAL_CARS } from "../data/cars.mock";
 import { CarCard } from "./CarCard";
 
+registerMotionPlugins();
+
 export function CarCatalogSection() {
+  const sectionRef = useRef<HTMLElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [liveStatus, setLiveStatus] = useState("");
+
+  useGSAP(
+    () => {
+      const mm = gsap.matchMedia();
+
+      mm.add(MOTION_MEDIA.desktop, () => {
+        gsap.from("[data-catalog-card]", {
+          y: 24,
+          opacity: 0,
+          duration: 0.5,
+          stagger: 0.08,
+          ease: MOTION_EASE.ignition,
+          force3D: true,
+          clearProps: "transform,opacity",
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: "top 78%",
+            once: true,
+          },
+        });
+      });
+    },
+    { scope: sectionRef }
+  );
 
   const scrollToSlide = useCallback((index: number) => {
     const track = trackRef.current;
@@ -57,18 +88,22 @@ export function CarCatalogSection() {
   }, []);
 
   return (
-    <section id="katalog" className="bg-white py-16 lg:py-20">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section
+      ref={sectionRef}
+      id="katalog"
+      className="border-t border-hairline bg-obsidian py-14 lg:py-20"
+    >
+      <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between gap-4">
           <div>
-            <p className="text-xs font-bold tracking-[0.14em] text-brand-blue uppercase">
-              Katalog Mobil
+            <p className="font-mono text-[11px] font-medium tracking-[0.16em] text-gold uppercase">
+              02 / Pilihan Mobil
             </p>
-            <h2 className="mt-2 text-2xl font-bold tracking-tight text-brand-navy sm:text-3xl lg:text-[34px]">
-              Harga Sewa Mobil Kupang Harian
+            <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">
+              Harga Sewa Mobil Kupang.
             </h2>
             <p className="mt-2 text-sm text-brand-muted sm:text-base">
-              Pilih mobil rental di Kota Kupang sesuai kebutuhan Anda, cek harga dan ketersediaan.
+              Pilih mobil sesuai kebutuhan, cek jadwal ketersediaan, lalu pesan via WhatsApp.
             </p>
           </div>
 
@@ -80,31 +115,34 @@ export function CarCatalogSection() {
               onClick={() => scrollToSlide(activeIndex - 1)}
               disabled={activeIndex === 0}
               aria-label="Mobil sebelumnya"
-              className="rounded-full"
+              className="h-11 w-11 rounded-md border-hairline bg-carbon text-white"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Button
               type="button"
+              variant="outline"
               size="icon"
               onClick={() => scrollToSlide(activeIndex + 1)}
               disabled={activeIndex === INITIAL_CARS.length - 1}
               aria-label="Mobil berikutnya"
-              className="rounded-full"
+              className="h-11 w-11 rounded-md border-hairline bg-carbon text-gold"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
-        {/* Desktop & Tablet: 1-4 Column Grid */}
+        {/* Desktop & Tablet: 2-4 Column Grid */}
         <div className="mt-10 hidden gap-6 md:grid md:grid-cols-2 lg:grid-cols-4">
           {INITIAL_CARS.map((car) => (
-            <CarCard key={car.id} car={car} />
+            <div key={car.id} data-catalog-card className="h-full">
+              <CarCard car={car} />
+            </div>
           ))}
         </div>
 
-        {/* Mobile: Accessible Horizontal Carousel */}
+        {/* Mobile: Swipeable Horizontal Carousel with Depth-Focus Snap */}
         <div
           role="region"
           aria-roledescription="carousel"
@@ -118,17 +156,23 @@ export function CarCatalogSection() {
             aria-label="Daftar Mobil"
             className="carousel-track gap-4 pb-2"
           >
-            {INITIAL_CARS.map((car, index) => (
-              <div
-                key={car.id}
-                role="group"
-                aria-roledescription="slide"
-                aria-label={`${index + 1} dari ${INITIAL_CARS.length}`}
-                className="w-[82%] shrink-0 snap-start"
-              >
-                <CarCard car={car} prioritizeImage={index === 0} />
-              </div>
-            ))}
+            {INITIAL_CARS.map((car, index) => {
+              const isFocused = index === activeIndex;
+              return (
+                <div
+                  key={car.id}
+                  role="group"
+                  aria-roledescription="slide"
+                  aria-label={`${index + 1} dari ${INITIAL_CARS.length}`}
+                  className={cn(
+                    "w-[80%] shrink-0 snap-start transition-[transform,opacity] duration-300 ease-out will-change-transform",
+                    isFocused ? "scale-100 opacity-100" : "scale-[0.95] opacity-75"
+                  )}
+                >
+                  <CarCard car={car} prioritizeImage={index === 0} />
+                </div>
+              );
+            })}
           </div>
 
           <p className="sr-only" role="status" aria-live="polite">
@@ -137,7 +181,7 @@ export function CarCatalogSection() {
 
           <nav
             aria-label="Pilih mobil"
-            className="mt-5 flex items-center justify-center gap-2"
+            className="mt-5 flex items-center gap-2"
           >
             {INITIAL_CARS.map((car, index) => {
               const isActive = index === activeIndex;
@@ -148,13 +192,16 @@ export function CarCatalogSection() {
                   onClick={() => scrollToSlide(index)}
                   aria-label={`Lihat ${car.name}`}
                   aria-current={isActive ? "true" : undefined}
-                  className={cn(
-                    "h-2.5 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer",
-                    isActive
-                      ? "w-6 bg-brand-navy"
-                      : "w-2.5 bg-slate-300 hover:bg-slate-400",
+                  className="relative h-1.5 flex-1 cursor-pointer overflow-hidden rounded-full bg-hairline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {isActive && (
+                    <m.span
+                      layoutId="catalog-mobile-active-pill"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      className="absolute inset-0 rounded-full bg-gold"
+                    />
                   )}
-                />
+                </button>
               );
             })}
           </nav>
