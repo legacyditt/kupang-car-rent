@@ -1,3 +1,6 @@
+import "@fontsource-variable/outfit";
+import "@fontsource-variable/plus-jakarta-sans";
+import "@fontsource-variable/jetbrains-mono";
 import { StrictMode } from "react";
 import { RouterProvider } from "@tanstack/react-router";
 import { LazyMotion, MotionConfig } from "motion/react";
