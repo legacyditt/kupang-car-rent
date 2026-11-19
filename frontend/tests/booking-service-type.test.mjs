@@ -23,3 +23,4 @@ test("buildBookingMessage includes selected rental service type", () => {
   assert.match(bookingUtilSource, /WITH_DRIVER:\s*"Dengan Sopir"/);
   assert.match(bookingUtilSource, /- Layanan: \$\{SERVICE_TYPE_LABELS\[serviceType\]\}/);
 });
+
