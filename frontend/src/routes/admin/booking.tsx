@@ -149,3 +149,4 @@ export function AdminBookingsPage() {
     </div>
   );
 }
+
