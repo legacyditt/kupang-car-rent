@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { DAY_HEADERS, MONTH_NAMES, toTimestamp } from "../utils/booking";
 import { CalendarGuide } from "./CalendarGuide";
@@ -33,25 +34,29 @@ export function AvailabilityCalendar({
           Pilih Tanggal
         </span>
         <div className="flex items-center gap-1.5">
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="icon"
             onClick={onPrevMonth}
-            className="rounded-md border border-hairline bg-obsidian p-1.5 text-brand-muted transition-colors hover:border-gold/40 hover:text-gold"
+            className="h-7 w-7 rounded-md border-hairline bg-obsidian text-brand-muted hover:border-gold/40 hover:bg-obsidian hover:text-gold"
             aria-label="Bulan sebelumnya"
           >
             <ChevronLeft className="h-3.5 w-3.5" />
-          </button>
+          </Button>
           <span className="min-w-[110px] text-center font-display text-xs font-bold text-white">
             {MONTH_NAMES[viewDate.getMonth()]} {viewDate.getFullYear()}
           </span>
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="icon"
             onClick={onNextMonth}
-            className="rounded-md border border-hairline bg-obsidian p-1.5 text-brand-muted transition-colors hover:border-gold/40 hover:text-gold"
+            className="h-7 w-7 rounded-md border-hairline bg-obsidian text-brand-muted hover:border-gold/40 hover:bg-obsidian hover:text-gold"
             aria-label="Bulan berikutnya"
           >
             <ChevronRight className="h-3.5 w-3.5" />
-          </button>
+          </Button>
         </div>
       </div>
 
