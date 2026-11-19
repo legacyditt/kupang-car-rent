@@ -2,6 +2,7 @@ import { createRoute, createRouter } from "@tanstack/react-router";
 import { AdminLayout } from "@/features/admin-dashboard/components/AdminLayout";
 import { rootRoute } from "@/routes/__root";
 import { AdminOverviewPage } from "@/routes/admin/index";
+import { AdminCarsPage } from "@/routes/admin/mobil";
 import { guestLayoutRoute, indexRoute } from "@/routes/index";
 
 const adminLayoutRoute = createRoute({
@@ -37,7 +38,7 @@ function createAdminPlaceholder(code: string, title: string) {
 const adminMobilRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: "/mobil",
-  component: createAdminPlaceholder("02", "Manajemen Kendaraan"),
+  component: AdminCarsPage,
 });
 
 const adminBookingRoute = createRoute({
