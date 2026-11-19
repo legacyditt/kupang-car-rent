@@ -27,3 +27,6 @@ backend/prisma/migrations/*.sql.bak
 
 # public 
 public/
+
+# Local utility scripts
+scripts/
