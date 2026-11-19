@@ -80,3 +80,4 @@ export function useActiveSection() {
 
   return { activeHref, isScrolled, handleNavClick };
 }
+

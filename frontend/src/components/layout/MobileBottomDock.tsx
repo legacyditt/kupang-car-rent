@@ -35,7 +35,9 @@ export function MobileBottomDock() {
               aria-current={isActive ? "page" : undefined}
               className={cn(
                 "relative flex min-h-[44px] flex-col items-center justify-center gap-0.5 rounded-full px-2 py-1.5 text-[10px] font-medium tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                isActive ? "text-obsidian" : "text-brand-muted hover:text-white"
+                isActive
+                  ? "text-obsidian"
+                  : "text-brand-muted hover:text-white",
               )}
             >
               {isActive && (
