@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import { ImagePlus, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -91,11 +97,11 @@ export function CarFormDialog({
       const normalized = await normalizeCarImageFile(file);
       setImageUrl(normalized.dataUrl);
       setImageMeta(
-        `${normalized.originalWidth}×${normalized.originalHeight} → ${normalized.outputWidth}×${normalized.outputHeight} px`
+        `${normalized.originalWidth}×${normalized.originalHeight} → ${normalized.outputWidth}×${normalized.outputHeight} px`,
       );
     } catch (err) {
       setImageError(
-        err instanceof Error ? err.message : "Gagal memproses foto unit."
+        err instanceof Error ? err.message : "Gagal memproses foto unit.",
       );
     } finally {
       setIsProcessingImage(false);
@@ -300,12 +306,6 @@ export function CarFormDialog({
                 </span>
               </button>
             )}
-
-            <p className="font-mono text-[10px] text-brand-muted">
-              Otomatis disesuaikan ke kanvas {TARGET_CANVAS_WIDTH}×
-              {TARGET_CANVAS_HEIGHT} px (16:10) agar seragam dengan unit lain.
-            </p>
-
             {imageError && (
               <p className="font-mono text-xs font-medium text-red-400">
                 {imageError}
