@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { cn, formatRupiah } from "@/lib/utils";
 import type { CarItem, CarStatus } from "../types/car.types";
+import { CAR_STATUS_LABELS } from "../utils/car-admin";
 
 interface AdminCarCardProps {
   car: CarItem;
@@ -81,7 +82,7 @@ export function AdminCarCard({
               STATUS_BADGE_MAP[car.status]
             )}
           >
-            {car.status}
+            {CAR_STATUS_LABELS[car.status]}
           </Badge>
         </div>
 
@@ -102,7 +103,7 @@ export function AdminCarCard({
           >
             <SelectTrigger
               aria-label={`Ubah status ${car.name}`}
-              className="h-9 w-[140px] border-gold/30 bg-obsidian font-mono text-[11px] font-bold text-gold uppercase"
+              className="h-9 w-[155px] border-gold/30 bg-obsidian font-mono text-[11px] font-bold text-gold uppercase"
             >
               <SelectValue />
             </SelectTrigger>
@@ -113,7 +114,7 @@ export function AdminCarCard({
                   value={status}
                   className="font-mono text-xs focus:bg-obsidian focus:text-gold"
                 >
-                  {status}
+                  {CAR_STATUS_LABELS[status]}
                 </SelectItem>
               ))}
             </SelectContent>

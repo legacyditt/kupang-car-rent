@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { INITIAL_CARS } from "@/features/cars/data/cars.mock";
+import { CAR_STATUS_LABELS } from "@/features/cars/utils/car-admin";
 import { formatRupiah } from "@/lib/utils";
 
 const RECENT_BOOKINGS = [
@@ -174,7 +175,7 @@ export function AdminOverviewPage() {
         {/* Fleet Status */}
         <section className="rounded-2xl border border-hairline bg-carbon p-5">
           <h2 className="font-display text-base font-bold text-white">
-            Status Armada Hari Ini
+            Status Unit Hari Ini
           </h2>
 
           <div className="mt-4 space-y-2.5">
@@ -191,7 +192,7 @@ export function AdminOverviewPage() {
                     CAR_STATUS_COLOR[car.status] ?? "text-brand-muted"
                   }`}
                 >
-                  ● {car.status}
+                  ● {CAR_STATUS_LABELS[car.status]}
                 </span>
               </div>
             ))}
@@ -201,3 +202,4 @@ export function AdminOverviewPage() {
     </div>
   );
 }
+

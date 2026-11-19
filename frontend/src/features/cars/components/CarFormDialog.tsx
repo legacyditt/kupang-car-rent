@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { CarItem, CarStatus } from "../types/car.types";
-import type { CarFormPayload } from "../utils/car-admin";
+import { CAR_STATUS_LABELS, type CarFormPayload } from "../utils/car-admin";
 
 interface CarFormDialogProps {
   open: boolean;
@@ -27,11 +27,11 @@ interface CarFormDialogProps {
   onSave: (payload: CarFormPayload) => void;
 }
 
-const STATUS_OPTIONS: Array<{ value: CarStatus; label: string }> = [
-  { value: "AVAILABLE", label: "AVAILABLE — Siap Disewakan" },
-  { value: "RENTED", label: "RENTED — Sedang Disewa" },
-  { value: "MAINTENANCE", label: "MAINTENANCE — Perawatan" },
-  { value: "INACTIVE", label: "INACTIVE — Tidak Ditawarkan" },
+const STATUS_VALUES: CarStatus[] = [
+  "AVAILABLE",
+  "RENTED",
+  "MAINTENANCE",
+  "INACTIVE",
 ];
 
 export function CarFormDialog({
@@ -179,13 +179,13 @@ export function CarFormDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="border-hairline bg-carbon text-white">
-                  {STATUS_OPTIONS.map((opt) => (
+                  {STATUS_VALUES.map((val) => (
                     <SelectItem
-                      key={opt.value}
-                      value={opt.value}
+                      key={val}
+                      value={val}
                       className="font-mono text-xs focus:bg-obsidian focus:text-gold"
                     >
-                      {opt.value}
+                      {CAR_STATUS_LABELS[val]}
                     </SelectItem>
                   ))}
                 </SelectContent>

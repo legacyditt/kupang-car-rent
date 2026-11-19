@@ -6,14 +6,17 @@ import { AdminCarCard } from "@/features/cars/components/AdminCarCard";
 import { CarFormDialog } from "@/features/cars/components/CarFormDialog";
 import { useAdminCars } from "@/features/cars/hooks/useAdminCars";
 import type { CarItem } from "@/features/cars/types/car.types";
-import type { CarFilterTab } from "@/features/cars/utils/car-admin";
+import {
+  CAR_STATUS_LABELS,
+  type CarFilterTab,
+} from "@/features/cars/utils/car-admin";
 
 const FILTER_TABS: Array<{ value: CarFilterTab; label: string }> = [
   { value: "ALL", label: "Semua" },
-  { value: "AVAILABLE", label: "Available" },
-  { value: "RENTED", label: "Rented" },
-  { value: "MAINTENANCE", label: "Maintenance" },
-  { value: "INACTIVE", label: "Inactive" },
+  { value: "AVAILABLE", label: CAR_STATUS_LABELS.AVAILABLE },
+  { value: "RENTED", label: CAR_STATUS_LABELS.RENTED },
+  { value: "MAINTENANCE", label: CAR_STATUS_LABELS.MAINTENANCE },
+  { value: "INACTIVE", label: CAR_STATUS_LABELS.INACTIVE },
 ];
 
 export function AdminCarsPage() {
@@ -85,7 +88,8 @@ export function AdminCarsPage() {
       {filteredCars.length === 0 ? (
         <div className="rounded-2xl border border-hairline bg-carbon p-10 text-center">
           <p className="font-display text-base font-bold text-white">
-            Tidak ada unit dengan status {activeTab}
+            Tidak ada unit dengan status{" "}
+            {activeTab === "ALL" ? "apapun" : CAR_STATUS_LABELS[activeTab]}
           </p>
           <p className="mt-1 text-xs text-brand-muted">
             Pilih filter lain atau tambahkan unit kendaraan baru.

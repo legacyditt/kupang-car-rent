@@ -2,6 +2,13 @@ import type { CarItem, CarStatus } from "../types/car.types";
 
 export type CarFilterTab = "ALL" | CarStatus;
 
+export const CAR_STATUS_LABELS: Record<CarStatus, string> = {
+  AVAILABLE: "Tersedia",
+  RENTED: "Sedang Disewa",
+  MAINTENANCE: "Perawatan",
+  INACTIVE: "Nonaktif",
+};
+
 export interface CarFormPayload {
   id?: string;
   name: string;
