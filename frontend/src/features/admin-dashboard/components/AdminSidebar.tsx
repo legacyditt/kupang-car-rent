@@ -67,7 +67,7 @@ export function AdminSidebar() {
         {collapsed ? (
           <Link
             to="/admin"
-            title={BUSINESS_INFO.name}
+            title={`${BUSINESS_INFO.name} — Ruang Pengelola`}
             className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg border border-gold/30 bg-obsidian p-1"
           >
             <img
@@ -79,18 +79,23 @@ export function AdminSidebar() {
             />
           </Link>
         ) : (
-          <Link
-            to="/admin"
-            className="flex min-w-0 items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <img
-              src={BUSINESS_INFO.logoPath}
-              alt={BUSINESS_INFO.name}
-              width={132}
-              height={40}
-              className="h-9 w-auto object-contain"
-            />
-          </Link>
+          <div className="min-w-0">
+            <Link
+              to="/admin"
+              className="inline-flex items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <img
+                src={BUSINESS_INFO.logoPath}
+                alt={BUSINESS_INFO.name}
+                width={132}
+                height={40}
+                className="h-9 w-auto object-contain"
+              />
+            </Link>
+            <p className="mt-1.5 truncate font-mono text-[10px] tracking-[0.12em] text-gold uppercase">
+              Ruang Pengelola
+            </p>
+          </div>
         )}
 
         <button
