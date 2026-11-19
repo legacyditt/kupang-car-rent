@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   CalendarDays,
@@ -5,6 +6,8 @@ import {
   ClipboardList,
   LayoutDashboard,
   LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
   Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -23,68 +26,149 @@ export const ADMIN_NAV_ITEMS = [
   { to: "/admin/pengaturan", code: "05", label: "Pengaturan", icon: Settings },
 ] as const;
 
+const SIDEBAR_STORAGE_KEY = "aventra-admin-sidebar-collapsed";
+
 export function AdminSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try {
+      return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next));
+      } catch {
+        // Ignore storage write failure in restricted contexts
+      }
+      return next;
+    });
+  };
 
   return (
-    <aside className="hidden w-[248px] shrink-0 flex-col border-r border-hairline bg-carbon px-5 py-7 md:flex">
-      <div>
-        <Link
-          to="/"
-          className="block font-display text-lg font-bold tracking-wider text-white uppercase"
+    <aside
+      className={cn(
+        "hidden shrink-0 flex-col border-r border-hairline bg-carbon py-6 transition-[width] duration-200 ease-out md:flex",
+        collapsed ? "w-[72px] items-center px-3" : "w-[248px] px-5"
+      )}
+    >
+      <div
+        className={cn(
+          "flex w-full items-center",
+          collapsed ? "flex-col gap-3" : "justify-between gap-2"
+        )}
+      >
+        {collapsed ? (
+          <Link
+            to="/"
+            title="Aventra Rental"
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-gold/40 bg-gold/12 font-display text-base font-bold text-gold"
+          >
+            A
+          </Link>
+        ) : (
+          <div className="min-w-0">
+            <Link
+              to="/"
+              className="block truncate font-display text-lg font-bold tracking-wider text-white uppercase"
+            >
+              Aventra Rental
+            </Link>
+            <p className="mt-1 truncate font-mono text-[10px] tracking-[0.14em] text-gold uppercase">
+              Admin Console
+            </p>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          aria-label={collapsed ? "Buka sidebar" : "Tutup sidebar"}
+          title={collapsed ? "Buka sidebar" : "Tutup sidebar"}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-hairline bg-obsidian text-brand-muted transition-colors hover:border-gold/40 hover:text-gold"
         >
-          Aventra Rental
-        </Link>
-        <p className="mt-1 font-mono text-[10px] tracking-[0.14em] text-gold uppercase">
-          Admin Console • Kupang
-        </p>
+          {collapsed ? (
+            <PanelLeftOpen className="h-4 w-4" aria-hidden="true" />
+          ) : (
+            <PanelLeftClose className="h-4 w-4" aria-hidden="true" />
+          )}
+        </button>
       </div>
 
-      <nav aria-label="Navigasi Admin" className="mt-7 flex-1 space-y-1.5">
+      <nav aria-label="Navigasi Admin" className="mt-7 w-full flex-1 space-y-1.5">
         {ADMIN_NAV_ITEMS.map((item) => {
           const isActive =
             item.to === "/admin"
               ? pathname === "/admin" || pathname === "/admin/"
               : pathname.startsWith(item.to);
           const Icon = item.icon;
+          const badgeCount = "badgeCount" in item ? item.badgeCount : 0;
 
           return (
             <Link
               key={item.to}
               to={item.to}
+              title={collapsed ? `${item.code} ${item.label}` : undefined}
               className={cn(
-                "flex h-[42px] items-center justify-between rounded-lg border px-3 font-mono text-xs tracking-wider uppercase transition-colors",
+                "relative flex h-[42px] items-center rounded-lg border font-mono text-xs tracking-wider uppercase transition-colors",
+                collapsed ? "justify-center px-0" : "justify-between px-3",
                 isActive
                   ? "border-gold/40 bg-gold/12 font-bold text-gold"
                   : "border-transparent font-medium text-brand-muted hover:border-hairline hover:bg-obsidian/60 hover:text-white"
               )}
             >
               <span className="flex items-center gap-2.5">
-                <Icon className="h-4 w-4" aria-hidden="true" />
-                <span>
-                  {item.code} {item.label}
-                </span>
+                <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                {!collapsed && (
+                  <span className="truncate">
+                    {item.code} {item.label}
+                  </span>
+                )}
               </span>
-              {"badgeCount" in item && item.badgeCount > 0 && (
+
+              {!collapsed && badgeCount > 0 && (
                 <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1.5 font-mono text-[10px] font-bold text-obsidian">
-                  {item.badgeCount}
+                  {badgeCount}
                 </span>
+              )}
+
+              {collapsed && badgeCount > 0 && (
+                <span
+                  aria-hidden="true"
+                  className="absolute right-2 top-2 h-2 w-2 rounded-full bg-gold"
+                />
               )}
             </Link>
           );
         })}
       </nav>
 
-      <div className="mt-auto rounded-xl border border-hairline bg-obsidian p-3">
-        <p className="text-xs font-bold text-white">Admin Aventra</p>
+      {collapsed ? (
         <Link
           to="/"
-          className="mt-1.5 inline-flex items-center gap-1.5 font-mono text-[10px] font-bold tracking-wider text-red-400 uppercase transition-colors hover:text-red-300"
+          title="Ke Website Guest"
+          aria-label="Ke Website Guest"
+          className="mt-auto flex h-10 w-10 items-center justify-center rounded-lg border border-hairline bg-obsidian text-red-400 transition-colors hover:border-red-400/40 hover:text-red-300"
         >
-          <LogOut className="h-3 w-3" aria-hidden="true" />
-          Ke Website Guest →
+          <LogOut className="h-4 w-4" aria-hidden="true" />
         </Link>
-      </div>
+      ) : (
+        <div className="mt-auto w-full rounded-xl border border-hairline bg-obsidian p-3">
+          <p className="text-xs font-bold text-white">Admin Aventra</p>
+          <Link
+            to="/"
+            className="mt-1.5 inline-flex items-center gap-1.5 font-mono text-[10px] font-bold tracking-wider text-red-400 uppercase transition-colors hover:text-red-300"
+          >
+            <LogOut className="h-3 w-3" aria-hidden="true" />
+            Ke Website Guest →
+          </Link>
+        </div>
+      )}
     </aside>
   );
 }
