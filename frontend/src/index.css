@@ -217,22 +217,22 @@
 
 @keyframes aventra-dialog-in {
   from {
-    transform: translate3d(-50%, -48%, 0) scale(0.96);
+    transform: scale(0.96);
     opacity: 0;
   }
   to {
-    transform: translate3d(-50%, -50%, 0) scale(1);
+    transform: scale(1);
     opacity: 1;
   }
 }
 
 @keyframes aventra-dialog-out {
   from {
-    transform: translate3d(-50%, -50%, 0) scale(1);
+    transform: scale(1);
     opacity: 1;
   }
   to {
-    transform: translate3d(-50%, -48%, 0) scale(0.96);
+    transform: scale(0.96);
     opacity: 0;
   }
 }

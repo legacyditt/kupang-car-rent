@@ -60,7 +60,7 @@ export function BookingModal({ car, open, onOpenChange }: BookingModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="booking-sheet inset-x-0 top-auto bottom-0 left-0 max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 gap-0 overflow-y-auto rounded-t-2xl rounded-b-none border-t border-gold/25 bg-carbon p-6 text-white shadow-2xl md:inset-x-auto md:top-1/2 md:bottom-auto md:left-1/2 md:w-[92vw] md:max-w-md md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl md:border md:border-gold/25">
+      <DialogContent className="booking-sheet inset-x-0 top-auto bottom-0 left-0 max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 gap-0 overflow-y-auto rounded-t-2xl rounded-b-none border-t border-gold/25 bg-carbon p-6 text-white shadow-2xl data-[state=closed]:animate-none data-[state=open]:animate-none md:inset-0 md:m-auto md:h-fit md:max-h-[90dvh] md:w-[92vw] md:max-w-md md:rounded-2xl md:border md:border-gold/25">
         <div
           aria-hidden="true"
           className="mx-auto mb-4 h-1 w-10 rounded-full bg-hairline md:hidden"
