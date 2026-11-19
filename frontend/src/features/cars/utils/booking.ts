@@ -84,20 +84,30 @@ export function hasBookedDateInRange(
   return false;
 }
 
+export type RentalServiceType = "SELF_DRIVE" | "WITH_DRIVER";
+
+export const SERVICE_TYPE_LABELS: Record<RentalServiceType, string> = {
+  SELF_DRIVE: "Lepas Kunci",
+  WITH_DRIVER: "Dengan Sopir",
+};
+
 /** Susun format pesan WhatsApp untuk booking. */
 export function buildBookingMessage(params: {
   car: CarItem;
   name: string;
+  serviceType: RentalServiceType;
   startDate: string;
   endDate: string;
   totalDays: number;
   totalPrice: number;
 }): string {
-  const { car, name, startDate, endDate, totalDays, totalPrice } = params;
+  const { car, name, serviceType, startDate, endDate, totalDays, totalPrice } =
+    params;
   return [
     "Halo, saya ingin booking mobil:",
     `- Nama: ${name}`,
     `- Mobil: ${car.name}`,
+    `- Layanan: ${SERVICE_TYPE_LABELS[serviceType]}`,
     `- Tanggal Mulai: ${startDate}`,
     `- Tanggal Selesai: ${endDate}`,
     `- Durasi: ${totalDays} hari`,

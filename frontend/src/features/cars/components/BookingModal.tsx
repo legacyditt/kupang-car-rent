@@ -1,10 +1,27 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
+import { KeyRound, UserCheck, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { formatRupiah } from "@/lib/utils";
+import { cn, formatRupiah } from "@/lib/utils";
 import type { CarItem } from "../types/car.types";
 import { useBookingForm } from "../hooks/useBookingForm";
+import {
+  SERVICE_TYPE_LABELS,
+  type RentalServiceType,
+} from "../utils/booking";
 import { AvailabilityCalendar } from "./AvailabilityCalendar";
+
+const SERVICE_OPTIONS: Array<{
+  value: RentalServiceType;
+  label: string;
+  icon: typeof KeyRound;
+}> = [
+  { value: "SELF_DRIVE", label: SERVICE_TYPE_LABELS.SELF_DRIVE, icon: KeyRound },
+  {
+    value: "WITH_DRIVER",
+    label: SERVICE_TYPE_LABELS.WITH_DRIVER,
+    icon: UserCheck,
+  },
+];
 
 interface BookingModalProps {
   car: CarItem;
@@ -16,6 +33,8 @@ export function BookingModal({ car, open, onOpenChange }: BookingModalProps) {
   const {
     name,
     setName,
+    serviceType,
+    setServiceType,
     startDate,
     endDate,
     viewDate,
@@ -77,6 +96,40 @@ export function BookingModal({ car, open, onOpenChange }: BookingModalProps) {
               />
             </div>
 
+            <div>
+              <span className="mb-1.5 block font-mono text-[11px] font-medium tracking-wider text-brand-muted uppercase">
+                Jenis Layanan
+              </span>
+              <div
+                role="radiogroup"
+                aria-label="Jenis Layanan"
+                className="grid grid-cols-2 gap-2"
+              >
+                {SERVICE_OPTIONS.map((opt) => {
+                  const Icon = opt.icon;
+                  const isSelected = serviceType === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={isSelected}
+                      onClick={() => setServiceType(opt.value)}
+                      className={cn(
+                        "flex h-10 items-center justify-center gap-2 rounded-lg border font-mono text-xs font-medium transition-colors",
+                        isSelected
+                          ? "border-gold bg-gold/15 text-gold"
+                          : "border-hairline bg-obsidian text-brand-muted hover:border-gold/40 hover:text-white"
+                      )}
+                    >
+                      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <AvailabilityCalendar
               viewDate={viewDate}
               calendarCells={calendarCells}
@@ -96,6 +149,12 @@ export function BookingModal({ car, open, onOpenChange }: BookingModalProps) {
             )}
 
             <div className="space-y-1.5 rounded-xl border border-hairline bg-obsidian p-3.5 text-xs">
+              <div className="flex justify-between">
+                <span className="text-brand-muted">Layanan</span>
+                <span className="font-mono font-semibold text-white">
+                  {SERVICE_TYPE_LABELS[serviceType]}
+                </span>
+              </div>
               <div className="flex justify-between">
                 <span className="text-brand-muted">Tanggal Mulai</span>
                 <span className="font-mono font-semibold text-white">

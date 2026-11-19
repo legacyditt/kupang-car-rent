@@ -8,6 +8,7 @@ import {
   hasBookedDateInRange,
   toISODate,
   toTimestamp,
+  type RentalServiceType,
 } from "../utils/booking";
 
 export function useBookingForm(car: CarItem, onSuccess: () => void) {
@@ -15,6 +16,8 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
   const todayIso = useMemo(() => toISODate(today), [today]);
 
   const [name, setName] = useState("");
+  const [serviceType, setServiceType] =
+    useState<RentalServiceType>("SELF_DRIVE");
   const [startDate, setStartDate] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -82,6 +85,7 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
     const message = buildBookingMessage({
       car,
       name: trimmedName,
+      serviceType,
       startDate,
       endDate,
       totalDays,
@@ -95,6 +99,8 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
   return {
     name,
     setName,
+    serviceType,
+    setServiceType,
     startDate,
     endDate,
     viewDate,
