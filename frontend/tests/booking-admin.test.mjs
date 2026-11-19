@@ -101,3 +101,4 @@ test("filterBookings and countBookingsByStatus work with search query and status
   assert.equal(filterBookings(SAMPLE_BOOKINGS, "PENDING", "delano").length, 1);
   assert.equal(filterBookings(SAMPLE_BOOKINGS, "ALL", "C008").length, 1);
 });
+

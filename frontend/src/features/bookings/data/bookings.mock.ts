@@ -104,3 +104,4 @@ export const INITIAL_BOOKINGS: BookingItem[] = [
     createdAt: "2026-11-10",
   },
 ];
+

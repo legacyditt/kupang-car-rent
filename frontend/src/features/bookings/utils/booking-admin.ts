@@ -132,3 +132,4 @@ export function transitionBookingStatus(
 
   return { ok: true, bookings: nextBookings };
 }
+

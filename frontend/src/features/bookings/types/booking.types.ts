@@ -25,3 +25,4 @@ export interface BookingItem {
   internalNote: string;
   createdAt: string;
 }
+
