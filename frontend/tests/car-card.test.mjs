@@ -8,7 +8,7 @@ const source = readFileSync(
 );
 
 test("CarCard clamps title and pins CTA to bottom", () => {
-  assert.match(source, /line-clamp-2 min-h-\[3\.5rem\]/);
-  assert.match(source, /mt-auto pt-4/);
+  assert.match(source, /line-clamp-2/);
+  assert.match(source, /mt-auto pt-5/);
   assert.doesNotMatch(source, /className="mt-4 w-full"/);
 });

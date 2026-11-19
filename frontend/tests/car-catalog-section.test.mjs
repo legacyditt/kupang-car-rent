@@ -10,10 +10,7 @@ const source = readFileSync(
   "utf8"
 );
 
-test("catalog grid stacks on mobile and uses sm/lg breakpoints", () => {
-  assert.match(
-    source,
-    /mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4/
-  );
-  assert.doesNotMatch(source, /hidden grid-cols-2 gap-6 md:grid lg:grid-cols-4/);
+test("catalog uses desktop 2-4 col grid and mobile depth-focus carousel", () => {
+  assert.match(source, /mt-10 hidden gap-6 md:grid md:grid-cols-2 lg:grid-cols-4/);
+  assert.match(source, /aria-roledescription="carousel"/);
 });
