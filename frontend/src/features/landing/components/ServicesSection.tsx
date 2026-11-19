@@ -2,6 +2,7 @@ import { useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ArrowRight, KeyRound, UserCheck } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { MOTION_EASE, MOTION_MEDIA, registerMotionPlugins } from "@/lib/motion";
 
 registerMotionPlugins();
@@ -105,33 +106,35 @@ export function ServicesSection() {
           {SERVICES.map((service) => {
             const Icon = service.icon;
             return (
-              <div
+              <Card
                 key={service.title}
                 data-service-card
-                className="group flex flex-col gap-5 rounded-xl border border-hairline bg-obsidian p-6 transition-all duration-200 hover:border-gold/45 active:scale-[0.985] sm:flex-row sm:items-start sm:p-8 md:active:scale-100"
+                className="group rounded-xl border-hairline bg-obsidian py-0 text-white transition-all duration-200 hover:border-gold/45 active:scale-[0.985] md:active:scale-100"
               >
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-gold/30 bg-gold/10 text-gold transition-transform duration-200 group-hover:-translate-y-0.5">
-                  <Icon className="h-5 w-5" aria-hidden="true" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-mono text-[10px] tracking-widest text-brand-muted uppercase">
-                    OPSI {service.code}
-                  </p>
-                  <h3 className="mt-1 font-display text-xl font-bold text-white">
-                    {service.title}
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-brand-muted">
-                    {service.description}
-                  </p>
-                  <p className="mt-5 inline-flex items-center gap-1.5 font-mono text-xs font-medium text-gold">
-                    {service.note}
-                    <ArrowRight
-                      className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1"
-                      aria-hidden="true"
-                    />
-                  </p>
-                </div>
-              </div>
+                <CardContent className="flex flex-col gap-5 p-6 sm:flex-row sm:items-start sm:p-8">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-gold/30 bg-gold/10 text-gold transition-transform duration-200 group-hover:-translate-y-0.5">
+                    <Icon className="h-5 w-5" aria-hidden="true" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-mono text-[10px] tracking-widest text-brand-muted uppercase">
+                      OPSI {service.code}
+                    </p>
+                    <h3 className="mt-1 font-display text-xl font-bold text-white">
+                      {service.title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-relaxed text-brand-muted">
+                      {service.description}
+                    </p>
+                    <p className="mt-5 inline-flex items-center gap-1.5 font-mono text-xs font-medium text-gold">
+                      {service.note}
+                      <ArrowRight
+                        className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1"
+                        aria-hidden="true"
+                      />
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             );
           })}
         </div>
