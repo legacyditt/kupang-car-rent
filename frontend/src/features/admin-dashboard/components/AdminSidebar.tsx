@@ -10,6 +10,7 @@ import {
   PanelLeftOpen,
   Settings,
 } from "lucide-react";
+import { BUSINESS_INFO } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 export const ADMIN_NAV_ITEMS = [
@@ -65,24 +66,31 @@ export function AdminSidebar() {
       >
         {collapsed ? (
           <Link
-            to="/"
-            title="Aventra Rental"
-            className="flex h-10 w-10 items-center justify-center rounded-lg border border-gold/40 bg-gold/12 font-display text-base font-bold text-gold"
+            to="/admin"
+            title={BUSINESS_INFO.name}
+            className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg border border-gold/30 bg-obsidian p-1"
           >
-            A
+            <img
+              src={BUSINESS_INFO.logoPath}
+              alt={BUSINESS_INFO.name}
+              width={40}
+              height={40}
+              className="h-full w-full object-contain"
+            />
           </Link>
         ) : (
-          <div className="min-w-0">
-            <Link
-              to="/"
-              className="block truncate font-display text-lg font-bold tracking-wider text-white uppercase"
-            >
-              Aventra Rental
-            </Link>
-            <p className="mt-1 truncate font-mono text-[10px] tracking-[0.14em] text-gold uppercase">
-              Admin Console
-            </p>
-          </div>
+          <Link
+            to="/admin"
+            className="flex min-w-0 items-center gap-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <img
+              src={BUSINESS_INFO.logoPath}
+              alt={BUSINESS_INFO.name}
+              width={132}
+              height={40}
+              className="h-9 w-auto object-contain"
+            />
+          </Link>
         )}
 
         <button
