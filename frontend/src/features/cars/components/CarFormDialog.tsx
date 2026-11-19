@@ -1,4 +1,5 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { ImagePlus, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,6 +20,13 @@ import {
 } from "@/components/ui/select";
 import type { CarItem, CarStatus } from "../types/car.types";
 import { CAR_STATUS_LABELS, type CarFormPayload } from "../utils/car-admin";
+import {
+  MIN_IMAGE_HEIGHT,
+  MIN_IMAGE_WIDTH,
+  normalizeCarImageFile,
+  TARGET_CANVAS_HEIGHT,
+  TARGET_CANVAS_WIDTH,
+} from "../utils/car-image";
 
 interface CarFormDialogProps {
   open: boolean;
@@ -40,15 +48,21 @@ export function CarFormDialog({
   editingCar,
   onSave,
 }: CarFormDialogProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
   const [brand, setBrand] = useState("");
   const [capacityLabel, setCapacityLabel] = useState("7 Kursi");
   const [pricePerDay, setPricePerDay] = useState("300000");
-  const [imageUrl, setImageUrl] = useState("/Toyota Avanza.jpg");
+  const [imageUrl, setImageUrl] = useState("");
+  const [imageMeta, setImageMeta] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [status, setStatus] = useState<CarStatus>("AVAILABLE");
 
   useEffect(() => {
     if (!open) return;
+    setImageError(null);
+    setImageMeta(null);
     if (editingCar) {
       setName(editingCar.name);
       setBrand(editingCar.brand);
@@ -61,13 +75,40 @@ export function CarFormDialog({
       setBrand("Toyota");
       setCapacityLabel("7 Kursi");
       setPricePerDay("300000");
-      setImageUrl("/Toyota Avanza.jpg");
+      setImageUrl("");
       setStatus("AVAILABLE");
     }
   }, [open, editingCar]);
 
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setImageError(null);
+    setIsProcessingImage(true);
+    try {
+      const normalized = await normalizeCarImageFile(file);
+      setImageUrl(normalized.dataUrl);
+      setImageMeta(
+        `${normalized.originalWidth}×${normalized.originalHeight} → ${normalized.outputWidth}×${normalized.outputHeight} px`
+      );
+    } catch (err) {
+      setImageError(
+        err instanceof Error ? err.message : "Gagal memproses foto unit."
+      );
+    } finally {
+      setIsProcessingImage(false);
+    }
+  };
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
+    if (!imageUrl) {
+      setImageError("Upload foto unit terlebih dahulu.");
+      return;
+    }
+
     const parsedPrice = Math.max(50000, Number(pricePerDay) || 300000);
 
     onSave({
@@ -84,13 +125,13 @@ export function CarFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-gold/25 bg-carbon text-white sm:max-w-md">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto border-gold/25 bg-carbon text-white sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="font-display text-lg font-bold text-white">
             {editingCar ? `Edit ${editingCar.name}` : "Tambah Unit Kendaraan"}
           </DialogTitle>
           <DialogDescription className="text-xs text-brand-muted">
-            Perbarui informasi unit, tarif harian, dan status operasional.
+            Perbarui informasi unit, tarif harian, dan foto standar showroom.
           </DialogDescription>
         </DialogHeader>
 
@@ -193,20 +234,83 @@ export function CarFormDialog({
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label
-              htmlFor="car-image"
-              className="font-mono text-[11px] tracking-wider text-brand-muted uppercase"
-            >
-              Path / URL Foto
-            </Label>
-            <Input
-              id="car-image"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              placeholder="/Toyota Avanza.jpg"
-              className="border-hairline bg-obsidian font-mono text-xs text-slate-300 focus-visible:border-gold focus-visible:ring-0"
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="font-mono text-[11px] tracking-wider text-brand-muted uppercase">
+                Foto Unit
+              </Label>
+              {imageMeta && (
+                <span className="font-mono text-[10px] text-emerald-400">
+                  {imageMeta}
+                </span>
+              )}
+            </div>
+
+            <input
+              ref={fileInputRef}
+              id="car-photo-upload"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleFileChange}
+              className="sr-only"
             />
+
+            {imageUrl ? (
+              <div className="overflow-hidden rounded-xl border border-hairline bg-obsidian">
+                <div className="flex aspect-[16/10] w-full items-center justify-center bg-white p-2">
+                  <img
+                    src={imageUrl}
+                    alt={name || "Preview unit"}
+                    className="h-full w-full object-contain"
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-2 border-t border-hairline px-3 py-2">
+                  <span className="font-mono text-[10px] text-brand-muted">
+                    Standar {TARGET_CANVAS_WIDTH}×{TARGET_CANVAS_HEIGHT} (16:10)
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={isProcessingImage}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="h-7 border-gold/30 bg-carbon font-mono text-[10px] text-gold hover:border-gold hover:text-gold"
+                  >
+                    <Upload className="h-3 w-3" aria-hidden="true" />
+                    {isProcessingImage ? "Memproses..." : "Ganti Foto"}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                disabled={isProcessingImage}
+                onClick={() => fileInputRef.current?.click()}
+                className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-gold/35 bg-obsidian px-4 py-6 text-center transition-colors hover:border-gold hover:bg-obsidian/80"
+              >
+                <ImagePlus className="h-6 w-6 text-gold" aria-hidden="true" />
+                <span className="font-display text-xs font-bold text-white">
+                  {isProcessingImage
+                    ? "Menyesuaikan ukuran foto..."
+                    : "Pilih atau Upload Foto Mobil"}
+                </span>
+                <span className="font-mono text-[10px] text-brand-muted">
+                  JPG, PNG, WEBP • Maks 5 MB • Min {MIN_IMAGE_WIDTH}×
+                  {MIN_IMAGE_HEIGHT} px
+                </span>
+              </button>
+            )}
+
+            <p className="font-mono text-[10px] text-brand-muted">
+              Otomatis disesuaikan ke kanvas {TARGET_CANVAS_WIDTH}×
+              {TARGET_CANVAS_HEIGHT} px (16:10) agar seragam dengan unit lain.
+            </p>
+
+            {imageError && (
+              <p className="font-mono text-xs font-medium text-red-400">
+                {imageError}
+              </p>
+            )}
           </div>
 
           <DialogFooter className="pt-2">
@@ -221,6 +325,7 @@ export function CarFormDialog({
             <Button
               type="submit"
               variant="accent"
+              disabled={isProcessingImage}
               className="font-display text-xs tracking-wider uppercase"
             >
               {editingCar ? "Simpan Perubahan" : "Tambah Unit"}
@@ -231,4 +336,3 @@ export function CarFormDialog({
     </Dialog>
   );
 }
-
