@@ -15,3 +15,4 @@ export function AdminLayout() {
     </div>
   );
 }
+
