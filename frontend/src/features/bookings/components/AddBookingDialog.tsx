@@ -25,6 +25,7 @@ import type { BookingItem } from "../types/booking.types";
 import {
   ddmmyyyyToYyyymmdd,
   getBookedCalendarDatesForCar,
+  yyyymmddToDdmmyyyy,
   type CreateBookingInput,
 } from "../utils/booking-admin";
 import { readStoredCars } from "../utils/bookings-storage";
@@ -33,6 +34,8 @@ interface AddBookingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   existingBookings: BookingItem[];
+  initialCarId?: string;
+  initialDate?: string; // YYYY-MM-DD
   onCreateBooking: (
     input: CreateBookingInput
   ) =>
@@ -44,6 +47,8 @@ export function AddBookingDialog({
   open,
   onOpenChange,
   existingBookings,
+  initialCarId,
+  initialDate,
   onCreateBooking,
 }: AddBookingDialogProps) {
   const cars = useMemo(() => (open ? readStoredCars() : []), [open]);
@@ -68,20 +73,30 @@ export function AddBookingDialog({
 
   useEffect(() => {
     if (!open) return;
-    const defaultCar = cars[0];
+    const defaultCar =
+      (initialCarId ? cars.find((c) => c.id === initialCarId) : undefined) ??
+      cars[0];
     setCustomerName("");
     setCustomerPhone("");
     setCarId(defaultCar?.id ?? "");
     setServiceType("SELF_DRIVE");
-    setStartDate(null);
-    setEndDate(null);
+    if (initialDate) {
+      const formatted = yyyymmddToDdmmyyyy(initialDate);
+      const [y, m] = initialDate.split("-").map(Number);
+      setStartDate(formatted);
+      setEndDate(formatted);
+      setViewDate(new Date(y, (m || 1) - 1, 1));
+    } else {
+      setStartDate(null);
+      setEndDate(null);
+      setViewDate(new Date(today.getFullYear(), today.getMonth(), 1));
+    }
     setIsCalendarOpen(false);
-    setViewDate(new Date(today.getFullYear(), today.getMonth(), 1));
     setIsPriceOverridden(false);
     setFinalPriceInput("0");
     setInternalNote("");
     setErrorMsg(null);
-  }, [open, cars, today]);
+  }, [open, cars, today, initialCarId, initialDate]);
 
   const selectedCar = useMemo(
     () => cars.find((c) => c.id === carId) ?? cars[0] ?? null,

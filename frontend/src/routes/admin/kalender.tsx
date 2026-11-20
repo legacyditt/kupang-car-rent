@@ -1,6 +1,8 @@
-import { ChevronLeft, ChevronRight, Wrench } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Wrench } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { AddBookingDialog } from "@/features/bookings/components/AddBookingDialog";
+import { BookingDetailSheet } from "@/features/bookings/components/BookingDetailSheet";
 import { useAdminBookings } from "@/features/bookings/hooks/useAdminBookings";
 import type { BookingStatus } from "@/features/bookings/types/booking.types";
 import { readStoredCars } from "@/features/bookings/utils/bookings-storage";
@@ -38,7 +40,16 @@ function getTodayYyyymmdd(): string {
 }
 
 export function AdminCalendarPage() {
-  const { bookings } = useAdminBookings();
+  const {
+    bookings,
+    selectedBooking,
+    selectedConflict,
+    setSelectedId,
+    changeStatus,
+    saveNotesAndPrice,
+    addBooking,
+    editBooking,
+  } = useAdminBookings();
   const cars = useMemo(() => readStoredCars(), []);
   const todayStr = useMemo(() => getTodayYyyymmdd(), []);
 
@@ -47,6 +58,7 @@ export function AdminCalendarPage() {
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
   const [carFilter, setCarFilter] = useState<string>("ALL");
+  const [addTargetDate, setAddTargetDate] = useState<string | null>(null);
 
   const cells = useMemo(
     () =>
@@ -187,8 +199,9 @@ export function AdminCalendarPage() {
             return (
               <div
                 key={cell.dateStr}
+                onClick={() => setAddTargetDate(cell.dateStr)}
                 className={cn(
-                  "min-h-[96px] rounded-xl border p-2 transition-colors",
+                  "group min-h-[96px] cursor-pointer rounded-xl border p-2 transition-colors hover:border-gold/40",
                   cell.isCurrentMonth
                     ? "border-hairline bg-obsidian/70"
                     : "border-hairline/40 bg-obsidian/25 opacity-55",
@@ -204,11 +217,17 @@ export function AdminCalendarPage() {
                   >
                     {cell.dayNumber}
                   </span>
-                  {isToday && (
-                    <span className="font-mono text-[9px] font-bold text-gold uppercase">
-                      Hari Ini
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1">
+                    {isToday && (
+                      <span className="font-mono text-[9px] font-bold text-gold uppercase">
+                        Hari Ini
+                      </span>
+                    )}
+                    <Plus
+                      className="h-3 w-3 text-brand-muted opacity-0 transition-opacity group-hover:opacity-100"
+                      aria-hidden="true"
+                    />
+                  </div>
                 </div>
 
                 <div className="mt-1.5 space-y-1">
@@ -218,16 +237,21 @@ export function AdminCalendarPage() {
                         booking.status as keyof typeof STATUS_PILL_STYLES
                       ] ?? STATUS_PILL_STYLES.COMPLETED;
                     return (
-                      <div
+                      <button
                         key={booking.id}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedId(booking.id);
+                        }}
                         title={`${booking.carName} • ${booking.customerName} (${booking.status})`}
                         className={cn(
-                          "truncate rounded border px-1.5 py-0.5 font-mono text-[10px] font-medium",
+                          "block w-full truncate rounded border px-1.5 py-0.5 text-left font-mono text-[10px] font-medium transition-opacity hover:opacity-85",
                           style
                         )}
                       >
                         {booking.carName} • {booking.customerName}
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
@@ -248,6 +272,29 @@ export function AdminCalendarPage() {
           ))}
         </div>
       </div>
+
+      <BookingDetailSheet
+        booking={selectedBooking}
+        conflict={selectedConflict}
+        open={Boolean(selectedBooking)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedId(null);
+        }}
+        onChangeStatus={changeStatus}
+        onSaveDetails={saveNotesAndPrice}
+        onEditBooking={editBooking}
+      />
+
+      <AddBookingDialog
+        open={Boolean(addTargetDate)}
+        onOpenChange={(open) => {
+          if (!open) setAddTargetDate(null);
+        }}
+        existingBookings={bookings}
+        initialCarId={carFilter !== "ALL" ? carFilter : undefined}
+        initialDate={addTargetDate ?? undefined}
+        onCreateBooking={addBooking}
+      />
     </div>
   );
 }
