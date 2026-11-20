@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAdminAuth } from "@/features/admin-auth/hooks/useAdminAuth";
+import { DEFAULT_ADMIN_CREDENTIALS } from "@/features/admin-auth/utils/admin-auth";
 import { useBusinessProfile } from "@/features/business-profile/hooks/useBusinessProfile";
 import {
   MOTION_EASE,
@@ -16,19 +17,37 @@ import {
 
 registerMotionPlugins();
 
+function maskWhatsAppDisplay(intl: string): string {
+  if (intl.length <= 8) return intl;
+  return `${intl.slice(0, 8)}••••${intl.slice(-4)}`;
+}
+
 /** Halaman login admin dengan form terpusat di atas logo Aventra gelap yang disinari cahaya emas bergerak. */
 export function AdminLoginPage() {
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
   const cardBorderRef = useRef<HTMLDivElement>(null);
-  const { isAuthenticated, login } = useAdminAuth();
+  const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const { isAuthenticated, login, register } = useAdminAuth();
   const { profile } = useBusinessProfile();
 
+  const [view, setView] = useState<"login" | "otp" | "reset">("login");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [otpDigits, setOtpDigits] = useState<string[]>([
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+  ]);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [infoMsg, setInfoMsg] = useState<string | null>(null);
 
   // Animasi masuk form + garis emas tipis yang bergerak mengitari border kartu (menghormati prefers-reduced-motion).
   useGSAP(
@@ -99,9 +118,27 @@ export function AdminLoginPage() {
     return <Navigate to="/admin" replace />;
   }
 
-  function handleSubmit(e: FormEvent) {
+  function openForgotOtp() {
+    setErrorMsg(null);
+    setInfoMsg(null);
+    setOtpDigits(["", "", "", "", "", ""]);
+    setView("otp");
+  }
+
+  function backToLogin(notice?: string) {
+    setErrorMsg(null);
+    setInfoMsg(notice ?? null);
+    setPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setOtpDigits(["", "", "", "", "", ""]);
+    setView("login");
+  }
+
+  function handleLoginSubmit(e: FormEvent) {
     e.preventDefault();
     setErrorMsg(null);
+    setInfoMsg(null);
 
     const res = login(identifier, password);
     if (!res.ok) {
@@ -109,6 +146,48 @@ export function AdminLoginPage() {
       return;
     }
 
+    navigate({ to: "/admin", replace: true });
+  }
+
+  function handleOtpChange(index: number, raw: string) {
+    const digit = raw.replace(/\D/g, "").slice(-1);
+    const next = [...otpDigits];
+    next[index] = digit;
+    setOtpDigits(next);
+    setErrorMsg(null);
+    if (digit && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
+  }
+
+  function handleOtpKeyDown(index: number, key: string) {
+    if (key === "Backspace" && !otpDigits[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+  }
+
+  function handleOtpSubmit(e: FormEvent) {
+    e.preventDefault();
+    setErrorMsg(null);
+    setInfoMsg(null);
+    const code = otpDigits.join("");
+    if (code.length < 6) {
+      setErrorMsg("Masukkan 6 digit kode OTP.");
+      return;
+    }
+    setView("reset");
+  }
+
+  function handleResetSubmit(e: FormEvent) {
+    e.preventDefault();
+    setErrorMsg(null);
+    const targetAccount =
+      identifier.trim() || DEFAULT_ADMIN_CREDENTIALS.email;
+    const res = register(targetAccount, newPassword, confirmPassword);
+    if (!res.ok) {
+      setErrorMsg(res.error);
+      return;
+    }
     navigate({ to: "/admin", replace: true });
   }
 
@@ -211,99 +290,284 @@ export function AdminLoginPage() {
 
           <div>
             <h1 className="flex justify-center font-display text-2xl font-bold tracking-tight text-white sm:text-[28px]">
-              Login Admin
+              {view === "login" && "Login Admin"}
+              {view === "otp" && "Verifikasi Kode OTP"}
+              {view === "reset" && "Buat Password Baru"}
             </h1>
-            <p className="mt-1.5 text-xs leading-relaxed text-brand-muted">
-              Kelola unit, tarif sewa, dan konfirmasi booking Kupang.
+            <p className="mt-1.5 text-center text-xs leading-relaxed text-brand-muted">
+              {view === "login" &&
+                "Kelola unit, tarif sewa, dan konfirmasi booking Kupang."}
+              {view === "otp" &&
+                `Masukkan 6 digit kode verifikasi yang dikirim ke WhatsApp Admin (${maskWhatsAppDisplay(profile.whatsappDisplayIntl)}).`}
+              {view === "reset" &&
+                "Masukkan password baru untuk akun pengelola."}
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="admin-identifier"
-                className="font-mono text-[10px] tracking-wider text-brand-muted uppercase"
-              >
-                Email / Username
-              </Label>
-              <div className="relative">
-                <Mail
-                  className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-muted"
-                  aria-hidden="true"
-                />
-                <Input
-                  id="admin-identifier"
-                  type="text"
-                  autoComplete="username"
-                  required
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="admin@aventrarental.id"
-                  className="h-11 border-hairline bg-obsidian/65 pl-10 pr-3.5 text-sm text-white placeholder:text-brand-muted/60 transition-colors focus-visible:border-gold focus-visible:ring-0"
-                />
+          {view === "login" && (
+            <form onSubmit={handleLoginSubmit} className="mt-6 space-y-4">
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="admin-identifier"
+                  className="font-mono text-[10px] tracking-wider text-brand-muted uppercase"
+                >
+                  Email / Username
+                </Label>
+                <div className="relative">
+                  <Mail
+                    className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-muted"
+                    aria-hidden="true"
+                  />
+                  <Input
+                    id="admin-identifier"
+                    type="text"
+                    autoComplete="username"
+                    required
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    placeholder="admin@aventrarental.id"
+                    className="h-11 border-hairline bg-obsidian/65 pl-10 pr-3.5 text-sm text-white placeholder:text-brand-muted/60 transition-colors focus-visible:border-gold focus-visible:ring-0"
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="admin-password"
-                className="font-mono text-[10px] tracking-wider text-brand-muted uppercase"
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="admin-password"
+                  className="font-mono text-[10px] tracking-wider text-brand-muted uppercase"
+                >
+                  Password
+                </Label>
+                <div className="relative">
+                  <Lock
+                    className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-muted"
+                    aria-hidden="true"
+                  />
+                  <Input
+                    id="admin-password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••••••"
+                    className="h-11 border-hairline bg-obsidian/65 pl-10 pr-11 text-sm text-white placeholder:text-brand-muted/60 transition-colors focus-visible:border-gold focus-visible:ring-0"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    aria-label={
+                      showPassword
+                        ? "Sembunyikan password"
+                        : "Tampilkan password"
+                    }
+                    className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md text-brand-muted transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      <Eye className="h-4 w-4" aria-hidden="true" />
+                    )}
+                  </button>
+                </div>
+                <div className="flex justify-end pt-0.5">
+                  <button
+                    type="button"
+                    onClick={openForgotOtp}
+                    className="cursor-pointer font-mono text-[11px] font-medium text-gold transition-colors hover:text-gold-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+                  >
+                    Lupa password?
+                  </button>
+                </div>
+              </div>
+
+              {infoMsg && (
+                <p className="rounded-lg border border-emerald-400/35 bg-emerald-400/10 p-2.5 font-mono text-xs text-emerald-300">
+                  {infoMsg}
+                </p>
+              )}
+
+              {errorMsg && (
+                <p
+                  role="alert"
+                  className="rounded-lg border border-red-400/35 bg-red-400/10 p-2.5 font-mono text-xs text-red-300"
+                >
+                  {errorMsg}
+                </p>
+              )}
+
+              <Button
+                type="submit"
+                className="mt-1 h-11 w-full cursor-pointer bg-gold font-mono text-xs font-bold tracking-wider text-obsidian uppercase shadow-[0_0_24px_rgba(245,184,46,0.22)] transition-all duration-150 hover:bg-gold-light active:scale-[0.99]"
               >
-                Password
-              </Label>
-              <div className="relative">
-                <Lock
-                  className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-muted"
-                  aria-hidden="true"
-                />
-                <Input
-                  id="admin-password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
-                  className="h-11 border-hairline bg-obsidian/65 pl-10 pr-11 text-sm text-white placeholder:text-brand-muted/60 transition-colors focus-visible:border-gold focus-visible:ring-0"
-                />
+                Masuk Dashboard →
+              </Button>
+            </form>
+          )}
+
+          {view === "otp" && (
+            <form onSubmit={handleOtpSubmit} className="mt-6 space-y-5">
+              <div className="grid grid-cols-6 gap-2">
+                {otpDigits.map((digit, idx) => (
+                  <Input
+                    key={idx}
+                    ref={(el) => {
+                      otpRefs.current[idx] = el;
+                    }}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    aria-label={`Digit OTP ${idx + 1}`}
+                    value={digit}
+                    onChange={(e) => handleOtpChange(idx, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(idx, e.key)}
+                    className="h-12 border-hairline bg-obsidian/65 px-0 text-center font-mono text-lg font-bold text-gold transition-colors focus-visible:border-gold focus-visible:ring-0"
+                  />
+                ))}
+              </div>
+
+              {infoMsg && (
+                <p className="rounded-lg border border-emerald-400/35 bg-emerald-400/10 p-2.5 font-mono text-xs text-emerald-300">
+                  {infoMsg}
+                </p>
+              )}
+
+              {errorMsg && (
+                <p
+                  role="alert"
+                  className="rounded-lg border border-red-400/35 bg-red-400/10 p-2.5 font-mono text-xs text-red-300"
+                >
+                  {errorMsg}
+                </p>
+              )}
+
+              <Button
+                type="submit"
+                className="h-11 w-full cursor-pointer bg-gold font-mono text-xs font-bold tracking-wider text-obsidian uppercase shadow-[0_0_24px_rgba(245,184,46,0.22)] transition-all duration-150 hover:bg-gold-light active:scale-[0.99]"
+              >
+                Verifikasi Kode →
+              </Button>
+
+              <div className="flex items-center justify-between font-mono text-[11px]">
                 <button
                   type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  aria-label={
-                    showPassword
-                      ? "Sembunyikan password"
-                      : "Tampilkan password"
-                  }
-                  className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md text-brand-muted transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+                  onClick={() => backToLogin()}
+                  className="cursor-pointer text-brand-muted transition-colors hover:text-white"
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" aria-hidden="true" />
-                  ) : (
-                    <Eye className="h-4 w-4" aria-hidden="true" />
-                  )}
+                  ← Kembali ke login
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setErrorMsg(null);
+                    setInfoMsg("Kode OTP baru telah dikirim ke WhatsApp Admin.");
+                  }}
+                  className="cursor-pointer text-gold transition-colors hover:text-gold-light"
+                >
+                  Kirim ulang kode
                 </button>
               </div>
-            </div>
+            </form>
+          )}
 
-            {errorMsg && (
-              <p
-                role="alert"
-                className="rounded-lg border border-red-400/35 bg-red-400/10 p-2.5 font-mono text-xs text-red-300"
+          {view === "reset" && (
+            <form onSubmit={handleResetSubmit} className="mt-6 space-y-4">
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="admin-new-password"
+                  className="font-mono text-[10px] tracking-wider text-brand-muted uppercase"
+                >
+                  Password Baru
+                </Label>
+                <div className="relative">
+                  <Lock
+                    className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-muted"
+                    aria-hidden="true"
+                  />
+                  <Input
+                    id="admin-new-password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    required
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Minimal 6 karakter"
+                    className="h-11 border-hairline bg-obsidian/65 pl-10 pr-11 text-sm text-white placeholder:text-brand-muted/60 transition-colors focus-visible:border-gold focus-visible:ring-0"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    aria-label={
+                      showPassword
+                        ? "Sembunyikan password"
+                        : "Tampilkan password"
+                    }
+                    className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md text-brand-muted transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      <Eye className="h-4 w-4" aria-hidden="true" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label
+                  htmlFor="admin-confirm-new-password"
+                  className="font-mono text-[10px] tracking-wider text-brand-muted uppercase"
+                >
+                  Konfirmasi Password Baru
+                </Label>
+                <div className="relative">
+                  <Lock
+                    className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-muted"
+                    aria-hidden="true"
+                  />
+                  <Input
+                    id="admin-confirm-new-password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Ulangi password baru"
+                    className="h-11 border-hairline bg-obsidian/65 pl-10 pr-3.5 text-sm text-white placeholder:text-brand-muted/60 transition-colors focus-visible:border-gold focus-visible:ring-0"
+                  />
+                </div>
+              </div>
+
+              {errorMsg && (
+                <p
+                  role="alert"
+                  className="rounded-lg border border-red-400/35 bg-red-400/10 p-2.5 font-mono text-xs text-red-300"
+                >
+                  {errorMsg}
+                </p>
+              )}
+
+              <Button
+                type="submit"
+                className="mt-1 h-11 w-full cursor-pointer bg-gold font-mono text-xs font-bold tracking-wider text-obsidian uppercase shadow-[0_0_24px_rgba(245,184,46,0.22)] transition-all duration-150 hover:bg-gold-light active:scale-[0.99]"
               >
-                {errorMsg}
-              </p>
-            )}
+                Simpan Password Baru →
+              </Button>
 
-            <Button
-              type="submit"
-              className="mt-1 h-11 w-full cursor-pointer bg-gold font-mono text-xs font-bold tracking-wider text-obsidian uppercase shadow-[0_0_24px_rgba(245,184,46,0.22)] transition-all duration-150 hover:bg-gold-light active:scale-[0.99]"
-            >
-              Masuk Dashboard →
-            </Button>
-          </form>
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => backToLogin()}
+                  className="cursor-pointer font-mono text-[11px] text-brand-muted transition-colors hover:text-white"
+                >
+                  ← Kembali ke login
+                </button>
+              </div>
+            </form>
+          )}
 
           <p className="mt-6 border-t border-hairline pt-4 text-center font-mono text-[10px] text-brand-muted">
-            Akses terbatas • Tidak tersedia registrasi publik
+            Akses terbatas • Khusus pengelola rental
           </p>
         </div>
         </div>
