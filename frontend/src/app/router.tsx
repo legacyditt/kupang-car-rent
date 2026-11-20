@@ -4,6 +4,7 @@ import { rootRoute } from "@/routes/__root";
 import { AdminOverviewPage } from "@/routes/admin/index";
 import { AdminCarsPage } from "@/routes/admin/mobil";
 import { AdminBookingsPage } from "@/routes/admin/booking";
+import { AdminCalendarPage } from "@/routes/admin/kalender";
 import { guestLayoutRoute, indexRoute } from "@/routes/index";
 
 const adminLayoutRoute = createRoute({
@@ -51,7 +52,7 @@ const adminBookingRoute = createRoute({
 const adminKalenderRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: "/kalender",
-  component: createAdminPlaceholder("04", "Kalender Penyewaan"),
+  component: AdminCalendarPage,
 });
 
 const adminPengaturanRoute = createRoute({
