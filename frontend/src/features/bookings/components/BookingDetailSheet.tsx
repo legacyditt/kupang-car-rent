@@ -1,5 +1,10 @@
-import { useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle2, MessageCircle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  MessageCircle,
+  Pencil,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,8 +13,14 @@ import {
   SheetContent,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { SERVICE_TYPE_LABELS } from "@/features/cars/utils/booking";
+import {
+  SERVICE_TYPE_LABELS,
+  type RentalServiceType,
+} from "@/features/cars/utils/booking";
+import { formatRupiah } from "@/lib/utils";
 import type { BookingItem, BookingStatus } from "../types/booking.types";
+import type { UpdateBookingDetailsInput } from "../utils/booking-admin";
+import { readStoredCars } from "../utils/bookings-storage";
 import { BookingStatusBadge } from "./BookingStatusBadge";
 
 interface BookingDetailSheetProps {
@@ -26,6 +37,10 @@ interface BookingDetailSheetProps {
     bookingId: string,
     updates: { finalPrice: number; internalNote: string }
   ) => void;
+  onEditBooking: (
+    bookingId: string,
+    patch: UpdateBookingDetailsInput
+  ) => { ok: true } | { ok: false; error: string };
 }
 
 export function BookingDetailSheet({
@@ -35,22 +50,62 @@ export function BookingDetailSheet({
   onOpenChange,
   onChangeStatus,
   onSaveDetails,
+  onEditBooking,
 }: BookingDetailSheetProps) {
   const [finalPrice, setFinalPrice] = useState("0");
   const [internalNote, setInternalNote] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editCarId, setEditCarId] = useState("");
+  const [editStartDate, setEditStartDate] = useState("");
+  const [editEndDate, setEditEndDate] = useState("");
+  const [editServiceType, setEditServiceType] =
+    useState<RentalServiceType>("SELF_DRIVE");
+
+  const cars = useMemo(() => (open ? readStoredCars() : []), [open]);
 
   useEffect(() => {
     if (!booking) return;
     setFinalPrice(String(booking.finalPrice));
     setInternalNote(booking.internalNote);
     setActionError(null);
+    setIsEditing(false);
+    setEditName(booking.customerName);
+    setEditPhone(booking.customerPhone);
+    setEditCarId(booking.carId);
+    setEditStartDate(booking.startDate);
+    setEditEndDate(booking.endDate);
+    setEditServiceType(booking.serviceType);
   }, [booking]);
 
   if (!booking) return null;
 
   const isPending = booking.status === "PENDING";
+  const isEditable =
+    booking.status === "PENDING" || booking.status === "CONFIRMED";
   const parsedPrice = Math.max(0, Number(finalPrice) || booking.finalPrice);
+
+  const handleSaveEdit = () => {
+    setActionError(null);
+    const chosenCar = cars.find((c) => c.id === editCarId);
+    const res = onEditBooking(booking.id, {
+      customerName: editName,
+      customerPhone: editPhone,
+      carId: chosenCar?.id ?? booking.carId,
+      carName: chosenCar?.name ?? booking.carName,
+      pricePerDay: chosenCar?.pricePerDay,
+      startDate: editStartDate,
+      endDate: editEndDate,
+      serviceType: editServiceType,
+    });
+    if (!res.ok) {
+      setActionError(res.error);
+      return;
+    }
+    setIsEditing(false);
+  };
 
   const handleTransition = (nextStatus: BookingStatus) => {
     setActionError(null);
@@ -88,16 +143,107 @@ export function BookingDetailSheet({
         <div className="mt-5 space-y-5">
           {/* Spec Box */}
           <div className="space-y-2 rounded-xl border border-hairline bg-obsidian p-4 text-xs">
-            <p className="font-display text-sm font-bold text-white">
-              {booking.carName}
-            </p>
-            <p className="font-mono text-[11px] text-brand-muted">
-              Jadwal: {booking.startDate} s/d {booking.endDate} (
-              {booking.totalDays} hari)
-            </p>
-            <p className="font-mono text-[11px] text-brand-muted">
-              Layanan: {SERVICE_TYPE_LABELS[booking.serviceType]}
-            </p>
+            <div className="flex items-start justify-between gap-2">
+              <p className="font-display text-sm font-bold text-white">
+                {booking.carName}
+              </p>
+              {isEditable && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActionError(null);
+                    setIsEditing((prev) => !prev);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-md border border-hairline px-2 py-1 font-mono text-[10px] text-brand-muted transition-colors hover:border-gold/50 hover:text-gold"
+                >
+                  <Pencil className="h-3 w-3" aria-hidden="true" />
+                  {isEditing ? "Tutup Edit" : "Edit"}
+                </button>
+              )}
+            </div>
+
+            {isEditing && isEditable ? (
+              <div className="space-y-2.5 pt-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    aria-label="Nama Pelanggan"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="Nama pelanggan"
+                    className="h-8 border-hairline bg-carbon text-xs text-white"
+                  />
+                  <Input
+                    aria-label="No. WhatsApp"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    placeholder="No. WhatsApp"
+                    className="h-8 border-hairline bg-carbon text-xs text-white"
+                  />
+                </div>
+                <select
+                  aria-label="Unit Mobil"
+                  value={editCarId}
+                  onChange={(e) => setEditCarId(e.target.value)}
+                  className="h-8 w-full rounded-md border border-hairline bg-carbon px-2 text-xs text-white focus:border-gold focus:outline-none"
+                >
+                  {cars.map((car) => (
+                    <option key={car.id} value={car.id}>
+                      {car.name} — {formatRupiah(car.pricePerDay)}/hari
+                    </option>
+                  ))}
+                </select>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    aria-label="Tanggal Mulai"
+                    type="date"
+                    value={editStartDate}
+                    onChange={(e) => setEditStartDate(e.target.value)}
+                    className="h-8 border-hairline bg-carbon font-mono text-[11px] text-white"
+                  />
+                  <Input
+                    aria-label="Tanggal Selesai"
+                    type="date"
+                    min={editStartDate}
+                    value={editEndDate}
+                    onChange={(e) => setEditEndDate(e.target.value)}
+                    className="h-8 border-hairline bg-carbon font-mono text-[11px] text-white"
+                  />
+                </div>
+                <select
+                  aria-label="Jenis Layanan"
+                  value={editServiceType}
+                  onChange={(e) =>
+                    setEditServiceType(e.target.value as RentalServiceType)
+                  }
+                  className="h-8 w-full rounded-md border border-hairline bg-carbon px-2 text-xs text-white focus:border-gold focus:outline-none"
+                >
+                  <option value="SELF_DRIVE">
+                    {SERVICE_TYPE_LABELS.SELF_DRIVE}
+                  </option>
+                  <option value="WITH_DRIVER">
+                    {SERVICE_TYPE_LABELS.WITH_DRIVER}
+                  </option>
+                </select>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleSaveEdit}
+                  className="h-8 w-full bg-gold font-mono text-[11px] font-bold text-obsidian uppercase hover:bg-gold-light"
+                >
+                  Simpan Perubahan
+                </Button>
+              </div>
+            ) : (
+              <>
+                <p className="font-mono text-[11px] text-brand-muted">
+                  Jadwal: {booking.startDate} s/d {booking.endDate} (
+                  {booking.totalDays} hari)
+                </p>
+                <p className="font-mono text-[11px] text-brand-muted">
+                  Layanan: {SERVICE_TYPE_LABELS[booking.serviceType]}
+                </p>
+              </>
+            )}
 
             {isPending && (
               <div className="pt-1">
@@ -131,14 +277,15 @@ export function BookingDetailSheet({
               htmlFor="booking-final-price"
               className="font-mono text-[10px] tracking-wider text-brand-muted uppercase"
             >
-              Harga Final (Rp){isPending ? " — Editable Sebelum Konfirmasi" : ""}
+              Harga Final (Rp)
+              {isEditable ? " — Editable" : ""}
             </Label>
             <Input
               id="booking-final-price"
               type="number"
               min={0}
               step={25000}
-              disabled={!isPending}
+              disabled={!isEditable}
               value={finalPrice}
               onChange={(e) => setFinalPrice(e.target.value)}
               className="border-gold/35 bg-obsidian font-mono text-sm font-bold text-gold focus-visible:border-gold focus-visible:ring-0 disabled:opacity-70"

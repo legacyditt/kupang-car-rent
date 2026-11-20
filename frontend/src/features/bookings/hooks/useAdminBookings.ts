@@ -1,42 +1,38 @@
 import { useEffect, useMemo, useState } from "react";
-import { INITIAL_BOOKINGS } from "../data/bookings.mock";
 import type { BookingItem, BookingStatus } from "../types/booking.types";
 import {
   countBookingsByStatus,
+  createBookingRecord,
   filterBookings,
   hasScheduleConflict,
   transitionBookingStatus,
+  updateBookingDetails,
   type BookingFilterTab,
+  type CreateBookingInput,
+  type UpdateBookingDetailsInput,
 } from "../utils/booking-admin";
-
-const STORAGE_KEY = "aventra-admin-bookings";
-
-function loadInitialBookings(): BookingItem[] {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return INITIAL_BOOKINGS;
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0
-      ? parsed
-      : INITIAL_BOOKINGS;
-  } catch {
-    return INITIAL_BOOKINGS;
-  }
-}
+import {
+  readStoredBookings,
+  subscribeStoredBookings,
+  writeStoredBookings,
+} from "../utils/bookings-storage";
 
 export function useAdminBookings() {
-  const [bookings, setBookings] = useState<BookingItem[]>(loadInitialBookings);
+  const [bookings, setBookings] = useState<BookingItem[]>(readStoredBookings);
   const [statusFilter, setStatusFilter] = useState<BookingFilterTab>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(bookings));
-    } catch {
-      // Ignore storage write failure in restricted contexts
-    }
-  }, [bookings]);
+    return subscribeStoredBookings(() => {
+      setBookings(readStoredBookings());
+    });
+  }, []);
+
+  const persistBookings = (next: BookingItem[]) => {
+    setBookings(next);
+    writeStoredBookings(next);
+  };
 
   const counts = useMemo(() => countBookingsByStatus(bookings), [bookings]);
 
@@ -70,7 +66,7 @@ export function useAdminBookings() {
     if (!result.ok) {
       return result;
     }
-    setBookings(result.bookings);
+    persistBookings(result.bookings);
     return { ok: true };
   };
 
@@ -78,17 +74,41 @@ export function useAdminBookings() {
     bookingId: string,
     updates: { finalPrice: number; internalNote: string }
   ) => {
-    setBookings((prev) =>
-      prev.map((item) =>
-        item.id === bookingId
-          ? {
-              ...item,
-              finalPrice: updates.finalPrice,
-              internalNote: updates.internalNote,
-            }
-          : item
-      )
+    const next = bookings.map((item) =>
+      item.id === bookingId
+        ? {
+            ...item,
+            finalPrice: updates.finalPrice,
+            internalNote: updates.internalNote,
+          }
+        : item
     );
+    persistBookings(next);
+  };
+
+  const addBooking = (
+    input: CreateBookingInput
+  ):
+    | { ok: true; booking: BookingItem; conflict: BookingItem | null }
+    | { ok: false; error: string } => {
+    const result = createBookingRecord(input, bookings);
+    if (!result.ok) {
+      return result;
+    }
+    persistBookings(result.bookings);
+    return { ok: true, booking: result.booking, conflict: result.conflict };
+  };
+
+  const editBooking = (
+    bookingId: string,
+    patch: UpdateBookingDetailsInput
+  ): { ok: true } | { ok: false; error: string } => {
+    const result = updateBookingDetails(bookings, bookingId, patch);
+    if (!result.ok) {
+      return result;
+    }
+    persistBookings(result.bookings);
+    return { ok: true };
   };
 
   return {
@@ -104,6 +124,8 @@ export function useAdminBookings() {
     setSelectedId,
     changeStatus,
     saveNotesAndPrice,
+    addBooking,
+    editBooking,
   };
 }
 

@@ -95,17 +95,30 @@ export const SERVICE_TYPE_LABELS: Record<RentalServiceType, string> = {
 export function buildBookingMessage(params: {
   car: CarItem;
   name: string;
+  phone?: string;
+  bookingCode?: string;
   serviceType: RentalServiceType;
   startDate: string;
   endDate: string;
   totalDays: number;
   totalPrice: number;
 }): string {
-  const { car, name, serviceType, startDate, endDate, totalDays, totalPrice } =
-    params;
+  const {
+    car,
+    name,
+    phone,
+    bookingCode,
+    serviceType,
+    startDate,
+    endDate,
+    totalDays,
+    totalPrice,
+  } = params;
   return [
     "Halo, saya ingin booking mobil:",
+    ...(bookingCode ? [`- Kode Booking: ${bookingCode}`] : []),
     `- Nama: ${name}`,
+    ...(phone ? [`- No. WhatsApp: ${phone}`] : []),
     `- Mobil: ${car.name}`,
     `- Layanan: ${SERVICE_TYPE_LABELS[serviceType]}`,
     `- Tanggal Mulai: ${startDate}`,

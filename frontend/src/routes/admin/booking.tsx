@@ -1,7 +1,10 @@
-import { Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AddBookingDialog } from "@/features/bookings/components/AddBookingDialog";
 import { BookingDetailSheet } from "@/features/bookings/components/BookingDetailSheet";
 import { BookingStatusBadge } from "@/features/bookings/components/BookingStatusBadge";
 import { useAdminBookings } from "@/features/bookings/hooks/useAdminBookings";
@@ -24,6 +27,7 @@ const FILTER_TABS: Array<{ value: BookingFilterTab; label: string }> = [
 
 export function AdminBookingsPage() {
   const {
+    bookings,
     filteredBookings,
     counts,
     statusFilter,
@@ -35,18 +39,32 @@ export function AdminBookingsPage() {
     setSelectedId,
     changeStatus,
     saveNotesAndPrice,
+    addBooking,
+    editBooking,
   } = useAdminBookings();
+  const [isAddOpen, setIsAddOpen] = useState(false);
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <p className="font-mono text-[11px] font-bold tracking-[0.14em] text-gold uppercase">
-          03 / Manajemen Booking
-        </p>
-        <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-white sm:text-3xl">
-          Daftar Permintaan &amp; Jadwal.
-        </h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="font-mono text-[11px] font-bold tracking-[0.14em] text-gold uppercase">
+            03 / Manajemen Booking
+          </p>
+          <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-white sm:text-3xl">
+            Daftar Permintaan &amp; Jadwal.
+          </h1>
+        </div>
+
+        <Button
+          type="button"
+          onClick={() => setIsAddOpen(true)}
+          className="h-10 gap-2 self-start bg-gold font-mono text-xs font-bold tracking-wider text-obsidian uppercase hover:bg-gold-light sm:self-auto"
+        >
+          <Plus className="h-4 w-4" aria-hidden="true" />
+          Tambah Booking
+        </Button>
       </div>
 
       {/* Search & Status Tabs */}
@@ -145,6 +163,14 @@ export function AdminBookingsPage() {
         }}
         onChangeStatus={changeStatus}
         onSaveDetails={saveNotesAndPrice}
+        onEditBooking={editBooking}
+      />
+
+      <AddBookingDialog
+        open={isAddOpen}
+        onOpenChange={setIsAddOpen}
+        existingBookings={bookings}
+        onCreateBooking={addBooking}
       />
     </div>
   );

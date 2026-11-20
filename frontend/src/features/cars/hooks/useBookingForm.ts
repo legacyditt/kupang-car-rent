@@ -1,4 +1,14 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import {
+  createBookingRecord,
+  ddmmyyyyToYyyymmdd,
+  getBookedCalendarDatesForCar,
+} from "@/features/bookings/utils/booking-admin";
+import {
+  readStoredBookings,
+  subscribeStoredBookings,
+  writeStoredBookings,
+} from "@/features/bookings/utils/bookings-storage";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import type { CarItem } from "../types/car.types";
 import {
@@ -16,6 +26,7 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
   const todayIso = useMemo(() => toISODate(today), [today]);
 
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [serviceType, setServiceType] =
     useState<RentalServiceType>("SELF_DRIVE");
   const [startDate, setStartDate] = useState<string | null>(null);
@@ -24,10 +35,24 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
   const [viewDate, setViewDate] = useState(
     () => new Date(today.getFullYear(), today.getMonth(), 1),
   );
+  const [storedBookings, setStoredBookings] = useState(readStoredBookings);
+
+  useEffect(() => {
+    return subscribeStoredBookings(() => {
+      setStoredBookings(readStoredBookings());
+    });
+  }, []);
 
   const bookedSet = useMemo(
-    () => new Set(car.bookedDates ?? []),
-    [car.bookedDates],
+    () =>
+      new Set(
+        getBookedCalendarDatesForCar(
+          car.id,
+          storedBookings,
+          car.bookedDates ?? [],
+        ),
+      ),
+    [car.id, car.bookedDates, storedBookings],
   );
 
   const calendarCells = useMemo(
@@ -82,9 +107,34 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
       return;
     }
 
+    const latestBookings = readStoredBookings();
+    const created = createBookingRecord(
+      {
+        customerName: trimmedName,
+        customerPhone: phone,
+        carId: car.id,
+        carName: car.name,
+        pricePerDay: car.pricePerDay,
+        startDate: ddmmyyyyToYyyymmdd(startDate),
+        endDate: ddmmyyyyToYyyymmdd(endDate),
+        serviceType,
+      },
+      latestBookings,
+    );
+
+    if (!created.ok) {
+      setErrorMsg(created.error);
+      return;
+    }
+
+    writeStoredBookings(created.bookings);
+    setStoredBookings(created.bookings);
+
     const message = buildBookingMessage({
       car,
       name: trimmedName,
+      phone: created.booking.customerPhone,
+      bookingCode: created.booking.bookingCode,
       serviceType,
       startDate,
       endDate,
@@ -93,12 +143,19 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
     });
 
     window.open(buildWhatsAppUrl(message), "_blank", "noopener,noreferrer");
+    setName("");
+    setPhone("");
+    setStartDate(null);
+    setEndDate(null);
+    setErrorMsg(null);
     onSuccess();
   }
 
   return {
     name,
     setName,
+    phone,
+    setPhone,
     serviceType,
     setServiceType,
     startDate,
