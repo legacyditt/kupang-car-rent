@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   CalendarDays,
@@ -10,6 +10,10 @@ import {
   PanelLeftOpen,
   Settings,
 } from "lucide-react";
+import {
+  readStoredBookings,
+  subscribeStoredBookings,
+} from "@/features/bookings/utils/bookings-storage";
 import { useBusinessProfile } from "@/features/business-profile/hooks/useBusinessProfile";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +25,6 @@ export const ADMIN_NAV_ITEMS = [
     code: "03",
     label: "Booking",
     icon: ClipboardList,
-    badgeCount: 3,
   },
   { to: "/admin/kalender", code: "04", label: "Kalender", icon: CalendarDays },
   { to: "/admin/pengaturan", code: "05", label: "Pengaturan", icon: Settings },
@@ -32,6 +35,18 @@ const SIDEBAR_STORAGE_KEY = "aventra-admin-sidebar-collapsed";
 export function AdminSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { profile } = useBusinessProfile();
+  const [pendingCount, setPendingCount] = useState<number>(
+    () => readStoredBookings().filter((b) => b.status === "PENDING").length
+  );
+
+  useEffect(() => {
+    const syncPending = () => {
+      setPendingCount(
+        readStoredBookings().filter((b) => b.status === "PENDING").length
+      );
+    };
+    return subscribeStoredBookings(syncPending);
+  }, []);
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try {
       return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true";
@@ -121,7 +136,7 @@ export function AdminSidebar() {
               ? pathname === "/admin" || pathname === "/admin/"
               : pathname.startsWith(item.to);
           const Icon = item.icon;
-          const badgeCount = "badgeCount" in item ? item.badgeCount : 0;
+          const badgeCount = item.to === "/admin/booking" ? pendingCount : 0;
 
           return (
             <Link
@@ -173,7 +188,9 @@ export function AdminSidebar() {
         </Link>
       ) : (
         <div className="mt-auto w-full rounded-xl border border-hairline bg-obsidian p-3">
-          <p className="text-xs font-bold text-white">Admin Aventra</p>
+          <p className="truncate text-xs font-bold text-white">
+            Admin {profile.name}
+          </p>
           <Link
             to="/"
             className="mt-1.5 inline-flex items-center gap-1.5 font-mono text-[10px] font-bold tracking-wider text-red-400 uppercase transition-colors hover:text-red-300"
