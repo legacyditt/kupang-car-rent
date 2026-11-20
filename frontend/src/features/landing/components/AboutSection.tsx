@@ -3,7 +3,7 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import * as m from "motion/react-m";
 import { Button } from "@/components/ui/button";
-import { BUSINESS_INFO } from "@/lib/constants";
+import { useBusinessProfile } from "@/features/business-profile/hooks/useBusinessProfile";
 import {
   MOTION_EASE,
   MOTION_MEDIA,
@@ -35,6 +35,7 @@ const BRAND_PILLARS = [
 
 export function AboutSection() {
   const sectionRef = useRef<HTMLElement>(null);
+  const { profile } = useBusinessProfile();
 
   useGSAP(
     () => {
@@ -110,10 +111,10 @@ export function AboutSection() {
 
         <div>
           <p className="font-mono text-[11px] font-medium tracking-[0.16em] text-gold uppercase">
-            03 / Tentang {BUSINESS_INFO.name}
+            03 / Tentang {profile.name}
           </p>
           <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            {BUSINESS_INFO.tagline}.
+            {profile.tagline}.
           </h2>
 
           <div className="mt-8 divide-y divide-hairline border-y border-hairline">

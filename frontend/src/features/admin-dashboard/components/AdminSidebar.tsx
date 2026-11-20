@@ -10,7 +10,7 @@ import {
   PanelLeftOpen,
   Settings,
 } from "lucide-react";
-import { BUSINESS_INFO } from "@/lib/constants";
+import { useBusinessProfile } from "@/features/business-profile/hooks/useBusinessProfile";
 import { cn } from "@/lib/utils";
 
 export const ADMIN_NAV_ITEMS = [
@@ -31,6 +31,7 @@ const SIDEBAR_STORAGE_KEY = "aventra-admin-sidebar-collapsed";
 
 export function AdminSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { profile } = useBusinessProfile();
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try {
       return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true";
@@ -67,12 +68,12 @@ export function AdminSidebar() {
         {collapsed ? (
           <Link
             to="/admin"
-            title={`${BUSINESS_INFO.name} — Ruang Pengelola`}
+            title={`${profile.name} — Ruang Pengelola`}
             className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg border border-gold/30 bg-obsidian p-1"
           >
             <img
-              src={BUSINESS_INFO.logoPath}
-              alt={BUSINESS_INFO.name}
+              src={profile.logoPath}
+              alt={profile.name}
               width={40}
               height={40}
               className="h-full w-full object-contain"
@@ -85,8 +86,8 @@ export function AdminSidebar() {
               className="inline-flex items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <img
-                src={BUSINESS_INFO.logoPath}
-                alt={BUSINESS_INFO.name}
+                src={profile.logoPath}
+                alt={profile.name}
                 width={132}
                 height={40}
                 className="h-9 w-auto object-contain"
