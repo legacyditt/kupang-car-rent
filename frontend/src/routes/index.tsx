@@ -20,6 +20,7 @@ export const indexRoute = createRoute({
   component: LandingPage,
 });
 
+/** Halaman utama pelanggan: menyusun section beranda, katalog unit, layanan, alur booking, profil, dan CTA WhatsApp. */
 function LandingPage() {
   return (
     <>

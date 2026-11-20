@@ -37,6 +37,7 @@ interface BookingModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
+/** Modal booking pelanggan: pilih layanan & tanggal tersedia, simpan booking PENDING ke store, lalu arahkan ke WhatsApp admin. */
 export function BookingModal({ car, open, onOpenChange }: BookingModalProps) {
   const {
     name,

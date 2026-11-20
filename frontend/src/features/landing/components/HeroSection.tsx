@@ -12,10 +12,12 @@ import {
 
 registerMotionPlugins();
 
+/** Section pembuka (above-the-fold) dengan visual armada utama dan CTA menuju katalog atau WhatsApp. */
 export function HeroSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const desktopImgRef = useRef<HTMLImageElement>(null);
 
+  // Animasi masuk hero (zoom-out gambar, garis aksen, dan teks) saat pertama tampil di desktop.
   useGSAP(
     () => {
       const mm = gsap.matchMedia();

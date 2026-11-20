@@ -26,9 +26,11 @@ const SERVICES = [
   },
 ] as const;
 
+/** Section layanan sewa yang menjelaskan opsi Dengan Sopir dan Lepas Kunci. */
 export function ServicesSection() {
   const sectionRef = useRef<HTMLElement>(null);
 
+  // Animasi garis dan kartu layanan saat section masuk viewport desktop.
   useGSAP(
     () => {
       const mm = gsap.matchMedia();

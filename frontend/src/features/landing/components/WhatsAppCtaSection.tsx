@@ -14,9 +14,11 @@ import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
 registerMotionPlugins();
 
+/** Banner ajakan konsultasi dan reservasi cepat langsung ke WhatsApp admin. */
 export function WhatsAppCtaSection() {
   const sectionRef = useRef<HTMLElement>(null);
 
+  // Animasi fade-up banner CTA WhatsApp saat masuk viewport.
   useGSAP(
     () => {
       const mm = gsap.matchMedia();

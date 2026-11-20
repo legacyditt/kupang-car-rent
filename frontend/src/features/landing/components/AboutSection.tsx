@@ -33,10 +33,12 @@ const BRAND_PILLARS = [
   },
 ] as const;
 
+/** Section profil singkat dan keunggulan rental yang tersinkron dengan Profil Bisnis admin. */
 export function AboutSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const { profile } = useBusinessProfile();
 
+  // Animasi gambar dan daftar pilar keunggulan saat section terlihat di desktop.
   useGSAP(
     () => {
       const mm = gsap.matchMedia();

@@ -29,9 +29,11 @@ const BOOKING_STEPS = [
   },
 ] as const;
 
+/** Section langkah cara booking 4 tahap dari memilih unit hingga konfirmasi admin. */
 export function HowToBookSection() {
   const sectionRef = useRef<HTMLElement>(null);
 
+  // Animasi alur garis rute dan 4 langkah booking saat di-scroll di desktop.
   useGSAP(
     () => {
       const mm = gsap.matchMedia();

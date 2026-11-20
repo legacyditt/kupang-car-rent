@@ -11,12 +11,14 @@ import { CarCard } from "./CarCard";
 
 registerMotionPlugins();
 
+/** Katalog armada pada landing page: grid 2-4 kolom di desktop dan carousel di mobile. */
 export function CarCatalogSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [liveStatus, setLiveStatus] = useState("");
 
+  // Animasi masuk kartu katalog saat section terlihat di desktop.
   useGSAP(
     () => {
       const mm = gsap.matchMedia();
@@ -41,6 +43,7 @@ export function CarCatalogSection() {
     { scope: sectionRef }
   );
 
+  // Geser carousel mobile ke indeks unit yang dipilih.
   const scrollToSlide = useCallback((index: number) => {
     const track = trackRef.current;
     if (!track) return;
@@ -54,6 +57,7 @@ export function CarCatalogSection() {
     setLiveStatus(`Mobil ${bounded + 1} dari ${INITIAL_CARS.length}`);
   }, []);
 
+  // Sinkronkan indikator slide aktif saat user menggeser carousel mobile.
   useEffect(() => {
     const track = trackRef.current;
     if (!track) return;

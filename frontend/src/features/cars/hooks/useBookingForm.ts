@@ -37,6 +37,7 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
   );
   const [storedBookings, setStoredBookings] = useState(readStoredBookings);
 
+  // Sinkronkan tanggal terblokir jika ada perubahan booking di tab/halaman lain.
   useEffect(() => {
     return subscribeStoredBookings(() => {
       setStoredBookings(readStoredBookings());
@@ -64,6 +65,7 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
     startDate && endDate ? calculateRentalDays(startDate, endDate) : 0;
   const totalPrice = totalDays * car.pricePerDay;
 
+  // Atur rentang tanggal mulai–selesai dan tolak rentang yang menabrak jadwal terbooking.
   function handleDateClick(iso: string) {
     setErrorMsg(null);
 
@@ -86,6 +88,7 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
     setEndDate(iso);
   }
 
+  // Navigasi tampilan kalender ke bulan sebelumnya / berikutnya.
   function handlePrevMonth() {
     setViewDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
   }
@@ -94,6 +97,7 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
     setViewDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   }
 
+  // Validasi input, simpan booking PENDING ke store, lalu arahkan ke WhatsApp admin.
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const trimmedName = name.trim();
