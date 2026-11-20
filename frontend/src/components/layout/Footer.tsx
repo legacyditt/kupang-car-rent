@@ -1,25 +1,28 @@
 import { MapPin, Phone } from "lucide-react";
-import { BUSINESS_INFO, NAV_LINKS } from "@/lib/constants";
+import { useBusinessProfile } from "@/features/business-profile/hooks/useBusinessProfile";
+import { NAV_LINKS } from "@/lib/constants";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
 export function Footer() {
+  const { profile } = useBusinessProfile();
+
   return (
     <footer id="kontak" className="border-t border-hairline bg-[#030406] text-white">
       <div className="mx-auto max-w-7xl px-5 pb-24 pt-12 sm:px-6 md:pb-14 lg:px-8 lg:py-16">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
           <div>
             <img
-              src={BUSINESS_INFO.logoPath}
-              alt={`${BUSINESS_INFO.name} Logo`}
+              src={profile.logoPath}
+              alt={`${profile.name} Logo`}
               width={162}
               height={48}
               className="h-11 w-auto object-contain"
             />
             <p className="mt-4 font-mono text-xs tracking-wider text-gold uppercase">
-              {BUSINESS_INFO.tagline}
+              {profile.tagline}
             </p>
             <p className="mt-2 max-w-xs text-sm leading-relaxed text-brand-muted">
-              Sewa mobil harian di Kota Kupang. Lepas kunci atau dengan sopir.
+              {profile.description}
             </p>
           </div>
 
@@ -54,12 +57,12 @@ export function Footer() {
                   rel="noopener noreferrer"
                   className="font-display text-lg font-bold text-white transition-colors hover:text-gold"
                 >
-                  {BUSINESS_INFO.whatsappDisplayIntl}
+                  {profile.whatsappDisplayIntl}
                 </a>
               </li>
               <li className="flex items-start gap-2.5">
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gold" aria-hidden="true" />
-                <span className="text-brand-muted">{BUSINESS_INFO.location}</span>
+                <span className="text-brand-muted">{profile.location}</span>
               </li>
             </ul>
           </div>
@@ -67,7 +70,7 @@ export function Footer() {
 
         <div className="mt-10 border-t border-hairline pt-6">
           <p className="font-mono text-[11px] tracking-wider text-slate-500 uppercase">
-            © 2026 {BUSINESS_INFO.name.toUpperCase()} KUPANG
+            © 2026 {profile.name.toUpperCase()} KUPANG
           </p>
         </div>
       </div>

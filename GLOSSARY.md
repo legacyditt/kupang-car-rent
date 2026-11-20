@@ -20,3 +20,8 @@ _Avoid_: Customer, Klien, User
 Catatan khusus admin pada sebuah booking (seperti lokasi serah terima, sopir, atau status DP) yang tidak ditampilkan ke pelanggan.
 _Avoid_: Catatan Pelanggan, Komentar
 
+**Profil Bisnis**:
+Identitas, nomor WhatsApp tujuan booking, alamat, jam operasional, dan logo rental yang ditampilkan kepada pelanggan maupun admin.
+_Avoid_: Pengaturan Sistem, Konfigurasi App
+
+

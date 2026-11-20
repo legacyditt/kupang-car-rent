@@ -4,7 +4,8 @@ import { useGSAP } from "@gsap/react";
 import * as m from "motion/react-m";
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BUSINESS_INFO, NAV_LINKS } from "@/lib/constants";
+import { useBusinessProfile } from "@/features/business-profile/hooks/useBusinessProfile";
+import { NAV_LINKS } from "@/lib/constants";
 import {
   MOTION_EASE,
   MOTION_MEDIA,
@@ -19,6 +20,7 @@ registerMotionPlugins();
 export function Navbar() {
   const headerRef = useRef<HTMLElement>(null);
   const { activeHref, isScrolled, handleNavClick } = useActiveSection();
+  const { profile } = useBusinessProfile();
 
   useGSAP(
     () => {
@@ -54,8 +56,8 @@ export function Navbar() {
           className="flex items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <img
-            src={BUSINESS_INFO.logoPath}
-            alt={BUSINESS_INFO.name}
+            src={profile.logoPath}
+            alt={profile.name}
             width={148}
             height={44}
             className="h-9 w-auto object-contain lg:h-11"

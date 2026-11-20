@@ -5,6 +5,7 @@ import { AdminOverviewPage } from "@/routes/admin/index";
 import { AdminCarsPage } from "@/routes/admin/mobil";
 import { AdminBookingsPage } from "@/routes/admin/booking";
 import { AdminCalendarPage } from "@/routes/admin/kalender";
+import { AdminSettingsPage } from "@/routes/admin/pengaturan";
 import { guestLayoutRoute, indexRoute } from "@/routes/index";
 
 const adminLayoutRoute = createRoute({
@@ -18,24 +19,6 @@ const adminOverviewRoute = createRoute({
   path: "/",
   component: AdminOverviewPage,
 });
-
-function createAdminPlaceholder(code: string, title: string) {
-  return function AdminSectionPlaceholder() {
-    return (
-      <div className="rounded-2xl border border-hairline bg-carbon p-6">
-        <p className="font-mono text-[11px] font-bold tracking-[0.14em] text-gold uppercase">
-          {code} / {title}
-        </p>
-        <h1 className="mt-1 font-display text-2xl font-bold text-white">
-          {title}
-        </h1>
-        <p className="mt-2 text-sm text-brand-muted">
-          Kerangka route siap. Implementasi penuh menyusul pada tahap berikutnya.
-        </p>
-      </div>
-    );
-  };
-}
 
 const adminMobilRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
@@ -58,7 +41,7 @@ const adminKalenderRoute = createRoute({
 const adminPengaturanRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: "/pengaturan",
-  component: createAdminPlaceholder("05", "Pengaturan Bisnis"),
+  component: AdminSettingsPage,
 });
 
 const routeTree = rootRoute.addChildren([
