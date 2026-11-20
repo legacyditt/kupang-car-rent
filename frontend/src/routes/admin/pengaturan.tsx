@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LogoUploadCard } from "@/features/business-profile/components/LogoUploadCard";
 import { useBusinessProfile } from "@/features/business-profile/hooks/useBusinessProfile";
 
 export function AdminSettingsPage() {
-  const { profile, saveProfile } = useBusinessProfile();
+  const { profile, saveProfile, resetLogo } = useBusinessProfile();
 
   const [name, setName] = useState(profile.name);
   const [whatsappNumber, setWhatsappNumber] = useState(
@@ -175,21 +176,33 @@ export function AdminSettingsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-4 rounded-xl border border-hairline bg-obsidian p-4">
-              <img
-                src={profile.logoPath}
-                alt={profile.name}
-                className="h-14 w-auto rounded-md object-contain"
-              />
-              <div className="min-w-0">
-                <p className="font-display text-sm font-bold text-white uppercase">
-                  {profile.name}
-                </p>
-                <p className="mt-0.5 font-mono text-[10px] text-brand-muted">
-                  Logo aktif saat ini
-                </p>
-              </div>
-            </div>
+            <LogoUploadCard
+              businessName={name || profile.name}
+              logoPath={profile.logoPath}
+              onLogoChange={(dataUrl) => {
+                setSavedToast(false);
+                setErrorMsg(null);
+                const res = saveProfile({
+                  name,
+                  whatsappNumber,
+                  location,
+                  operatingHours,
+                  tagline,
+                  description,
+                  logoPath: dataUrl,
+                });
+                if (!res.ok) {
+                  setErrorMsg(res.error);
+                  return;
+                }
+                setSavedToast(true);
+              }}
+              onResetLogo={() => {
+                setSavedToast(false);
+                resetLogo();
+                setSavedToast(true);
+              }}
+            />
 
             <div className="space-y-1.5">
               <Label

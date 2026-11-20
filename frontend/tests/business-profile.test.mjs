@@ -5,6 +5,7 @@ import {
   formatIntlWhatsApp,
   normalizeAdminWhatsApp,
   validateAndNormalizeProfile,
+  validateLogoFile,
 } from "../src/features/business-profile/utils/business-profile.ts";
 
 test("normalizeAdminWhatsApp converts 08xx and +628xx into 628xx", () => {
@@ -44,5 +45,24 @@ test("validateAndNormalizeProfile normalizes valid input", () => {
     assert.equal(res.profile.whatsappDisplayIntl, "+62 812-3898-9891");
     assert.equal(res.profile.location, "Jl. El Tari, Kupang");
   }
+});
+
+test("validateLogoFile accepts PNG/JPG/WEBP <= 1MB and rejects invalid files", () => {
+  assert.equal(
+    validateLogoFile({ type: "image/png", size: 500_000 }).ok,
+    true
+  );
+  assert.equal(
+    validateLogoFile({ type: "image/jpeg", size: 1_048_576 }).ok,
+    true
+  );
+  assert.equal(
+    validateLogoFile({ type: "image/gif", size: 100_000 }).ok,
+    false
+  );
+  assert.equal(
+    validateLogoFile({ type: "image/png", size: 1_048_577 }).ok,
+    false
+  );
 });
 

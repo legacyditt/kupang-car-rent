@@ -73,3 +73,29 @@ export function validateAndNormalizeProfile(
   };
 }
 
+const ALLOWED_LOGO_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+]);
+export const MAX_LOGO_SIZE_BYTES = 1_048_576; // 1MB
+
+export function validateLogoFile(file: {
+  type: string;
+  size: number;
+}): { ok: true } | { ok: false; error: string } {
+  if (!ALLOWED_LOGO_TYPES.has(file.type)) {
+    return {
+      ok: false,
+      error: "Format logo harus PNG, JPG, atau WEBP.",
+    };
+  }
+  if (file.size > MAX_LOGO_SIZE_BYTES) {
+    return {
+      ok: false,
+      error: "Ukuran logo maksimal 1 MB.",
+    };
+  }
+  return { ok: true };
+}
+
