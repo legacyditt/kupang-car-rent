@@ -10,6 +10,7 @@ import { BookingStatusBadge } from "@/features/bookings/components/BookingStatus
 import { useAdminBookings } from "@/features/bookings/hooks/useAdminBookings";
 import {
   BOOKING_STATUS_LABELS,
+  yyyymmddToDdmmyyyy,
   type BookingFilterTab,
 } from "@/features/bookings/utils/booking-admin";
 import { SERVICE_TYPE_LABELS } from "@/features/cars/utils/booking";
@@ -135,9 +136,10 @@ export function AdminBookingsPage() {
                       </span>
                     </p>
                     <p className="mt-1 truncate text-xs text-brand-muted">
-                      {booking.carName} • {booking.startDate} s/d{" "}
-                      {booking.endDate} ({booking.totalDays} hari) •{" "}
-                      {SERVICE_TYPE_LABELS[booking.serviceType]}
+                      {booking.carName} •{" "}
+                      {yyyymmddToDdmmyyyy(booking.startDate)} s/d{" "}
+                      {yyyymmddToDdmmyyyy(booking.endDate)} ({booking.totalDays}{" "}
+                      hari) • {SERVICE_TYPE_LABELS[booking.serviceType]}
                     </p>
                   </div>
 

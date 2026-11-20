@@ -1,4 +1,4 @@
-import { AlertTriangle, KeyRound, UserCheck } from "lucide-react";
+import { CalendarDays, KeyRound, UserCheck } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,15 +10,21 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AvailabilityCalendar } from "@/features/cars/components/AvailabilityCalendar";
 import {
+  calculateRentalDays,
+  getCalendarCells,
+  hasBookedDateInRange,
   SERVICE_TYPE_LABELS,
+  toISODate,
+  toTimestamp,
   type RentalServiceType,
 } from "@/features/cars/utils/booking";
 import { cn, formatRupiah } from "@/lib/utils";
 import type { BookingItem } from "../types/booking.types";
 import {
-  calculateInclusiveDays,
-  hasScheduleConflict,
+  ddmmyyyyToYyyymmdd,
+  getBookedCalendarDatesForCar,
   type CreateBookingInput,
 } from "../utils/booking-admin";
 import { readStoredCars } from "../utils/bookings-storage";
@@ -34,14 +40,6 @@ interface AddBookingDialogProps {
     | { ok: false; error: string };
 }
 
-function getTodayDateStr(): string {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
 export function AddBookingDialog({
   open,
   onOpenChange,
@@ -49,15 +47,21 @@ export function AddBookingDialog({
   onCreateBooking,
 }: AddBookingDialogProps) {
   const cars = useMemo(() => (open ? readStoredCars() : []), [open]);
+  const today = useMemo(() => new Date(), []);
+  const todayIso = useMemo(() => toISODate(today), [today]);
 
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [carId, setCarId] = useState("");
   const [serviceType, setServiceType] =
     useState<RentalServiceType>("SELF_DRIVE");
-  const [startDate, setStartDate] = useState(getTodayDateStr);
-  const [endDate, setEndDate] = useState(getTodayDateStr);
-  const [finalPriceInput, setFinalPriceInput] = useState("");
+  const [startDate, setStartDate] = useState<string | null>(null); // DD-MM-YYYY
+  const [endDate, setEndDate] = useState<string | null>(null); // DD-MM-YYYY
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [viewDate, setViewDate] = useState(
+    () => new Date(today.getFullYear(), today.getMonth(), 1)
+  );
+  const [finalPriceInput, setFinalPriceInput] = useState("0");
   const [isPriceOverridden, setIsPriceOverridden] = useState(false);
   const [internalNote, setInternalNote] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -69,24 +73,39 @@ export function AddBookingDialog({
     setCustomerPhone("");
     setCarId(defaultCar?.id ?? "");
     setServiceType("SELF_DRIVE");
-    const today = getTodayDateStr();
-    setStartDate(today);
-    setEndDate(today);
+    setStartDate(null);
+    setEndDate(null);
+    setIsCalendarOpen(false);
+    setViewDate(new Date(today.getFullYear(), today.getMonth(), 1));
     setIsPriceOverridden(false);
-    setFinalPriceInput(defaultCar ? String(defaultCar.pricePerDay) : "0");
+    setFinalPriceInput("0");
     setInternalNote("");
     setErrorMsg(null);
-  }, [open, cars]);
+  }, [open, cars, today]);
 
   const selectedCar = useMemo(
     () => cars.find((c) => c.id === carId) ?? cars[0] ?? null,
     [cars, carId]
   );
 
-  const totalDays = useMemo(
-    () => calculateInclusiveDays(startDate, endDate),
-    [startDate, endDate]
+  const bookedSet = useMemo(() => {
+    if (!selectedCar) return new Set<string>();
+    return new Set(
+      getBookedCalendarDatesForCar(
+        selectedCar.id,
+        existingBookings,
+        selectedCar.bookedDates ?? []
+      )
+    );
+  }, [selectedCar, existingBookings]);
+
+  const calendarCells = useMemo(
+    () => getCalendarCells(viewDate.getFullYear(), viewDate.getMonth()),
+    [viewDate]
   );
+
+  const totalDays =
+    startDate && endDate ? calculateRentalDays(startDate, endDate) : 0;
 
   const estimatedPrice = selectedCar
     ? totalDays * selectedCar.pricePerDay
@@ -98,44 +117,46 @@ export function AddBookingDialog({
     }
   }, [estimatedPrice, isPriceOverridden]);
 
-  const scheduleConflict = useMemo(() => {
-    if (!selectedCar || totalDays <= 0) return null;
-    const preview: BookingItem = {
-      id: "__preview__",
-      bookingCode: "PREVIEW",
-      customerName: customerName || "Preview",
-      customerPhone,
-      carId: selectedCar.id,
-      carName: selectedCar.name,
-      startDate,
-      endDate,
-      totalDays,
-      serviceType,
-      estimatedPrice,
-      finalPrice: estimatedPrice,
-      status: "PENDING",
-      internalNote,
-      createdAt: startDate,
-    };
-    return hasScheduleConflict(preview, existingBookings);
-  }, [
-    selectedCar,
-    totalDays,
-    customerName,
-    customerPhone,
-    startDate,
-    endDate,
-    serviceType,
-    estimatedPrice,
-    internalNote,
-    existingBookings,
-  ]);
+  function handleDateClick(iso: string) {
+    setErrorMsg(null);
+
+    if (!startDate || (startDate && endDate)) {
+      setStartDate(iso);
+      setEndDate(null);
+      return;
+    }
+
+    if (toTimestamp(iso) < toTimestamp(startDate)) {
+      setStartDate(iso);
+      return;
+    }
+
+    if (hasBookedDateInRange(startDate, iso, bookedSet)) {
+      setErrorMsg("Rentang tanggal melewati jadwal yang sudah dibooking.");
+      return;
+    }
+
+    setEndDate(iso);
+    setIsCalendarOpen(false);
+  }
+
+  function handleCarChange(nextCarId: string) {
+    setCarId(nextCarId);
+    setStartDate(null);
+    setEndDate(null);
+    setErrorMsg(null);
+  }
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setErrorMsg(null);
     if (!selectedCar) {
       setErrorMsg("Unit mobil belum tersedia.");
+      return;
+    }
+    if (!startDate || !endDate) {
+      setErrorMsg("Pilih tanggal mulai dan tanggal selesai pada kalender.");
+      setIsCalendarOpen(true);
       return;
     }
 
@@ -146,8 +167,8 @@ export function AddBookingDialog({
       carId: selectedCar.id,
       carName: selectedCar.name,
       pricePerDay: selectedCar.pricePerDay,
-      startDate,
-      endDate,
+      startDate: ddmmyyyyToYyyymmdd(startDate),
+      endDate: ddmmyyyyToYyyymmdd(endDate),
       serviceType,
       finalPrice:
         Number.isFinite(parsedFinalPrice) && parsedFinalPrice >= 0
@@ -225,7 +246,7 @@ export function AddBookingDialog({
             <select
               id="add-booking-car"
               value={carId}
-              onChange={(e) => setCarId(e.target.value)}
+              onChange={(e) => handleCarChange(e.target.value)}
               className="h-10 w-full rounded-lg border border-hairline bg-obsidian px-3 text-sm text-white focus:border-gold focus:outline-none"
             >
               {cars.map((car) => (
@@ -277,56 +298,72 @@ export function AddBookingDialog({
             </div>
           </div>
 
+          {/* Date Triggers */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label
-                htmlFor="add-booking-start"
-                className="font-mono text-[10px] tracking-wider text-brand-muted uppercase"
-              >
+              <Label className="font-mono text-[10px] tracking-wider text-brand-muted uppercase">
                 Tanggal Mulai
               </Label>
-              <Input
-                id="add-booking-start"
-                type="date"
-                required
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="h-10 border-hairline bg-obsidian font-mono text-xs text-white focus-visible:border-gold focus-visible:ring-0"
-              />
+              <button
+                type="button"
+                onClick={() => setIsCalendarOpen((prev) => !prev)}
+                className={cn(
+                  "flex h-10 w-full items-center justify-between rounded-lg border px-3 font-mono text-xs transition-colors",
+                  isCalendarOpen
+                    ? "border-gold bg-obsidian text-white"
+                    : "border-hairline bg-obsidian text-white hover:border-gold/50"
+                )}
+              >
+                <span className={startDate ? "text-white" : "text-brand-muted/70"}>
+                  {startDate ?? "Pilih tanggal"}
+                </span>
+                <CalendarDays className="h-4 w-4 text-gold" aria-hidden="true" />
+              </button>
             </div>
 
             <div className="space-y-1.5">
-              <Label
-                htmlFor="add-booking-end"
-                className="font-mono text-[10px] tracking-wider text-brand-muted uppercase"
-              >
+              <Label className="font-mono text-[10px] tracking-wider text-brand-muted uppercase">
                 Tanggal Selesai
               </Label>
-              <Input
-                id="add-booking-end"
-                type="date"
-                required
-                min={startDate}
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="h-10 border-hairline bg-obsidian font-mono text-xs text-white focus-visible:border-gold focus-visible:ring-0"
-              />
+              <button
+                type="button"
+                onClick={() => setIsCalendarOpen((prev) => !prev)}
+                className={cn(
+                  "flex h-10 w-full items-center justify-between rounded-lg border px-3 font-mono text-xs transition-colors",
+                  isCalendarOpen
+                    ? "border-gold bg-obsidian text-white"
+                    : "border-hairline bg-obsidian text-white hover:border-gold/50"
+                )}
+              >
+                <span className={endDate ? "text-white" : "text-brand-muted/70"}>
+                  {endDate ?? "Pilih tanggal"}
+                </span>
+                <CalendarDays className="h-4 w-4 text-gold" aria-hidden="true" />
+              </button>
             </div>
           </div>
 
-          {scheduleConflict && (
-            <div className="flex items-start gap-2 rounded-lg border border-amber-400/35 bg-amber-400/10 p-3 text-xs text-amber-200">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
-              <p>
-                Jadwal bentrok dengan{" "}
-                <span className="font-mono font-bold">
-                  {scheduleConflict.bookingCode}
-                </span>{" "}
-                ({scheduleConflict.customerName},{" "}
-                {scheduleConflict.startDate} s/d {scheduleConflict.endDate}).
-                Tetap bisa disimpan sebagai PENDING, tetapi Konfirmasi akan
-                diblokir BR-09.
-              </p>
+          {isCalendarOpen && (
+            <div className="rounded-xl border border-gold/25 bg-obsidian/70 p-3.5">
+              <AvailabilityCalendar
+                viewDate={viewDate}
+                calendarCells={calendarCells}
+                todayIso={todayIso}
+                bookedSet={bookedSet}
+                startDate={startDate}
+                endDate={endDate}
+                onSelectDate={handleDateClick}
+                onPrevMonth={() =>
+                  setViewDate(
+                    (prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1)
+                  )
+                }
+                onNextMonth={() =>
+                  setViewDate(
+                    (prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1)
+                  )
+                }
+              />
             </div>
           )}
 
@@ -405,4 +442,3 @@ export function AddBookingDialog({
     </Dialog>
   );
 }
-

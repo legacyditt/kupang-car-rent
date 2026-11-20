@@ -19,7 +19,10 @@ import {
 } from "@/features/cars/utils/booking";
 import { formatRupiah } from "@/lib/utils";
 import type { BookingItem, BookingStatus } from "../types/booking.types";
-import type { UpdateBookingDetailsInput } from "../utils/booking-admin";
+import {
+  yyyymmddToDdmmyyyy,
+  type UpdateBookingDetailsInput,
+} from "../utils/booking-admin";
 import { readStoredCars } from "../utils/bookings-storage";
 import { BookingStatusBadge } from "./BookingStatusBadge";
 
@@ -119,7 +122,7 @@ export function BookingDetailSheet({
   };
 
   const customerWaUrl = `https://wa.me/${booking.customerPhone}?text=${encodeURIComponent(
-    `Halo ${booking.customerName}, terkait booking ${booking.bookingCode} (${booking.carName}, ${booking.startDate} s/d ${booking.endDate}).`
+    `Halo ${booking.customerName}, terkait booking ${booking.bookingCode} (${booking.carName}, ${yyyymmddToDdmmyyyy(booking.startDate)} s/d ${yyyymmddToDdmmyyyy(booking.endDate)}).`
   )}`;
 
   return (
@@ -236,8 +239,9 @@ export function BookingDetailSheet({
             ) : (
               <>
                 <p className="font-mono text-[11px] text-brand-muted">
-                  Jadwal: {booking.startDate} s/d {booking.endDate} (
-                  {booking.totalDays} hari)
+                  Jadwal: {yyyymmddToDdmmyyyy(booking.startDate)} s/d{" "}
+                  {yyyymmddToDdmmyyyy(booking.endDate)} ({booking.totalDays}{" "}
+                  hari)
                 </p>
                 <p className="font-mono text-[11px] text-brand-muted">
                   Layanan: {SERVICE_TYPE_LABELS[booking.serviceType]}
