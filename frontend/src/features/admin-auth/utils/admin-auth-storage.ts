@@ -1,7 +1,36 @@
-import type { AdminSession } from "../utils/admin-auth";
+import {
+  DEFAULT_ADMIN_CREDENTIALS,
+  type AdminAccount,
+  type AdminSession,
+} from "../utils/admin-auth";
 
 export const ADMIN_SESSION_STORAGE_KEY = "aventra-admin-session";
+export const ADMIN_ACCOUNTS_STORAGE_KEY = "aventra-admin-accounts";
 export const ADMIN_SESSION_UPDATED_EVENT = "aventra:admin-session-updated";
+
+export function readAdminAccounts(): AdminAccount[] {
+  try {
+    const raw = window.localStorage.getItem(ADMIN_ACCOUNTS_STORAGE_KEY);
+    if (!raw) return [DEFAULT_ADMIN_CREDENTIALS];
+    const parsed = JSON.parse(raw) as AdminAccount[];
+    return Array.isArray(parsed) && parsed.length > 0
+      ? parsed
+      : [DEFAULT_ADMIN_CREDENTIALS];
+  } catch {
+    return [DEFAULT_ADMIN_CREDENTIALS];
+  }
+}
+
+export function writeAdminAccounts(accounts: AdminAccount[]): void {
+  try {
+    window.localStorage.setItem(
+      ADMIN_ACCOUNTS_STORAGE_KEY,
+      JSON.stringify(accounts)
+    );
+  } catch {
+    // Ignore storage write failure in restricted contexts
+  }
+}
 
 export function readAdminSession(): AdminSession | null {
   try {
