@@ -3,6 +3,7 @@ import { AdminLayout } from "@/features/admin-dashboard/components/AdminLayout";
 import { rootRoute } from "@/routes/__root";
 import { AdminOverviewPage } from "@/routes/admin/index";
 import { AdminCarsPage } from "@/routes/admin/mobil";
+import { AdminBookingsPage } from "@/routes/admin/booking";
 import { guestLayoutRoute, indexRoute } from "@/routes/index";
 
 const adminLayoutRoute = createRoute({
@@ -44,7 +45,7 @@ const adminMobilRoute = createRoute({
 const adminBookingRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: "/booking",
-  component: createAdminPlaceholder("03", "Manajemen Booking"),
+  component: AdminBookingsPage,
 });
 
 const adminKalenderRoute = createRoute({

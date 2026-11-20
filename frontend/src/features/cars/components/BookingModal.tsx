@@ -41,6 +41,8 @@ export function BookingModal({ car, open, onOpenChange }: BookingModalProps) {
   const {
     name,
     setName,
+    phone,
+    setPhone,
     serviceType,
     setServiceType,
     startDate,
@@ -90,6 +92,24 @@ export function BookingModal({ car, open, onOpenChange }: BookingModalProps) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Masukkan nama Anda"
+              className="h-10 rounded-lg border-hairline bg-obsidian px-3 text-sm text-white placeholder:text-brand-muted/60 focus-visible:border-gold focus-visible:ring-0"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label
+              htmlFor={`booking-phone-${car.id}`}
+              className="font-mono text-[11px] font-medium tracking-wider text-brand-muted uppercase"
+            >
+              No. WhatsApp
+            </Label>
+            <Input
+              id={`booking-phone-${car.id}`}
+              type="tel"
+              required
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Contoh: 081234567890"
               className="h-10 rounded-lg border-hairline bg-obsidian px-3 text-sm text-white placeholder:text-brand-muted/60 focus-visible:border-gold focus-visible:ring-0"
             />
           </div>
