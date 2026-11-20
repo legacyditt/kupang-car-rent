@@ -6,7 +6,14 @@ import { AdminCarsPage } from "@/routes/admin/mobil";
 import { AdminBookingsPage } from "@/routes/admin/booking";
 import { AdminCalendarPage } from "@/routes/admin/kalender";
 import { AdminSettingsPage } from "@/routes/admin/pengaturan";
+import { AdminLoginPage } from "@/routes/admin/login";
 import { guestLayoutRoute, indexRoute } from "@/routes/index";
+
+const adminLoginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin/login",
+  component: AdminLoginPage,
+});
 
 const adminLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -46,6 +53,7 @@ const adminPengaturanRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   guestLayoutRoute.addChildren([indexRoute]),
+  adminLoginRoute,
   adminLayoutRoute.addChildren([
     adminOverviewRoute,
     adminMobilRoute,
