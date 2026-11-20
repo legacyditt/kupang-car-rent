@@ -10,6 +10,7 @@ import {
   PanelLeftOpen,
   Settings,
 } from "lucide-react";
+import { useAdminAuth } from "@/features/admin-auth/hooks/useAdminAuth";
 import {
   readStoredBookings,
   subscribeStoredBookings,
@@ -34,6 +35,7 @@ const SIDEBAR_STORAGE_KEY = "aventra-admin-sidebar-collapsed";
 
 export function AdminSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { logout } = useAdminAuth();
   const { profile } = useBusinessProfile();
   const [pendingCount, setPendingCount] = useState<number>(
     () => readStoredBookings().filter((b) => b.status === "PENDING").length
@@ -178,26 +180,36 @@ export function AdminSidebar() {
       </nav>
 
       {collapsed ? (
-        <Link
-          to="/"
-          title="Ke Website Guest"
-          aria-label="Ke Website Guest"
+        <button
+          type="button"
+          onClick={logout}
+          title="Keluar Dashboard"
+          aria-label="Keluar Dashboard"
           className="mt-auto flex h-10 w-10 items-center justify-center rounded-lg border border-hairline bg-obsidian text-red-400 transition-colors hover:border-red-400/40 hover:text-red-300"
         >
           <LogOut className="h-4 w-4" aria-hidden="true" />
-        </Link>
+        </button>
       ) : (
         <div className="mt-auto w-full rounded-xl border border-hairline bg-obsidian p-3">
           <p className="truncate text-xs font-bold text-white">
             Admin {profile.name}
           </p>
-          <Link
-            to="/"
-            className="mt-1.5 inline-flex items-center gap-1.5 font-mono text-[10px] font-bold tracking-wider text-red-400 uppercase transition-colors hover:text-red-300"
-          >
-            <LogOut className="h-3 w-3" aria-hidden="true" />
-            Ke Website Guest →
-          </Link>
+          <div className="mt-1.5 flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={logout}
+              className="inline-flex items-center gap-1.5 font-mono text-[10px] font-bold tracking-wider text-red-400 uppercase transition-colors hover:text-red-300"
+            >
+              <LogOut className="h-3 w-3" aria-hidden="true" />
+              Keluar
+            </button>
+            <Link
+              to="/"
+              className="font-mono text-[10px] text-brand-muted transition-colors hover:text-white"
+            >
+              Website →
+            </Link>
+          </div>
         </div>
       )}
     </aside>

@@ -1,8 +1,15 @@
-import { Outlet } from "@tanstack/react-router";
+import { Navigate, Outlet } from "@tanstack/react-router";
+import { useAdminAuth } from "@/features/admin-auth/hooks/useAdminAuth";
 import { AdminMobileDock } from "./AdminMobileDock";
 import { AdminSidebar } from "./AdminSidebar";
 
 export function AdminLayout() {
+  const { isAuthenticated } = useAdminAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/admin/login" replace />;
+  }
+
   return (
     <div className="flex min-h-screen bg-obsidian text-foreground">
       <AdminSidebar />
