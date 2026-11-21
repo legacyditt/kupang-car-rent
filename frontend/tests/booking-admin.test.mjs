@@ -8,6 +8,7 @@ import {
   createBookingRecord,
   extendInProgressBooking,
   filterBookings,
+  getAllowedPaymentStatuses,
   getBookedCalendarDatesForCar,
   hasScheduleConflict,
   normalizeWhatsAppPhone,
@@ -215,17 +216,37 @@ test("canUseDownPayment requires >= 3 days and computePaymentSummary calculates 
   }
 });
 
-test("updateBookingPayment updates paymentStatus and paidAmount accurately", () => {
-  const dpPaid = updateBookingPayment(SAMPLE_BOOKINGS, "bk-1", {
+test("updateBookingPayment updates paymentStatus on CONFIRMED and blocks terminal statuses", () => {
+  const withConfirmed = [
+    ...SAMPLE_BOOKINGS.slice(0, 2),
+    {
+      ...SAMPLE_BOOKINGS[0],
+      id: "bk-conf",
+      status: "CONFIRMED",
+    },
+    {
+      ...SAMPLE_BOOKINGS[0],
+      id: "bk-done",
+      status: "COMPLETED",
+    },
+  ];
+
+  const dpPaid = updateBookingPayment(withConfirmed, "bk-conf", {
     paymentScheme: "DP_50",
     paymentStatus: "DP_PAID",
   });
   assert.equal(dpPaid.ok, true);
   if (dpPaid.ok) {
-    assert.equal(dpPaid.bookings[0].paymentScheme, "DP_50");
-    assert.equal(dpPaid.bookings[0].paymentStatus, "DP_PAID");
-    assert.equal(dpPaid.bookings[0].paidAmount, 750_000);
+    assert.equal(dpPaid.bookings[2].paymentScheme, "DP_50");
+    assert.equal(dpPaid.bookings[2].paymentStatus, "DP_PAID");
+    assert.equal(dpPaid.bookings[2].paidAmount, 750_000);
   }
+
+  const blockedDone = updateBookingPayment(withConfirmed, "bk-done", {
+    paymentScheme: "FULL",
+    paymentStatus: "PAID",
+  });
+  assert.equal(blockedDone.ok, false);
 });
 
 test("extendInProgressBooking extends IN_PROGRESS booking, checks BR-09, and adjusts PAID balance", () => {
@@ -275,6 +296,53 @@ test("extendInProgressBooking extends IN_PROGRESS booking, checks BR-09, and adj
     assert.equal(extended.bookings[0].finalPrice, 1_200_000);
     assert.equal(extended.bookings[0].paidAmount, 600_000);
     assert.equal(extended.bookings[0].paymentStatus, "DP_PAID");
+  }
+});
+
+test("COMPLETED requires PAID status and IN_PROGRESS prevents payment downgrade", () => {
+  const unpaidInProgress = [
+    {
+      ...SAMPLE_BOOKINGS[0],
+      id: "bk-ip-1",
+      status: "IN_PROGRESS",
+      paymentScheme: "DP_50",
+      paymentStatus: "DP_PAID",
+      paidAmount: 750_000,
+    },
+  ];
+
+  // Cannot complete while DP_PAID (unpaid balance remains)
+  const blockedComplete = transitionBookingStatus(
+    unpaidInProgress,
+    "bk-ip-1",
+    "COMPLETED"
+  );
+  assert.equal(blockedComplete.ok, false);
+
+  // In IN_PROGRESS with DP_PAID, only PAID is allowed as next payment status
+  assert.deepEqual(
+    getAllowedPaymentStatuses("IN_PROGRESS", "DP_50", "DP_PAID"),
+    ["PAID"]
+  );
+  const blockedDowngrade = updateBookingPayment(unpaidInProgress, "bk-ip-1", {
+    paymentScheme: "DP_50",
+    paymentStatus: "UNPAID",
+  });
+  assert.equal(blockedDowngrade.ok, false);
+
+  // Mark PAID, then COMPLETED succeeds
+  const paidRes = updateBookingPayment(unpaidInProgress, "bk-ip-1", {
+    paymentScheme: "DP_50",
+    paymentStatus: "PAID",
+  });
+  assert.equal(paidRes.ok, true);
+  if (paidRes.ok) {
+    const completed = transitionBookingStatus(
+      paidRes.bookings,
+      "bk-ip-1",
+      "COMPLETED"
+    );
+    assert.equal(completed.ok, true);
   }
 });
 

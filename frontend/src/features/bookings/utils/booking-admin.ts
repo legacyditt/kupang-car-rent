@@ -125,6 +125,23 @@ export function transitionBookingStatus(
     }
   }
 
+  // Payment-gated completion: cegah booking ditutup SELESAI jika masih ada sisa tagihan.
+  if (nextStatus === "COMPLETED") {
+    const payment = computePaymentSummary(
+      target.finalPrice,
+      target.paymentScheme ?? "FULL",
+      target.paymentStatus ?? "UNPAID",
+      target.paidAmount
+    );
+    if (payment.paymentStatus !== "PAID" || payment.remainingAmount > 0) {
+      return {
+        ok: false,
+        error:
+          "Lunasi pembayaran terlebih dahulu sebelum menandai booking selesai.",
+      };
+    }
+  }
+
   const nextBookings = bookings.map((item) =>
     item.id === bookingId
       ? {
@@ -455,6 +472,32 @@ export function getBookedCalendarDatesForCar(
   return Array.from(result);
 }
 
+/**
+ * Menentukan daftar status pembayaran yang boleh dipilih admin sesuai tahap booking.
+ * Pada IN_PROGRESS, DP yang sudah masuk tidak boleh mundur ke UNPAID/DP_PAID — hanya tersisa pelunasan (PAID).
+ */
+export function getAllowedPaymentStatuses(
+  bookingStatus: BookingStatus,
+  paymentScheme: PaymentScheme = "FULL",
+  currentPaymentStatus: PaymentStatus = "UNPAID"
+): PaymentStatus[] {
+  if (bookingStatus === "CONFIRMED") {
+    return paymentScheme === "DP_50"
+      ? ["UNPAID", "DP_PAID", "PAID"]
+      : ["UNPAID", "PAID"];
+  }
+
+  if (bookingStatus === "IN_PROGRESS") {
+    if (currentPaymentStatus === "PAID") return ["PAID"];
+    if (currentPaymentStatus === "DP_PAID") return ["PAID"];
+    return paymentScheme === "DP_50"
+      ? ["UNPAID", "DP_PAID", "PAID"]
+      : ["UNPAID", "PAID"];
+  }
+
+  return [currentPaymentStatus];
+}
+
 export function updateBookingPayment(
   bookings: BookingItem[],
   bookingId: string,
@@ -467,14 +510,43 @@ export function updateBookingPayment(
   if (!target) {
     return { ok: false, error: "Data booking tidak ditemukan." };
   }
+  if (
+    target.status === "COMPLETED" ||
+    target.status === "REJECTED" ||
+    target.status === "CANCELLED"
+  ) {
+    return {
+      ok: false,
+      error: "Status pembayaran tidak dapat diubah pada booking yang sudah selesai, ditolak, atau dibatalkan.",
+    };
+  }
 
   const effectiveScheme: PaymentScheme = canUseDownPayment(target.totalDays)
     ? updates.paymentScheme
     : "FULL";
+  const currentPayStatus: PaymentStatus = target.paymentStatus ?? "UNPAID";
+  const effectiveStatus: PaymentStatus =
+    target.status === "PENDING" ? "UNPAID" : updates.paymentStatus;
+
+  if (target.status !== "PENDING" && effectiveStatus !== currentPayStatus) {
+    const allowed = getAllowedPaymentStatuses(
+      target.status,
+      effectiveScheme,
+      currentPayStatus
+    );
+    if (!allowed.includes(effectiveStatus)) {
+      return {
+        ok: false,
+        error:
+          "Status pembayaran tidak dapat dikembalikan ke tahap sebelumnya saat sewa sedang jalan.",
+      };
+    }
+  }
+
   const summary = computePaymentSummary(
     target.finalPrice,
     effectiveScheme,
-    updates.paymentStatus
+    effectiveStatus
   );
 
   return {
