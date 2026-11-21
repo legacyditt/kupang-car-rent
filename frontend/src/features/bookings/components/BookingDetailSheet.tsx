@@ -30,6 +30,7 @@ import {
   type UpdateBookingDetailsInput,
 } from "../utils/booking-admin";
 import { readStoredCars } from "../utils/bookings-storage";
+import { BookingCalendarPicker } from "./BookingCalendarPicker";
 import { BookingPaymentPanel } from "./BookingPaymentPanel";
 import { BookingStatusBadge } from "./BookingStatusBadge";
 
@@ -214,23 +215,18 @@ export function BookingDetailSheet({
                     </option>
                   ))}
                 </select>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    aria-label="Tanggal Mulai"
-                    type="date"
-                    value={editStartDate}
-                    onChange={(e) => setEditStartDate(e.target.value)}
-                    className="h-8 border-hairline bg-carbon font-mono text-[11px] text-white"
-                  />
-                  <Input
-                    aria-label="Tanggal Selesai"
-                    type="date"
-                    min={editStartDate}
-                    value={editEndDate}
-                    onChange={(e) => setEditEndDate(e.target.value)}
-                    className="h-8 border-hairline bg-carbon font-mono text-[11px] text-white"
-                  />
-                </div>
+                <BookingCalendarPicker
+                  mode="range"
+                  carId={editCarId || booking.carId}
+                  excludeBookingId={booking.id}
+                  startDate={editStartDate}
+                  endDate={editEndDate}
+                  onChangeRange={(nextStart, nextEnd) => {
+                    setEditStartDate(nextStart);
+                    setEditEndDate(nextEnd);
+                  }}
+                  onError={setActionError}
+                />
                 <select
                   aria-label="Jenis Layanan"
                   value={editServiceType}
@@ -326,33 +322,33 @@ export function BookingDetailSheet({
 
           {/* Extend Rental while IN_PROGRESS */}
           {booking.status === "IN_PROGRESS" && onExtendBooking && (
-            <div className="space-y-2 rounded-xl border border-sky-400/30 bg-sky-400/5 p-3.5 text-xs">
+            <div className="space-y-2.5 rounded-xl border border-sky-400/30 bg-sky-400/5 p-3.5 text-xs">
               <p className="font-mono text-[10px] font-bold tracking-wider text-sky-300 uppercase">
                 Perpanjang Sewa (Sedang Jalan)
               </p>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="date"
-                  aria-label="Tanggal Selesai Baru"
-                  min={booking.endDate}
-                  value={extendEndDate}
-                  onChange={(e) => setExtendEndDate(e.target.value)}
-                  className="h-9 flex-1 border-hairline bg-obsidian font-mono text-xs text-white"
-                />
-                <Button
-                  type="button"
-                  size="sm"
-                  disabled={!extendEndDate || extendEndDate <= booking.endDate}
-                  onClick={() => {
-                    setActionError(null);
-                    const res = onExtendBooking(booking.id, extendEndDate);
-                    if (!res.ok) setActionError(res.error);
-                  }}
-                  className="h-9 bg-sky-500 font-mono text-[11px] font-bold text-obsidian uppercase hover:bg-sky-400 disabled:opacity-45"
-                >
-                  Perpanjang
-                </Button>
-              </div>
+              <BookingCalendarPicker
+                mode="extend-end"
+                carId={booking.carId}
+                excludeBookingId={booking.id}
+                startDate={booking.startDate}
+                endDate={extendEndDate}
+                minExtendEndDate={booking.endDate}
+                onChangeExtendEnd={setExtendEndDate}
+                onError={setActionError}
+              />
+              <Button
+                type="button"
+                size="sm"
+                disabled={!extendEndDate || extendEndDate <= booking.endDate}
+                onClick={() => {
+                  setActionError(null);
+                  const res = onExtendBooking(booking.id, extendEndDate);
+                  if (!res.ok) setActionError(res.error);
+                }}
+                className="h-9 w-full bg-sky-500 font-mono text-[11px] font-bold text-obsidian uppercase hover:bg-sky-400 disabled:opacity-45"
+              >
+                Perpanjang Sewa →
+              </Button>
             </div>
           )}
 
