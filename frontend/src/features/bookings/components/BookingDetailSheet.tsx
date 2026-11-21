@@ -25,14 +25,12 @@ import type {
   PaymentStatus,
 } from "../types/booking.types";
 import {
-  canUseDownPayment,
   computePaymentSummary,
-  PAYMENT_SCHEME_LABELS,
-  PAYMENT_STATUS_LABELS,
   yyyymmddToDdmmyyyy,
   type UpdateBookingDetailsInput,
 } from "../utils/booking-admin";
 import { readStoredCars } from "../utils/bookings-storage";
+import { BookingPaymentPanel } from "./BookingPaymentPanel";
 import { BookingStatusBadge } from "./BookingStatusBadge";
 
 interface BookingDetailSheetProps {
@@ -317,99 +315,14 @@ export function BookingDetailSheet({
             />
           </div>
 
-          {/* Payment Scheme & Status */}
-          {onUpdatePayment &&
-            (() => {
-              const dpEligible = canUseDownPayment(booking.totalDays);
-              const currentScheme: PaymentScheme = dpEligible
-                ? booking.paymentScheme ?? "FULL"
-                : "FULL";
-              const currentPayStatus: PaymentStatus =
-                booking.paymentStatus ?? "UNPAID";
-              const summary = computePaymentSummary(
-                booking.finalPrice,
-                currentScheme,
-                currentPayStatus,
-                booking.paidAmount
-              );
-
-              return (
-                <div className="space-y-2.5 rounded-xl border border-hairline bg-obsidian p-3.5 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-[10px] tracking-wider text-brand-muted uppercase">
-                      Pembayaran
-                    </span>
-                    <span className="font-mono text-[10px] font-bold text-gold">
-                      {PAYMENT_SCHEME_LABELS[currentScheme]} •{" "}
-                      {PAYMENT_STATUS_LABELS[currentPayStatus]}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <select
-                      aria-label="Skema Pembayaran"
-                      value={currentScheme}
-                      disabled={!dpEligible}
-                      onChange={(e) => {
-                        setActionError(null);
-                        const res = onUpdatePayment(booking.id, {
-                          paymentScheme: e.target.value as PaymentScheme,
-                          paymentStatus: currentPayStatus,
-                        });
-                        if (!res.ok) setActionError(res.error);
-                      }}
-                      className="h-8 rounded-md border border-hairline bg-carbon px-2 font-mono text-[11px] text-white disabled:opacity-50"
-                    >
-                      <option value="FULL">{PAYMENT_SCHEME_LABELS.FULL}</option>
-                      <option value="DP_50">
-                        {PAYMENT_SCHEME_LABELS.DP_50} (min. 3 hari)
-                      </option>
-                    </select>
-
-                    <select
-                      aria-label="Status Pembayaran"
-                      value={currentPayStatus}
-                      onChange={(e) => {
-                        setActionError(null);
-                        const res = onUpdatePayment(booking.id, {
-                          paymentScheme: currentScheme,
-                          paymentStatus: e.target.value as PaymentStatus,
-                        });
-                        if (!res.ok) setActionError(res.error);
-                      }}
-                      className="h-8 rounded-md border border-hairline bg-carbon px-2 font-mono text-[11px] text-white"
-                    >
-                      <option value="UNPAID">
-                        {PAYMENT_STATUS_LABELS.UNPAID}
-                      </option>
-                      {currentScheme === "DP_50" && (
-                        <option value="DP_PAID">
-                          {PAYMENT_STATUS_LABELS.DP_PAID} (50%)
-                        </option>
-                      )}
-                      <option value="PAID">{PAYMENT_STATUS_LABELS.PAID}</option>
-                    </select>
-                  </div>
-
-                  <div className="flex justify-between font-mono text-[11px]">
-                    <span className="text-brand-muted">
-                      Masuk: {formatRupiah(summary.paidAmount)}
-                    </span>
-                    <span
-                      className={
-                        summary.remainingAmount > 0
-                          ? "font-bold text-amber-300"
-                          : "font-bold text-emerald-400"
-                      }
-                    >
-                      {summary.remainingAmount > 0
-                        ? `Sisa: ${formatRupiah(summary.remainingAmount)}`
-                        : "Lunas"}
-                    </span>
-                  </div>
-                </div>
-              );
-            })()}
+          {/* Payment Scheme & Status (stage-aware SoC component) */}
+          {onUpdatePayment && (
+            <BookingPaymentPanel
+              booking={booking}
+              onUpdatePayment={onUpdatePayment}
+              onError={setActionError}
+            />
+          )}
 
           {/* Extend Rental while IN_PROGRESS */}
           {booking.status === "IN_PROGRESS" && onExtendBooking && (
@@ -560,16 +473,38 @@ export function BookingDetailSheet({
               </div>
             )}
 
-            {booking.status === "IN_PROGRESS" && (
-              <Button
-                type="button"
-                variant="accent"
-                onClick={() => handleTransition("COMPLETED")}
-                className="h-11 w-full font-display text-xs tracking-wider uppercase"
-              >
-                Tandai Selesai →
-              </Button>
-            )}
+            {booking.status === "IN_PROGRESS" &&
+              (() => {
+                // Payment-gated completion: tombol Tandai Selesai hanya aktif jika pembayaran sudah Lunas.
+                const payment = computePaymentSummary(
+                  booking.finalPrice,
+                  booking.paymentScheme ?? "FULL",
+                  booking.paymentStatus ?? "UNPAID",
+                  booking.paidAmount
+                );
+                const isPaid =
+                  payment.paymentStatus === "PAID" &&
+                  payment.remainingAmount === 0;
+
+                return (
+                  <div className="space-y-1.5">
+                    <Button
+                      type="button"
+                      variant="accent"
+                      disabled={!isPaid}
+                      onClick={() => handleTransition("COMPLETED")}
+                      className="h-11 w-full font-display text-xs tracking-wider uppercase disabled:opacity-45"
+                    >
+                      Tandai Selesai →
+                    </Button>
+                    {!isPaid && (
+                      <p className="text-center font-mono text-[10px] text-amber-300">
+                        Lunasi pembayaran untuk mengaktifkan tombol selesai.
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
 
             {(booking.status === "COMPLETED" ||
               booking.status === "REJECTED" ||
