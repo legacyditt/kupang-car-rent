@@ -190,6 +190,17 @@ function generateBookingCode(existingBookings: BookingItem[]): string {
   return candidate;
 }
 
+export const PAYMENT_SCHEME_LABELS: Record<PaymentScheme, string> = {
+  FULL: "Bayar Penuh",
+  DP_50: "DP 50%",
+};
+
+export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  UNPAID: "Belum Bayar",
+  DP_PAID: "DP Masuk",
+  PAID: "Lunas",
+};
+
 export const DOWN_PAYMENT_MIN_DAYS = 3;
 
 export function canUseDownPayment(totalDays: number): boolean {
@@ -442,5 +453,114 @@ export function getBookedCalendarDatesForCar(
   }
 
   return Array.from(result);
+}
+
+export function updateBookingPayment(
+  bookings: BookingItem[],
+  bookingId: string,
+  updates: {
+    paymentScheme: PaymentScheme;
+    paymentStatus: PaymentStatus;
+  }
+): { ok: true; bookings: BookingItem[] } | { ok: false; error: string } {
+  const target = bookings.find((b) => b.id === bookingId);
+  if (!target) {
+    return { ok: false, error: "Data booking tidak ditemukan." };
+  }
+
+  const effectiveScheme: PaymentScheme = canUseDownPayment(target.totalDays)
+    ? updates.paymentScheme
+    : "FULL";
+  const summary = computePaymentSummary(
+    target.finalPrice,
+    effectiveScheme,
+    updates.paymentStatus
+  );
+
+  return {
+    ok: true,
+    bookings: bookings.map((item) =>
+      item.id === bookingId
+        ? {
+            ...item,
+            paymentScheme: summary.paymentScheme,
+            paymentStatus: summary.paymentStatus,
+            paidAmount: summary.paidAmount,
+          }
+        : item
+    ),
+  };
+}
+
+export function extendInProgressBooking(
+  bookings: BookingItem[],
+  bookingId: string,
+  newEndDate: string,
+  overrideFinalPrice?: number
+): { ok: true; bookings: BookingItem[] } | { ok: false; error: string } {
+  const target = bookings.find((b) => b.id === bookingId);
+  if (!target) {
+    return { ok: false, error: "Data booking tidak ditemukan." };
+  }
+  if (target.status !== "IN_PROGRESS") {
+    return {
+      ok: false,
+      error: "Perpanjang sewa hanya tersedia untuk booking berstatus Sedang Jalan.",
+    };
+  }
+  if (!newEndDate || newEndDate <= target.endDate) {
+    return {
+      ok: false,
+      error: "Tanggal selesai baru harus setelah tanggal selesai saat ini.",
+    };
+  }
+
+  const totalDays = calculateInclusiveDays(target.startDate, newEndDate);
+  const dailyRate =
+    target.totalDays > 0 ? Math.round(target.estimatedPrice / target.totalDays) : 0;
+  const estimatedPrice = totalDays * dailyRate;
+  const wasOverridden = target.finalPrice !== target.estimatedPrice;
+  const extraDays = totalDays - target.totalDays;
+  const finalPrice =
+    overrideFinalPrice !== undefined && Number.isFinite(overrideFinalPrice)
+      ? Math.max(0, overrideFinalPrice)
+      : wasOverridden
+        ? target.finalPrice + extraDays * dailyRate
+        : estimatedPrice;
+
+  const prevPaid = computePaymentSummary(
+    target.finalPrice,
+    target.paymentScheme ?? "FULL",
+    target.paymentStatus ?? "UNPAID",
+    target.paidAmount
+  ).paidAmount;
+
+  let nextPaymentStatus: PaymentStatus = target.paymentStatus ?? "UNPAID";
+  if (nextPaymentStatus === "PAID" && finalPrice > prevPaid) {
+    nextPaymentStatus = prevPaid > 0 ? "DP_PAID" : "UNPAID";
+  }
+
+  const extended: BookingItem = {
+    ...target,
+    endDate: newEndDate,
+    totalDays,
+    estimatedPrice,
+    finalPrice,
+    paymentStatus: nextPaymentStatus,
+    paidAmount: prevPaid,
+  };
+
+  const conflict = hasScheduleConflict(extended, bookings);
+  if (conflict) {
+    return {
+      ok: false,
+      error: `Perpanjangan bentrok dengan ${conflict.bookingCode} (${conflict.customerName}, ${conflict.startDate} s/d ${conflict.endDate}).`,
+    };
+  }
+
+  return {
+    ok: true,
+    bookings: bookings.map((item) => (item.id === bookingId ? extended : item)),
+  };
 }
 

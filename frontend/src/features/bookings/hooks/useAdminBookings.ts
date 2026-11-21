@@ -1,12 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
-import type { BookingItem, BookingStatus } from "../types/booking.types";
+import type {
+  BookingItem,
+  BookingStatus,
+  PaymentScheme,
+  PaymentStatus,
+} from "../types/booking.types";
 import {
   countBookingsByStatus,
   createBookingRecord,
+  extendInProgressBooking,
   filterBookings,
   hasScheduleConflict,
   transitionBookingStatus,
   updateBookingDetails,
+  updateBookingPayment,
   type BookingFilterTab,
   type CreateBookingInput,
   type UpdateBookingDetailsInput,
@@ -111,6 +118,36 @@ export function useAdminBookings() {
     return { ok: true };
   };
 
+  const updatePayment = (
+    bookingId: string,
+    updates: { paymentScheme: PaymentScheme; paymentStatus: PaymentStatus }
+  ): { ok: true } | { ok: false; error: string } => {
+    const result = updateBookingPayment(bookings, bookingId, updates);
+    if (!result.ok) {
+      return result;
+    }
+    persistBookings(result.bookings);
+    return { ok: true };
+  };
+
+  const extendBooking = (
+    bookingId: string,
+    newEndDate: string,
+    overrideFinalPrice?: number
+  ): { ok: true } | { ok: false; error: string } => {
+    const result = extendInProgressBooking(
+      bookings,
+      bookingId,
+      newEndDate,
+      overrideFinalPrice
+    );
+    if (!result.ok) {
+      return result;
+    }
+    persistBookings(result.bookings);
+    return { ok: true };
+  };
+
   return {
     bookings,
     filteredBookings,
@@ -126,6 +163,8 @@ export function useAdminBookings() {
     saveNotesAndPrice,
     addBooking,
     editBooking,
+    updatePayment,
+    extendBooking,
   };
 }
 

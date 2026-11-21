@@ -6,12 +6,14 @@ import {
   computePaymentSummary,
   countBookingsByStatus,
   createBookingRecord,
+  extendInProgressBooking,
   filterBookings,
   getBookedCalendarDatesForCar,
   hasScheduleConflict,
   normalizeWhatsAppPhone,
   transitionBookingStatus,
   updateBookingDetails,
+  updateBookingPayment,
 } from "../src/features/bookings/utils/booking-admin.ts";
 
 const SAMPLE_BOOKINGS = [
@@ -210,6 +212,69 @@ test("canUseDownPayment requires >= 3 days and computePaymentSummary calculates 
     assert.equal(shortBooking.booking.paymentScheme, "FULL");
     assert.equal(shortBooking.booking.paymentStatus, "UNPAID");
     assert.equal(shortBooking.booking.paidAmount, 0);
+  }
+});
+
+test("updateBookingPayment updates paymentStatus and paidAmount accurately", () => {
+  const dpPaid = updateBookingPayment(SAMPLE_BOOKINGS, "bk-1", {
+    paymentScheme: "DP_50",
+    paymentStatus: "DP_PAID",
+  });
+  assert.equal(dpPaid.ok, true);
+  if (dpPaid.ok) {
+    assert.equal(dpPaid.bookings[0].paymentScheme, "DP_50");
+    assert.equal(dpPaid.bookings[0].paymentStatus, "DP_PAID");
+    assert.equal(dpPaid.bookings[0].paidAmount, 750_000);
+  }
+});
+
+test("extendInProgressBooking extends IN_PROGRESS booking, checks BR-09, and adjusts PAID balance", () => {
+  const withInProgress = [
+    {
+      ...SAMPLE_BOOKINGS[0],
+      id: "bk-prog",
+      bookingCode: "BK-PROG-01",
+      startDate: "2026-11-18",
+      endDate: "2026-11-19",
+      totalDays: 2,
+      estimatedPrice: 600_000,
+      finalPrice: 600_000,
+      paymentScheme: "FULL",
+      paymentStatus: "PAID",
+      paidAmount: 600_000,
+      status: "IN_PROGRESS",
+    },
+    SAMPLE_BOOKINGS[2], // CONFIRMED 2026-11-20..22 on car-avanza
+  ];
+
+  // Blocked by bk-3 (2026-11-20..22)
+  const conflictRes = extendInProgressBooking(
+    withInProgress,
+    "bk-prog",
+    "2026-11-21"
+  );
+  assert.equal(conflictRes.ok, false);
+
+  // Valid extension when no conflict on car-brio
+  const cleanBookings = [
+    {
+      ...withInProgress[0],
+      carId: "car-brio",
+      carName: "Honda Brio",
+    },
+  ];
+  const extended = extendInProgressBooking(
+    cleanBookings,
+    "bk-prog",
+    "2026-11-21"
+  );
+  assert.equal(extended.ok, true);
+  if (extended.ok) {
+    assert.equal(extended.bookings[0].endDate, "2026-11-21");
+    assert.equal(extended.bookings[0].totalDays, 4);
+    assert.equal(extended.bookings[0].finalPrice, 1_200_000);
+    assert.equal(extended.bookings[0].paidAmount, 600_000);
+    assert.equal(extended.bookings[0].paymentStatus, "DP_PAID");
   }
 });
 
