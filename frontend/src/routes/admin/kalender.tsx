@@ -49,6 +49,8 @@ export function AdminCalendarPage() {
     saveNotesAndPrice,
     addBooking,
     editBooking,
+    updatePayment,
+    extendBooking,
   } = useAdminBookings();
   const cars = useMemo(() => readStoredCars(), []);
   const todayStr = useMemo(() => getTodayYyyymmdd(), []);
@@ -283,6 +285,8 @@ export function AdminCalendarPage() {
         onChangeStatus={changeStatus}
         onSaveDetails={saveNotesAndPrice}
         onEditBooking={editBooking}
+        onUpdatePayment={updatePayment}
+        onExtendBooking={extendBooking}
       />
 
       <AddBookingDialog

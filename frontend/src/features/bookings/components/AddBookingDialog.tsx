@@ -21,8 +21,9 @@ import {
   type RentalServiceType,
 } from "@/features/cars/utils/booking";
 import { cn, formatRupiah } from "@/lib/utils";
-import type { BookingItem } from "../types/booking.types";
+import type { BookingItem, PaymentScheme } from "../types/booking.types";
 import {
+  canUseDownPayment,
   ddmmyyyyToYyyymmdd,
   getBookedCalendarDatesForCar,
   yyyymmddToDdmmyyyy,
@@ -60,6 +61,7 @@ export function AddBookingDialog({
   const [carId, setCarId] = useState("");
   const [serviceType, setServiceType] =
     useState<RentalServiceType>("SELF_DRIVE");
+  const [paymentScheme, setPaymentScheme] = useState<PaymentScheme>("FULL");
   const [startDate, setStartDate] = useState<string | null>(null); // DD-MM-YYYY
   const [endDate, setEndDate] = useState<string | null>(null); // DD-MM-YYYY
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -80,6 +82,7 @@ export function AddBookingDialog({
     setCustomerPhone("");
     setCarId(defaultCar?.id ?? "");
     setServiceType("SELF_DRIVE");
+    setPaymentScheme("FULL");
     if (initialDate) {
       const formatted = yyyymmddToDdmmyyyy(initialDate);
       const [y, m] = initialDate.split("-").map(Number);
@@ -185,6 +188,7 @@ export function AddBookingDialog({
       startDate: ddmmyyyyToYyyymmdd(startDate),
       endDate: ddmmyyyyToYyyymmdd(endDate),
       serviceType,
+      paymentScheme: canUseDownPayment(totalDays) ? paymentScheme : "FULL",
       finalPrice:
         Number.isFinite(parsedFinalPrice) && parsedFinalPrice >= 0
           ? parsedFinalPrice
@@ -390,6 +394,34 @@ export function AddBookingDialog({
               <p className="mt-1 font-mono text-sm font-bold text-white tabular-nums">
                 {totalDays > 0 ? formatRupiah(estimatedPrice) : "—"}
               </p>
+              {canUseDownPayment(totalDays) && (
+                <div className="mt-2 flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentScheme("FULL")}
+                    className={cn(
+                      "rounded border px-2 py-0.5 font-mono text-[10px]",
+                      paymentScheme === "FULL"
+                        ? "border-gold bg-gold/15 text-gold"
+                        : "border-hairline text-brand-muted"
+                    )}
+                  >
+                    Penuh
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentScheme("DP_50")}
+                    className={cn(
+                      "rounded border px-2 py-0.5 font-mono text-[10px]",
+                      paymentScheme === "DP_50"
+                        ? "border-gold bg-gold/15 text-gold"
+                        : "border-hairline text-brand-muted"
+                    )}
+                  >
+                    DP 50%
+                  </button>
+                </div>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label

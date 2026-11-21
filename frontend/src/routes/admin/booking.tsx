@@ -42,6 +42,8 @@ export function AdminBookingsPage() {
     saveNotesAndPrice,
     addBooking,
     editBooking,
+    updatePayment,
+    extendBooking,
   } = useAdminBookings();
   const [isAddOpen, setIsAddOpen] = useState(false);
 
@@ -166,6 +168,8 @@ export function AdminBookingsPage() {
         onChangeStatus={changeStatus}
         onSaveDetails={saveNotesAndPrice}
         onEditBooking={editBooking}
+        onUpdatePayment={updatePayment}
+        onExtendBooking={extendBooking}
       />
 
       <AddBookingDialog

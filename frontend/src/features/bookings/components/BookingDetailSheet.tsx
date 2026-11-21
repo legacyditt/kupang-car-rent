@@ -18,8 +18,17 @@ import {
   type RentalServiceType,
 } from "@/features/cars/utils/booking";
 import { formatRupiah } from "@/lib/utils";
-import type { BookingItem, BookingStatus } from "../types/booking.types";
+import type {
+  BookingItem,
+  BookingStatus,
+  PaymentScheme,
+  PaymentStatus,
+} from "../types/booking.types";
 import {
+  canUseDownPayment,
+  computePaymentSummary,
+  PAYMENT_SCHEME_LABELS,
+  PAYMENT_STATUS_LABELS,
   yyyymmddToDdmmyyyy,
   type UpdateBookingDetailsInput,
 } from "../utils/booking-admin";
@@ -44,6 +53,14 @@ interface BookingDetailSheetProps {
     bookingId: string,
     patch: UpdateBookingDetailsInput
   ) => { ok: true } | { ok: false; error: string };
+  onUpdatePayment?: (
+    bookingId: string,
+    updates: { paymentScheme: PaymentScheme; paymentStatus: PaymentStatus }
+  ) => { ok: true } | { ok: false; error: string };
+  onExtendBooking?: (
+    bookingId: string,
+    newEndDate: string
+  ) => { ok: true } | { ok: false; error: string };
 }
 
 export function BookingDetailSheet({
@@ -54,6 +71,8 @@ export function BookingDetailSheet({
   onChangeStatus,
   onSaveDetails,
   onEditBooking,
+  onUpdatePayment,
+  onExtendBooking,
 }: BookingDetailSheetProps) {
   const [finalPrice, setFinalPrice] = useState("0");
   const [internalNote, setInternalNote] = useState("");
@@ -66,6 +85,7 @@ export function BookingDetailSheet({
   const [editEndDate, setEditEndDate] = useState("");
   const [editServiceType, setEditServiceType] =
     useState<RentalServiceType>("SELF_DRIVE");
+  const [extendEndDate, setExtendEndDate] = useState("");
 
   const cars = useMemo(() => (open ? readStoredCars() : []), [open]);
 
@@ -81,6 +101,7 @@ export function BookingDetailSheet({
     setEditStartDate(booking.startDate);
     setEditEndDate(booking.endDate);
     setEditServiceType(booking.serviceType);
+    setExtendEndDate(booking.endDate);
   }, [booking]);
 
   if (!booking) return null;
@@ -295,6 +316,132 @@ export function BookingDetailSheet({
               className="border-gold/35 bg-obsidian font-mono text-sm font-bold text-gold focus-visible:border-gold focus-visible:ring-0 disabled:opacity-70"
             />
           </div>
+
+          {/* Payment Scheme & Status */}
+          {onUpdatePayment &&
+            (() => {
+              const dpEligible = canUseDownPayment(booking.totalDays);
+              const currentScheme: PaymentScheme = dpEligible
+                ? booking.paymentScheme ?? "FULL"
+                : "FULL";
+              const currentPayStatus: PaymentStatus =
+                booking.paymentStatus ?? "UNPAID";
+              const summary = computePaymentSummary(
+                booking.finalPrice,
+                currentScheme,
+                currentPayStatus,
+                booking.paidAmount
+              );
+
+              return (
+                <div className="space-y-2.5 rounded-xl border border-hairline bg-obsidian p-3.5 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-[10px] tracking-wider text-brand-muted uppercase">
+                      Pembayaran
+                    </span>
+                    <span className="font-mono text-[10px] font-bold text-gold">
+                      {PAYMENT_SCHEME_LABELS[currentScheme]} •{" "}
+                      {PAYMENT_STATUS_LABELS[currentPayStatus]}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <select
+                      aria-label="Skema Pembayaran"
+                      value={currentScheme}
+                      disabled={!dpEligible}
+                      onChange={(e) => {
+                        setActionError(null);
+                        const res = onUpdatePayment(booking.id, {
+                          paymentScheme: e.target.value as PaymentScheme,
+                          paymentStatus: currentPayStatus,
+                        });
+                        if (!res.ok) setActionError(res.error);
+                      }}
+                      className="h-8 rounded-md border border-hairline bg-carbon px-2 font-mono text-[11px] text-white disabled:opacity-50"
+                    >
+                      <option value="FULL">{PAYMENT_SCHEME_LABELS.FULL}</option>
+                      <option value="DP_50">
+                        {PAYMENT_SCHEME_LABELS.DP_50} (min. 3 hari)
+                      </option>
+                    </select>
+
+                    <select
+                      aria-label="Status Pembayaran"
+                      value={currentPayStatus}
+                      onChange={(e) => {
+                        setActionError(null);
+                        const res = onUpdatePayment(booking.id, {
+                          paymentScheme: currentScheme,
+                          paymentStatus: e.target.value as PaymentStatus,
+                        });
+                        if (!res.ok) setActionError(res.error);
+                      }}
+                      className="h-8 rounded-md border border-hairline bg-carbon px-2 font-mono text-[11px] text-white"
+                    >
+                      <option value="UNPAID">
+                        {PAYMENT_STATUS_LABELS.UNPAID}
+                      </option>
+                      {currentScheme === "DP_50" && (
+                        <option value="DP_PAID">
+                          {PAYMENT_STATUS_LABELS.DP_PAID} (50%)
+                        </option>
+                      )}
+                      <option value="PAID">{PAYMENT_STATUS_LABELS.PAID}</option>
+                    </select>
+                  </div>
+
+                  <div className="flex justify-between font-mono text-[11px]">
+                    <span className="text-brand-muted">
+                      Masuk: {formatRupiah(summary.paidAmount)}
+                    </span>
+                    <span
+                      className={
+                        summary.remainingAmount > 0
+                          ? "font-bold text-amber-300"
+                          : "font-bold text-emerald-400"
+                      }
+                    >
+                      {summary.remainingAmount > 0
+                        ? `Sisa: ${formatRupiah(summary.remainingAmount)}`
+                        : "Lunas"}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
+
+          {/* Extend Rental while IN_PROGRESS */}
+          {booking.status === "IN_PROGRESS" && onExtendBooking && (
+            <div className="space-y-2 rounded-xl border border-sky-400/30 bg-sky-400/5 p-3.5 text-xs">
+              <p className="font-mono text-[10px] font-bold tracking-wider text-sky-300 uppercase">
+                Perpanjang Sewa (Sedang Jalan)
+              </p>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="date"
+                  aria-label="Tanggal Selesai Baru"
+                  min={booking.endDate}
+                  value={extendEndDate}
+                  onChange={(e) => setExtendEndDate(e.target.value)}
+                  className="h-9 flex-1 border-hairline bg-obsidian font-mono text-xs text-white"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={!extendEndDate || extendEndDate <= booking.endDate}
+                  onClick={() => {
+                    setActionError(null);
+                    const res = onExtendBooking(booking.id, extendEndDate);
+                    if (!res.ok) setActionError(res.error);
+                  }}
+                  className="h-9 bg-sky-500 font-mono text-[11px] font-bold text-obsidian uppercase hover:bg-sky-400 disabled:opacity-45"
+                >
+                  Perpanjang
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Internal Note */}
           <div className="space-y-1.5">
