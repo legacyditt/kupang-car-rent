@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   canTransitionStatus,
+  canUseDownPayment,
+  computePaymentSummary,
   countBookingsByStatus,
   createBookingRecord,
   filterBookings,
@@ -174,5 +176,40 @@ test("updateBookingDetails adjusts un-overridden finalPrice and enforces BR-09 f
 test("getBookedCalendarDatesForCar returns DD-MM-YYYY dates only for CONFIRMED and IN_PROGRESS", () => {
   const dates = getBookedCalendarDatesForCar("car-avanza", SAMPLE_BOOKINGS);
   assert.deepEqual(dates, ["20-11-2026", "21-11-2026", "22-11-2026"]);
+});
+
+test("canUseDownPayment requires >= 3 days and computePaymentSummary calculates DP 50%", () => {
+  assert.equal(canUseDownPayment(2), false);
+  assert.equal(canUseDownPayment(3), true);
+
+  const dpSummary = computePaymentSummary(1_500_000, "DP_50", "UNPAID", 0);
+  assert.equal(dpSummary.dpAmount, 750_000);
+  assert.equal(dpSummary.remainingAmount, 1_500_000);
+
+  const dpPaidSummary = computePaymentSummary(1_500_000, "DP_50", "DP_PAID");
+  assert.equal(dpPaidSummary.paidAmount, 750_000);
+  assert.equal(dpPaidSummary.remainingAmount, 750_000);
+
+  // < 3 days forces FULL even if DP_50 requested
+  const shortBooking = createBookingRecord(
+    {
+      customerName: "Rudi A.",
+      customerPhone: "081234567890",
+      carId: "car-brio",
+      carName: "Honda Brio",
+      pricePerDay: 300_000,
+      startDate: "2026-11-25",
+      endDate: "2026-11-26",
+      serviceType: "SELF_DRIVE",
+      paymentScheme: "DP_50",
+    },
+    SAMPLE_BOOKINGS
+  );
+  assert.equal(shortBooking.ok, true);
+  if (shortBooking.ok) {
+    assert.equal(shortBooking.booking.paymentScheme, "FULL");
+    assert.equal(shortBooking.booking.paymentStatus, "UNPAID");
+    assert.equal(shortBooking.booking.paidAmount, 0);
+  }
 });
 

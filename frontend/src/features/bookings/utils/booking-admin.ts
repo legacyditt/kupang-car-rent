@@ -1,5 +1,10 @@
 import type { RentalServiceType } from "../../cars/utils/booking";
-import type { BookingItem, BookingStatus } from "../types/booking.types";
+import type {
+  BookingItem,
+  BookingStatus,
+  PaymentScheme,
+  PaymentStatus,
+} from "../types/booking.types";
 
 export type BookingFilterTab = "ALL" | BookingStatus;
 
@@ -185,6 +190,46 @@ function generateBookingCode(existingBookings: BookingItem[]): string {
   return candidate;
 }
 
+export const DOWN_PAYMENT_MIN_DAYS = 3;
+
+export function canUseDownPayment(totalDays: number): boolean {
+  return totalDays >= DOWN_PAYMENT_MIN_DAYS;
+}
+
+export function computePaymentSummary(
+  finalPrice: number,
+  paymentScheme: PaymentScheme = "FULL",
+  paymentStatus: PaymentStatus = "UNPAID",
+  explicitPaidAmount?: number
+): {
+  paymentScheme: PaymentScheme;
+  paymentStatus: PaymentStatus;
+  dpAmount: number;
+  paidAmount: number;
+  remainingAmount: number;
+} {
+  const safePrice = Math.max(0, finalPrice);
+  const dpAmount =
+    paymentScheme === "DP_50" ? Math.round(safePrice * 0.5) : safePrice;
+
+  let paidAmount = 0;
+  if (explicitPaidAmount !== undefined && Number.isFinite(explicitPaidAmount)) {
+    paidAmount = Math.max(0, Math.min(safePrice, explicitPaidAmount));
+  } else if (paymentStatus === "PAID") {
+    paidAmount = safePrice;
+  } else if (paymentStatus === "DP_PAID") {
+    paidAmount = dpAmount;
+  }
+
+  return {
+    paymentScheme,
+    paymentStatus,
+    dpAmount,
+    paidAmount,
+    remainingAmount: Math.max(0, safePrice - paidAmount),
+  };
+}
+
 export interface CreateBookingInput {
   customerName: string;
   customerPhone: string;
@@ -194,6 +239,7 @@ export interface CreateBookingInput {
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
   serviceType: RentalServiceType;
+  paymentScheme?: PaymentScheme;
   finalPrice?: number;
   internalNote?: string;
 }
@@ -233,6 +279,10 @@ export function createBookingRecord(
     input.finalPrice !== undefined && Number.isFinite(input.finalPrice)
       ? Math.max(0, input.finalPrice)
       : estimatedPrice;
+  const paymentScheme: PaymentScheme =
+    input.paymentScheme === "DP_50" && canUseDownPayment(totalDays)
+      ? "DP_50"
+      : "FULL";
 
   const booking: BookingItem = {
     id: `bk-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -247,6 +297,9 @@ export function createBookingRecord(
     serviceType: input.serviceType,
     estimatedPrice,
     finalPrice,
+    paymentScheme,
+    paymentStatus: "UNPAID",
+    paidAmount: 0,
     status: "PENDING",
     internalNote: input.internalNote?.trim() ?? "",
     createdAt: formatTodayYyyymmdd(),

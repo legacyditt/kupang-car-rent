@@ -98,6 +98,7 @@ export function buildBookingMessage(params: {
   phone?: string;
   bookingCode?: string;
   serviceType: RentalServiceType;
+  paymentScheme?: "FULL" | "DP_50";
   startDate: string;
   endDate: string;
   totalDays: number;
@@ -109,11 +110,13 @@ export function buildBookingMessage(params: {
     phone,
     bookingCode,
     serviceType,
+    paymentScheme = "FULL",
     startDate,
     endDate,
     totalDays,
     totalPrice,
   } = params;
+  const dpAmount = Math.round(totalPrice * 0.5);
   return [
     "Halo, saya ingin booking mobil:",
     ...(bookingCode ? [`- Kode Booking: ${bookingCode}`] : []),
@@ -125,5 +128,10 @@ export function buildBookingMessage(params: {
     `- Tanggal Selesai: ${endDate}`,
     `- Durasi: ${totalDays} hari`,
     `- Estimasi Total: ${formatRupiah(totalPrice)}`,
+    ...(paymentScheme === "DP_50" && totalDays >= 3
+      ? [
+          `- Skema Bayar: DP 50% (${formatRupiah(dpAmount)}, sisa ${formatRupiah(totalPrice - dpAmount)})`,
+        ]
+      : ["- Skema Bayar: Bayar Penuh"]),
   ].join("\n");
 }

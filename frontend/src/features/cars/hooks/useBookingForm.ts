@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import {
+  canUseDownPayment,
   createBookingRecord,
   ddmmyyyyToYyyymmdd,
   getBookedCalendarDatesForCar,
 } from "@/features/bookings/utils/booking-admin";
+import type { PaymentScheme } from "@/features/bookings/types/booking.types";
 import {
   readStoredBookings,
   subscribeStoredBookings,
@@ -29,6 +31,7 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
   const [phone, setPhone] = useState("");
   const [serviceType, setServiceType] =
     useState<RentalServiceType>("SELF_DRIVE");
+  const [paymentScheme, setPaymentScheme] = useState<PaymentScheme>("FULL");
   const [startDate, setStartDate] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -64,6 +67,12 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
   const totalDays =
     startDate && endDate ? calculateRentalDays(startDate, endDate) : 0;
   const totalPrice = totalDays * car.pricePerDay;
+  const isDpEligible = canUseDownPayment(totalDays);
+  const effectivePaymentScheme: PaymentScheme = isDpEligible
+    ? paymentScheme
+    : "FULL";
+  const dpAmount =
+    effectivePaymentScheme === "DP_50" ? Math.round(totalPrice * 0.5) : totalPrice;
 
   // Atur rentang tanggal mulai–selesai dan tolak rentang yang menabrak jadwal terbooking.
   function handleDateClick(iso: string) {
@@ -122,6 +131,7 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
         startDate: ddmmyyyyToYyyymmdd(startDate),
         endDate: ddmmyyyyToYyyymmdd(endDate),
         serviceType,
+        paymentScheme: effectivePaymentScheme,
       },
       latestBookings,
     );
@@ -140,6 +150,7 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
       phone: created.booking.customerPhone,
       bookingCode: created.booking.bookingCode,
       serviceType,
+      paymentScheme: effectivePaymentScheme,
       startDate,
       endDate,
       totalDays,
@@ -149,6 +160,7 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
     window.open(buildWhatsAppUrl(message), "_blank", "noopener,noreferrer");
     setName("");
     setPhone("");
+    setPaymentScheme("FULL");
     setStartDate(null);
     setEndDate(null);
     setErrorMsg(null);
@@ -162,6 +174,10 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
     setPhone,
     serviceType,
     setServiceType,
+    paymentScheme: effectivePaymentScheme,
+    setPaymentScheme,
+    isDpEligible,
+    dpAmount,
     startDate,
     endDate,
     viewDate,
