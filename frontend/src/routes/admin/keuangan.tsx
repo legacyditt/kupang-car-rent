@@ -140,15 +140,15 @@ export function AdminFinancePage() {
         <div className="overflow-x-auto rounded-2xl border border-hairline bg-carbon">
           <table className="w-full min-w-[720px] text-left text-xs">
             <thead>
-              <tr className="border-b border-hairline font-mono text-[10px] tracking-wider text-brand-muted uppercase">
+              <tr className="border-b border-hairline text-center font-mono text-[10px] tracking-wider text-brand-muted uppercase">
                 <th className="px-4 py-3">Kode</th>
                 <th className="px-4 py-3">Pelanggan</th>
                 <th className="px-4 py-3">Unit &amp; Jadwal</th>
                 <th className="px-4 py-3">Skema</th>
                 <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Total</th>
-                <th className="px-4 py-3 text-right">Masuk</th>
-                <th className="px-4 py-3 text-right">Sisa</th>
+                <th className="px-4 py-3">Total</th>
+                <th className="px-4 py-3">Masuk</th>
+                <th className="px-4 py-3">Sisa</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-hairline/70">
