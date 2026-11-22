@@ -36,5 +36,10 @@ _Avoid_: Status Tagihan, Status Invoice
 Ulasan pelanggan yang dikelola admin dan ditampilkan pada halaman pelanggan di bawah banner WhatsApp.
 _Avoid_: Review, Komentar
 
+**Rekap Keuangan**:
+Daftar booking yang sudah memiliki uang masuk (`DP_PAID` atau `PAID`) beserta ringkasan total pemasukan, sisa tagihan DP, dan jumlah transaksi.
+_Avoid_: Kas, Buku Besar, Pengeluaran
+
+
 
 
