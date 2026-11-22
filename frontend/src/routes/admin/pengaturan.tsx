@@ -59,7 +59,7 @@ export function AdminSettingsPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="font-mono text-[11px] font-bold tracking-[0.14em] text-gold uppercase">
-            06 / Pengaturan Bisnis
+            07 / Pengaturan Bisnis
           </p>
           <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-white sm:text-3xl">
             Profil &amp; Kontak Rental.

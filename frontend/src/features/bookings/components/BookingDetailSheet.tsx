@@ -145,6 +145,15 @@ export function BookingDetailSheet({
     `Halo ${booking.customerName}, terkait booking ${booking.bookingCode} (${booking.carName}, ${yyyymmddToDdmmyyyy(booking.startDate)} s/d ${yyyymmddToDdmmyyyy(booking.endDate)}).`
   )}`;
 
+  const reviewLinkUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/ulasan?kode=${encodeURIComponent(booking.bookingCode)}`
+      : `/ulasan?kode=${encodeURIComponent(booking.bookingCode)}`;
+
+  const reviewWaUrl = `https://wa.me/${booking.customerPhone}?text=${encodeURIComponent(
+    `Halo ${booking.customerName}, terima kasih sudah menyewa ${booking.carName} (${booking.bookingCode}). Boleh bantu isi ulasan singkat di link berikut: ${reviewLinkUrl}`
+  )}`;
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full max-w-md overflow-y-auto border-l border-gold/25 bg-carbon p-6 text-white">
@@ -505,21 +514,40 @@ export function BookingDetailSheet({
             {(booking.status === "COMPLETED" ||
               booking.status === "REJECTED" ||
               booking.status === "CANCELLED") && (
-              <Button
-                type="button"
-                variant="outline"
-                asChild
-                className="h-10 w-full border-hairline bg-obsidian font-mono text-[11px] font-bold text-white uppercase hover:border-gold/50 hover:text-gold"
-              >
-                <a
-                  href={customerWaUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+              <div className="space-y-2">
+                {booking.status === "COMPLETED" && (
+                  <Button
+                    type="button"
+                    variant="accent"
+                    asChild
+                    className="h-10 w-full font-mono text-[11px] font-bold uppercase"
+                  >
+                    <a
+                      href={reviewWaUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                      Kirim Link Testimoni (WA)
+                    </a>
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  asChild
+                  className="h-10 w-full border-hairline bg-obsidian font-mono text-[11px] font-bold text-white uppercase hover:border-gold/50 hover:text-gold"
                 >
-                  <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
-                  Hubungi Pelanggan via WA
-                </a>
-              </Button>
+                  <a
+                    href={customerWaUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                    Hubungi Pelanggan via WA
+                  </a>
+                </Button>
+              </div>
             )}
           </div>
         </div>

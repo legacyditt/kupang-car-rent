@@ -6,9 +6,17 @@ import { AdminCarsPage } from "@/routes/admin/mobil";
 import { AdminBookingsPage } from "@/routes/admin/booking";
 import { AdminCalendarPage } from "@/routes/admin/kalender";
 import { AdminFinancePage } from "@/routes/admin/keuangan";
+import { AdminTestimonialsPage } from "@/routes/admin/testimoni";
 import { AdminSettingsPage } from "@/routes/admin/pengaturan";
 import { AdminLoginPage } from "@/routes/admin/login";
 import { guestLayoutRoute, indexRoute } from "@/routes/index";
+import { CustomerReviewPage } from "@/routes/ulasan";
+
+const ulasanRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/ulasan",
+  component: CustomerReviewPage,
+});
 
 const adminLoginRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -52,6 +60,12 @@ const adminKeuanganRoute = createRoute({
   component: AdminFinancePage,
 });
 
+const adminTestimoniRoute = createRoute({
+  getParentRoute: () => adminLayoutRoute,
+  path: "/testimoni",
+  component: AdminTestimonialsPage,
+});
+
 const adminPengaturanRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: "/pengaturan",
@@ -60,6 +74,7 @@ const adminPengaturanRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   guestLayoutRoute.addChildren([indexRoute]),
+  ulasanRoute,
   adminLoginRoute,
   adminLayoutRoute.addChildren([
     adminOverviewRoute,
@@ -67,6 +82,7 @@ const routeTree = rootRoute.addChildren([
     adminBookingRoute,
     adminKalenderRoute,
     adminKeuanganRoute,
+    adminTestimoniRoute,
     adminPengaturanRoute,
   ]),
 ]);

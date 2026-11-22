@@ -6,6 +6,7 @@ import {
   ClipboardList,
   LayoutDashboard,
   LogOut,
+  MessageSquareQuote,
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
@@ -30,7 +31,13 @@ export const ADMIN_NAV_ITEMS = [
   },
   { to: "/admin/kalender", code: "04", label: "Kalender", icon: CalendarDays },
   { to: "/admin/keuangan", code: "05", label: "Keuangan", icon: Wallet },
-  { to: "/admin/pengaturan", code: "06", label: "Pengaturan", icon: Settings },
+  {
+    to: "/admin/testimoni",
+    code: "06",
+    label: "Testimoni",
+    icon: MessageSquareQuote,
+  },
+  { to: "/admin/pengaturan", code: "07", label: "Pengaturan", icon: Settings },
 ] as const;
 
 const SIDEBAR_STORAGE_KEY = "aventra-admin-sidebar-collapsed";

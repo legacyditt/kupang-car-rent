@@ -6,6 +6,7 @@ import { HeroSection } from "@/features/landing/components/HeroSection";
 import { HowToBookSection } from "@/features/landing/components/HowToBookSection";
 import { ServicesSection } from "@/features/landing/components/ServicesSection";
 import { WhatsAppCtaSection } from "@/features/landing/components/WhatsAppCtaSection";
+import { TestimonialsSection } from "@/features/testimonials/components/TestimonialsSection";
 import { rootRoute } from "./__root";
 
 export const guestLayoutRoute = createRoute({
@@ -29,6 +30,7 @@ function LandingPage() {
       <ServicesSection />
       <HowToBookSection />
       <AboutSection />
+      <TestimonialsSection />
       <WhatsAppCtaSection />
     </>
   );
