@@ -151,7 +151,7 @@ export function exportFinanceToExcel(
       fill: { fgColor: { rgb: "12161E" } },
       border: THIN_BORDER,
       alignment: {
-        horizontal: c >= 7 ? "right" : c === 4 ? "center" : "left",
+        horizontal: "center",
         vertical: "center",
       },
     };
@@ -321,6 +321,7 @@ export async function exportFinanceToPdf(
       fillColor: [18, 22, 30],
       textColor: [245, 184, 46],
       fontStyle: "bold",
+      halign: "center",
     },
     footStyles: {
       fillColor: [254, 243, 199],

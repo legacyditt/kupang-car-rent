@@ -88,3 +88,4 @@ test("getAvailableReportMonths extracts sorted unique YYYY-MM months", () => {
     "2026-11",
   ]);
 });
+
