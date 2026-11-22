@@ -9,6 +9,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
+  Wallet,
 } from "lucide-react";
 import { useAdminAuth } from "@/features/admin-auth/hooks/useAdminAuth";
 import {
@@ -28,7 +29,8 @@ export const ADMIN_NAV_ITEMS = [
     icon: ClipboardList,
   },
   { to: "/admin/kalender", code: "04", label: "Kalender", icon: CalendarDays },
-  { to: "/admin/pengaturan", code: "05", label: "Pengaturan", icon: Settings },
+  { to: "/admin/keuangan", code: "05", label: "Keuangan", icon: Wallet },
+  { to: "/admin/pengaturan", code: "06", label: "Pengaturan", icon: Settings },
 ] as const;
 
 const SIDEBAR_STORAGE_KEY = "aventra-admin-sidebar-collapsed";
