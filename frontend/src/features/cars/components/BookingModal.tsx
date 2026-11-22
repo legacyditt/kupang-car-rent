@@ -46,6 +46,10 @@ export function BookingModal({ car, open, onOpenChange }: BookingModalProps) {
     setPhone,
     serviceType,
     setServiceType,
+    paymentScheme,
+    setPaymentScheme,
+    isDpEligible,
+    dpAmount,
     startDate,
     endDate,
     viewDate,
@@ -167,6 +171,47 @@ export function BookingModal({ car, open, onOpenChange }: BookingModalProps) {
             </p>
           )}
 
+          {/* Payment Scheme Selector (DP 50% unlocked at >= 3 days) */}
+          <div>
+            <div className="mb-1.5 flex items-center justify-between">
+              <Label className="font-mono text-[11px] font-medium tracking-wider text-brand-muted uppercase">
+                Skema Pembayaran
+              </Label>
+              {!isDpEligible && (
+                <span className="font-mono text-[10px] text-brand-muted">
+                  DP 50% tersedia min. 3 hari
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setPaymentScheme("FULL")}
+                className={cn(
+                  "flex h-10 items-center justify-center rounded-lg border font-mono text-xs font-medium transition-colors",
+                  paymentScheme === "FULL"
+                    ? "border-gold bg-gold/15 text-gold"
+                    : "border-hairline bg-obsidian text-brand-muted hover:border-gold/40 hover:text-white"
+                )}
+              >
+                Bayar Penuh
+              </button>
+              <button
+                type="button"
+                disabled={!isDpEligible}
+                onClick={() => setPaymentScheme("DP_50")}
+                className={cn(
+                  "flex h-10 items-center justify-center rounded-lg border font-mono text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-45",
+                  paymentScheme === "DP_50"
+                    ? "border-gold bg-gold/15 text-gold"
+                    : "border-hairline bg-obsidian text-brand-muted hover:border-gold/40 hover:text-white"
+                )}
+              >
+                DP 50%
+              </button>
+            </div>
+          </div>
+
           <div className="space-y-1.5 rounded-xl border border-hairline bg-obsidian p-3.5 text-xs">
             <div className="flex justify-between">
               <span className="text-brand-muted">Layanan</span>
@@ -197,6 +242,14 @@ export function BookingModal({ car, open, onOpenChange }: BookingModalProps) {
                 {totalDays > 0 ? formatRupiah(totalPrice) : "—"}
               </span>
             </div>
+            {paymentScheme === "DP_50" && totalDays >= 3 && (
+              <div className="flex justify-between border-t border-hairline pt-1.5 font-mono text-[11px] text-emerald-300">
+                <span>DP 50% (Sisa {formatRupiah(totalPrice - dpAmount)})</span>
+                <span className="font-bold tabular-nums">
+                  {formatRupiah(dpAmount)}
+                </span>
+              </div>
+            )}
           </div>
 
           <Button

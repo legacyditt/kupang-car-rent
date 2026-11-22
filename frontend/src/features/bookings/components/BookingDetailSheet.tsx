@@ -18,12 +18,20 @@ import {
   type RentalServiceType,
 } from "@/features/cars/utils/booking";
 import { formatRupiah } from "@/lib/utils";
-import type { BookingItem, BookingStatus } from "../types/booking.types";
+import type {
+  BookingItem,
+  BookingStatus,
+  PaymentScheme,
+  PaymentStatus,
+} from "../types/booking.types";
 import {
+  computePaymentSummary,
   yyyymmddToDdmmyyyy,
   type UpdateBookingDetailsInput,
 } from "../utils/booking-admin";
 import { readStoredCars } from "../utils/bookings-storage";
+import { BookingCalendarPicker } from "./BookingCalendarPicker";
+import { BookingPaymentPanel } from "./BookingPaymentPanel";
 import { BookingStatusBadge } from "./BookingStatusBadge";
 
 interface BookingDetailSheetProps {
@@ -44,6 +52,14 @@ interface BookingDetailSheetProps {
     bookingId: string,
     patch: UpdateBookingDetailsInput
   ) => { ok: true } | { ok: false; error: string };
+  onUpdatePayment?: (
+    bookingId: string,
+    updates: { paymentScheme: PaymentScheme; paymentStatus: PaymentStatus }
+  ) => { ok: true } | { ok: false; error: string };
+  onExtendBooking?: (
+    bookingId: string,
+    newEndDate: string
+  ) => { ok: true } | { ok: false; error: string };
 }
 
 export function BookingDetailSheet({
@@ -54,6 +70,8 @@ export function BookingDetailSheet({
   onChangeStatus,
   onSaveDetails,
   onEditBooking,
+  onUpdatePayment,
+  onExtendBooking,
 }: BookingDetailSheetProps) {
   const [finalPrice, setFinalPrice] = useState("0");
   const [internalNote, setInternalNote] = useState("");
@@ -66,6 +84,7 @@ export function BookingDetailSheet({
   const [editEndDate, setEditEndDate] = useState("");
   const [editServiceType, setEditServiceType] =
     useState<RentalServiceType>("SELF_DRIVE");
+  const [extendEndDate, setExtendEndDate] = useState("");
 
   const cars = useMemo(() => (open ? readStoredCars() : []), [open]);
 
@@ -81,6 +100,7 @@ export function BookingDetailSheet({
     setEditStartDate(booking.startDate);
     setEditEndDate(booking.endDate);
     setEditServiceType(booking.serviceType);
+    setExtendEndDate(booking.endDate);
   }, [booking]);
 
   if (!booking) return null;
@@ -195,23 +215,18 @@ export function BookingDetailSheet({
                     </option>
                   ))}
                 </select>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    aria-label="Tanggal Mulai"
-                    type="date"
-                    value={editStartDate}
-                    onChange={(e) => setEditStartDate(e.target.value)}
-                    className="h-8 border-hairline bg-carbon font-mono text-[11px] text-white"
-                  />
-                  <Input
-                    aria-label="Tanggal Selesai"
-                    type="date"
-                    min={editStartDate}
-                    value={editEndDate}
-                    onChange={(e) => setEditEndDate(e.target.value)}
-                    className="h-8 border-hairline bg-carbon font-mono text-[11px] text-white"
-                  />
-                </div>
+                <BookingCalendarPicker
+                  mode="range"
+                  carId={editCarId || booking.carId}
+                  excludeBookingId={booking.id}
+                  startDate={editStartDate}
+                  endDate={editEndDate}
+                  onChangeRange={(nextStart, nextEnd) => {
+                    setEditStartDate(nextStart);
+                    setEditEndDate(nextEnd);
+                  }}
+                  onError={setActionError}
+                />
                 <select
                   aria-label="Jenis Layanan"
                   value={editServiceType}
@@ -295,6 +310,47 @@ export function BookingDetailSheet({
               className="border-gold/35 bg-obsidian font-mono text-sm font-bold text-gold focus-visible:border-gold focus-visible:ring-0 disabled:opacity-70"
             />
           </div>
+
+          {/* Payment Scheme & Status (stage-aware SoC component) */}
+          {onUpdatePayment && (
+            <BookingPaymentPanel
+              booking={booking}
+              onUpdatePayment={onUpdatePayment}
+              onError={setActionError}
+            />
+          )}
+
+          {/* Extend Rental while IN_PROGRESS */}
+          {booking.status === "IN_PROGRESS" && onExtendBooking && (
+            <div className="space-y-2.5 rounded-xl border border-sky-400/30 bg-sky-400/5 p-3.5 text-xs">
+              <p className="font-mono text-[10px] font-bold tracking-wider text-sky-300 uppercase">
+                Perpanjang Sewa (Sedang Jalan)
+              </p>
+              <BookingCalendarPicker
+                mode="extend-end"
+                carId={booking.carId}
+                excludeBookingId={booking.id}
+                startDate={booking.startDate}
+                endDate={extendEndDate}
+                minExtendEndDate={booking.endDate}
+                onChangeExtendEnd={setExtendEndDate}
+                onError={setActionError}
+              />
+              <Button
+                type="button"
+                size="sm"
+                disabled={!extendEndDate || extendEndDate <= booking.endDate}
+                onClick={() => {
+                  setActionError(null);
+                  const res = onExtendBooking(booking.id, extendEndDate);
+                  if (!res.ok) setActionError(res.error);
+                }}
+                className="h-9 w-full bg-sky-500 font-mono text-[11px] font-bold text-obsidian uppercase hover:bg-sky-400 disabled:opacity-45"
+              >
+                Perpanjang Sewa →
+              </Button>
+            </div>
+          )}
 
           {/* Internal Note */}
           <div className="space-y-1.5">
@@ -413,16 +469,38 @@ export function BookingDetailSheet({
               </div>
             )}
 
-            {booking.status === "IN_PROGRESS" && (
-              <Button
-                type="button"
-                variant="accent"
-                onClick={() => handleTransition("COMPLETED")}
-                className="h-11 w-full font-display text-xs tracking-wider uppercase"
-              >
-                Tandai Selesai →
-              </Button>
-            )}
+            {booking.status === "IN_PROGRESS" &&
+              (() => {
+                // Payment-gated completion: tombol Tandai Selesai hanya aktif jika pembayaran sudah Lunas.
+                const payment = computePaymentSummary(
+                  booking.finalPrice,
+                  booking.paymentScheme ?? "FULL",
+                  booking.paymentStatus ?? "UNPAID",
+                  booking.paidAmount
+                );
+                const isPaid =
+                  payment.paymentStatus === "PAID" &&
+                  payment.remainingAmount === 0;
+
+                return (
+                  <div className="space-y-1.5">
+                    <Button
+                      type="button"
+                      variant="accent"
+                      disabled={!isPaid}
+                      onClick={() => handleTransition("COMPLETED")}
+                      className="h-11 w-full font-display text-xs tracking-wider uppercase disabled:opacity-45"
+                    >
+                      Tandai Selesai →
+                    </Button>
+                    {!isPaid && (
+                      <p className="text-center font-mono text-[10px] text-amber-300">
+                        Lunasi pembayaran untuk mengaktifkan tombol selesai.
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
 
             {(booking.status === "COMPLETED" ||
               booking.status === "REJECTED" ||

@@ -1,5 +1,10 @@
 import type { RentalServiceType } from "../../cars/utils/booking";
-import type { BookingItem, BookingStatus } from "../types/booking.types";
+import type {
+  BookingItem,
+  BookingStatus,
+  PaymentScheme,
+  PaymentStatus,
+} from "../types/booking.types";
 
 export type BookingFilterTab = "ALL" | BookingStatus;
 
@@ -120,6 +125,23 @@ export function transitionBookingStatus(
     }
   }
 
+  // Payment-gated completion: cegah booking ditutup SELESAI jika masih ada sisa tagihan.
+  if (nextStatus === "COMPLETED") {
+    const payment = computePaymentSummary(
+      target.finalPrice,
+      target.paymentScheme ?? "FULL",
+      target.paymentStatus ?? "UNPAID",
+      target.paidAmount
+    );
+    if (payment.paymentStatus !== "PAID" || payment.remainingAmount > 0) {
+      return {
+        ok: false,
+        error:
+          "Lunasi pembayaran terlebih dahulu sebelum menandai booking selesai.",
+      };
+    }
+  }
+
   const nextBookings = bookings.map((item) =>
     item.id === bookingId
       ? {
@@ -185,6 +207,57 @@ function generateBookingCode(existingBookings: BookingItem[]): string {
   return candidate;
 }
 
+export const PAYMENT_SCHEME_LABELS: Record<PaymentScheme, string> = {
+  FULL: "Bayar Penuh",
+  DP_50: "DP 50%",
+};
+
+export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  UNPAID: "Belum Bayar",
+  DP_PAID: "DP Masuk",
+  PAID: "Lunas",
+};
+
+export const DOWN_PAYMENT_MIN_DAYS = 3;
+
+export function canUseDownPayment(totalDays: number): boolean {
+  return totalDays >= DOWN_PAYMENT_MIN_DAYS;
+}
+
+export function computePaymentSummary(
+  finalPrice: number,
+  paymentScheme: PaymentScheme = "FULL",
+  paymentStatus: PaymentStatus = "UNPAID",
+  explicitPaidAmount?: number
+): {
+  paymentScheme: PaymentScheme;
+  paymentStatus: PaymentStatus;
+  dpAmount: number;
+  paidAmount: number;
+  remainingAmount: number;
+} {
+  const safePrice = Math.max(0, finalPrice);
+  const dpAmount =
+    paymentScheme === "DP_50" ? Math.round(safePrice * 0.5) : safePrice;
+
+  let paidAmount = 0;
+  if (explicitPaidAmount !== undefined && Number.isFinite(explicitPaidAmount)) {
+    paidAmount = Math.max(0, Math.min(safePrice, explicitPaidAmount));
+  } else if (paymentStatus === "PAID") {
+    paidAmount = safePrice;
+  } else if (paymentStatus === "DP_PAID") {
+    paidAmount = dpAmount;
+  }
+
+  return {
+    paymentScheme,
+    paymentStatus,
+    dpAmount,
+    paidAmount,
+    remainingAmount: Math.max(0, safePrice - paidAmount),
+  };
+}
+
 export interface CreateBookingInput {
   customerName: string;
   customerPhone: string;
@@ -194,6 +267,7 @@ export interface CreateBookingInput {
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
   serviceType: RentalServiceType;
+  paymentScheme?: PaymentScheme;
   finalPrice?: number;
   internalNote?: string;
 }
@@ -233,6 +307,10 @@ export function createBookingRecord(
     input.finalPrice !== undefined && Number.isFinite(input.finalPrice)
       ? Math.max(0, input.finalPrice)
       : estimatedPrice;
+  const paymentScheme: PaymentScheme =
+    input.paymentScheme === "DP_50" && canUseDownPayment(totalDays)
+      ? "DP_50"
+      : "FULL";
 
   const booking: BookingItem = {
     id: `bk-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -247,6 +325,9 @@ export function createBookingRecord(
     serviceType: input.serviceType,
     estimatedPrice,
     finalPrice,
+    paymentScheme,
+    paymentStatus: "UNPAID",
+    paidAmount: 0,
     status: "PENDING",
     internalNote: input.internalNote?.trim() ?? "",
     createdAt: formatTodayYyyymmdd(),
@@ -389,5 +470,169 @@ export function getBookedCalendarDatesForCar(
   }
 
   return Array.from(result);
+}
+
+/**
+ * Menentukan daftar status pembayaran yang boleh dipilih admin sesuai tahap booking.
+ * Pada IN_PROGRESS, DP yang sudah masuk tidak boleh mundur ke UNPAID/DP_PAID — hanya tersisa pelunasan (PAID).
+ */
+export function getAllowedPaymentStatuses(
+  bookingStatus: BookingStatus,
+  paymentScheme: PaymentScheme = "FULL",
+  currentPaymentStatus: PaymentStatus = "UNPAID"
+): PaymentStatus[] {
+  if (bookingStatus === "CONFIRMED") {
+    return paymentScheme === "DP_50"
+      ? ["UNPAID", "DP_PAID", "PAID"]
+      : ["UNPAID", "PAID"];
+  }
+
+  if (bookingStatus === "IN_PROGRESS") {
+    if (currentPaymentStatus === "PAID") return ["PAID"];
+    if (currentPaymentStatus === "DP_PAID") return ["PAID"];
+    return paymentScheme === "DP_50"
+      ? ["UNPAID", "DP_PAID", "PAID"]
+      : ["UNPAID", "PAID"];
+  }
+
+  return [currentPaymentStatus];
+}
+
+export function updateBookingPayment(
+  bookings: BookingItem[],
+  bookingId: string,
+  updates: {
+    paymentScheme: PaymentScheme;
+    paymentStatus: PaymentStatus;
+  }
+): { ok: true; bookings: BookingItem[] } | { ok: false; error: string } {
+  const target = bookings.find((b) => b.id === bookingId);
+  if (!target) {
+    return { ok: false, error: "Data booking tidak ditemukan." };
+  }
+  if (
+    target.status === "COMPLETED" ||
+    target.status === "REJECTED" ||
+    target.status === "CANCELLED"
+  ) {
+    return {
+      ok: false,
+      error: "Status pembayaran tidak dapat diubah pada booking yang sudah selesai, ditolak, atau dibatalkan.",
+    };
+  }
+
+  const effectiveScheme: PaymentScheme = canUseDownPayment(target.totalDays)
+    ? updates.paymentScheme
+    : "FULL";
+  const currentPayStatus: PaymentStatus = target.paymentStatus ?? "UNPAID";
+  const effectiveStatus: PaymentStatus =
+    target.status === "PENDING" ? "UNPAID" : updates.paymentStatus;
+
+  if (target.status !== "PENDING" && effectiveStatus !== currentPayStatus) {
+    const allowed = getAllowedPaymentStatuses(
+      target.status,
+      effectiveScheme,
+      currentPayStatus
+    );
+    if (!allowed.includes(effectiveStatus)) {
+      return {
+        ok: false,
+        error:
+          "Status pembayaran tidak dapat dikembalikan ke tahap sebelumnya saat sewa sedang jalan.",
+      };
+    }
+  }
+
+  const summary = computePaymentSummary(
+    target.finalPrice,
+    effectiveScheme,
+    effectiveStatus
+  );
+
+  return {
+    ok: true,
+    bookings: bookings.map((item) =>
+      item.id === bookingId
+        ? {
+            ...item,
+            paymentScheme: summary.paymentScheme,
+            paymentStatus: summary.paymentStatus,
+            paidAmount: summary.paidAmount,
+          }
+        : item
+    ),
+  };
+}
+
+export function extendInProgressBooking(
+  bookings: BookingItem[],
+  bookingId: string,
+  newEndDate: string,
+  overrideFinalPrice?: number
+): { ok: true; bookings: BookingItem[] } | { ok: false; error: string } {
+  const target = bookings.find((b) => b.id === bookingId);
+  if (!target) {
+    return { ok: false, error: "Data booking tidak ditemukan." };
+  }
+  if (target.status !== "IN_PROGRESS") {
+    return {
+      ok: false,
+      error: "Perpanjang sewa hanya tersedia untuk booking berstatus Sedang Jalan.",
+    };
+  }
+  if (!newEndDate || newEndDate <= target.endDate) {
+    return {
+      ok: false,
+      error: "Tanggal selesai baru harus setelah tanggal selesai saat ini.",
+    };
+  }
+
+  const totalDays = calculateInclusiveDays(target.startDate, newEndDate);
+  const dailyRate =
+    target.totalDays > 0 ? Math.round(target.estimatedPrice / target.totalDays) : 0;
+  const estimatedPrice = totalDays * dailyRate;
+  const wasOverridden = target.finalPrice !== target.estimatedPrice;
+  const extraDays = totalDays - target.totalDays;
+  const finalPrice =
+    overrideFinalPrice !== undefined && Number.isFinite(overrideFinalPrice)
+      ? Math.max(0, overrideFinalPrice)
+      : wasOverridden
+        ? target.finalPrice + extraDays * dailyRate
+        : estimatedPrice;
+
+  const prevPaid = computePaymentSummary(
+    target.finalPrice,
+    target.paymentScheme ?? "FULL",
+    target.paymentStatus ?? "UNPAID",
+    target.paidAmount
+  ).paidAmount;
+
+  let nextPaymentStatus: PaymentStatus = target.paymentStatus ?? "UNPAID";
+  if (nextPaymentStatus === "PAID" && finalPrice > prevPaid) {
+    nextPaymentStatus = prevPaid > 0 ? "DP_PAID" : "UNPAID";
+  }
+
+  const extended: BookingItem = {
+    ...target,
+    endDate: newEndDate,
+    totalDays,
+    estimatedPrice,
+    finalPrice,
+    paymentStatus: nextPaymentStatus,
+    paidAmount: prevPaid,
+  };
+
+  const conflict = hasScheduleConflict(extended, bookings);
+  if (conflict) {
+    return {
+      ok: false,
+      error: `Perpanjangan bentrok dengan ${conflict.bookingCode} (${conflict.customerName}, ${conflict.startDate} s/d ${conflict.endDate}).`,
+    };
+  }
+
+  return {
+    ok: true,
+    bookings: bookings.map((item) => (item.id === bookingId ? extended : item)),
+  };
 }
 

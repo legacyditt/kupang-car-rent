@@ -24,4 +24,17 @@ _Avoid_: Catatan Pelanggan, Komentar
 Identitas, nomor WhatsApp tujuan booking, alamat, jam operasional, dan logo rental yang ditampilkan kepada pelanggan maupun admin.
 _Avoid_: Pengaturan Sistem, Konfigurasi App
 
+**Skema Pembayaran**:
+Pilihan cara bayar pada booking: bayar penuh (`FULL`) atau uang muka 50% (`DP_50`, hanya tersedia jika durasi sewa minimal 3 hari).
+_Avoid_: Metode Bayar, Tipe Transaksi
+
+**Status Pembayaran**:
+Status uang masuk pada booking (`UNPAID`, `DP_PAID`, atau `PAID`) yang menjadi dasar pencatatan pemasukan di Keuangan.
+_Avoid_: Status Tagihan, Status Invoice
+
+**Testimoni**:
+Ulasan pelanggan yang dikelola admin dan ditampilkan pada halaman pelanggan di bawah banner WhatsApp.
+_Avoid_: Review, Komentar
+
+
 

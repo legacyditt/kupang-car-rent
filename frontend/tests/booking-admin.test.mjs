@@ -2,14 +2,19 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   canTransitionStatus,
+  canUseDownPayment,
+  computePaymentSummary,
   countBookingsByStatus,
   createBookingRecord,
+  extendInProgressBooking,
   filterBookings,
+  getAllowedPaymentStatuses,
   getBookedCalendarDatesForCar,
   hasScheduleConflict,
   normalizeWhatsAppPhone,
   transitionBookingStatus,
   updateBookingDetails,
+  updateBookingPayment,
 } from "../src/features/bookings/utils/booking-admin.ts";
 
 const SAMPLE_BOOKINGS = [
@@ -174,5 +179,170 @@ test("updateBookingDetails adjusts un-overridden finalPrice and enforces BR-09 f
 test("getBookedCalendarDatesForCar returns DD-MM-YYYY dates only for CONFIRMED and IN_PROGRESS", () => {
   const dates = getBookedCalendarDatesForCar("car-avanza", SAMPLE_BOOKINGS);
   assert.deepEqual(dates, ["20-11-2026", "21-11-2026", "22-11-2026"]);
+});
+
+test("canUseDownPayment requires >= 3 days and computePaymentSummary calculates DP 50%", () => {
+  assert.equal(canUseDownPayment(2), false);
+  assert.equal(canUseDownPayment(3), true);
+
+  const dpSummary = computePaymentSummary(1_500_000, "DP_50", "UNPAID", 0);
+  assert.equal(dpSummary.dpAmount, 750_000);
+  assert.equal(dpSummary.remainingAmount, 1_500_000);
+
+  const dpPaidSummary = computePaymentSummary(1_500_000, "DP_50", "DP_PAID");
+  assert.equal(dpPaidSummary.paidAmount, 750_000);
+  assert.equal(dpPaidSummary.remainingAmount, 750_000);
+
+  // < 3 days forces FULL even if DP_50 requested
+  const shortBooking = createBookingRecord(
+    {
+      customerName: "Rudi A.",
+      customerPhone: "081234567890",
+      carId: "car-brio",
+      carName: "Honda Brio",
+      pricePerDay: 300_000,
+      startDate: "2026-11-25",
+      endDate: "2026-11-26",
+      serviceType: "SELF_DRIVE",
+      paymentScheme: "DP_50",
+    },
+    SAMPLE_BOOKINGS
+  );
+  assert.equal(shortBooking.ok, true);
+  if (shortBooking.ok) {
+    assert.equal(shortBooking.booking.paymentScheme, "FULL");
+    assert.equal(shortBooking.booking.paymentStatus, "UNPAID");
+    assert.equal(shortBooking.booking.paidAmount, 0);
+  }
+});
+
+test("updateBookingPayment updates paymentStatus on CONFIRMED and blocks terminal statuses", () => {
+  const withConfirmed = [
+    ...SAMPLE_BOOKINGS.slice(0, 2),
+    {
+      ...SAMPLE_BOOKINGS[0],
+      id: "bk-conf",
+      status: "CONFIRMED",
+    },
+    {
+      ...SAMPLE_BOOKINGS[0],
+      id: "bk-done",
+      status: "COMPLETED",
+    },
+  ];
+
+  const dpPaid = updateBookingPayment(withConfirmed, "bk-conf", {
+    paymentScheme: "DP_50",
+    paymentStatus: "DP_PAID",
+  });
+  assert.equal(dpPaid.ok, true);
+  if (dpPaid.ok) {
+    assert.equal(dpPaid.bookings[2].paymentScheme, "DP_50");
+    assert.equal(dpPaid.bookings[2].paymentStatus, "DP_PAID");
+    assert.equal(dpPaid.bookings[2].paidAmount, 750_000);
+  }
+
+  const blockedDone = updateBookingPayment(withConfirmed, "bk-done", {
+    paymentScheme: "FULL",
+    paymentStatus: "PAID",
+  });
+  assert.equal(blockedDone.ok, false);
+});
+
+test("extendInProgressBooking extends IN_PROGRESS booking, checks BR-09, and adjusts PAID balance", () => {
+  const withInProgress = [
+    {
+      ...SAMPLE_BOOKINGS[0],
+      id: "bk-prog",
+      bookingCode: "BK-PROG-01",
+      startDate: "2026-11-18",
+      endDate: "2026-11-19",
+      totalDays: 2,
+      estimatedPrice: 600_000,
+      finalPrice: 600_000,
+      paymentScheme: "FULL",
+      paymentStatus: "PAID",
+      paidAmount: 600_000,
+      status: "IN_PROGRESS",
+    },
+    SAMPLE_BOOKINGS[2], // CONFIRMED 2026-11-20..22 on car-avanza
+  ];
+
+  // Blocked by bk-3 (2026-11-20..22)
+  const conflictRes = extendInProgressBooking(
+    withInProgress,
+    "bk-prog",
+    "2026-11-21"
+  );
+  assert.equal(conflictRes.ok, false);
+
+  // Valid extension when no conflict on car-brio
+  const cleanBookings = [
+    {
+      ...withInProgress[0],
+      carId: "car-brio",
+      carName: "Honda Brio",
+    },
+  ];
+  const extended = extendInProgressBooking(
+    cleanBookings,
+    "bk-prog",
+    "2026-11-21"
+  );
+  assert.equal(extended.ok, true);
+  if (extended.ok) {
+    assert.equal(extended.bookings[0].endDate, "2026-11-21");
+    assert.equal(extended.bookings[0].totalDays, 4);
+    assert.equal(extended.bookings[0].finalPrice, 1_200_000);
+    assert.equal(extended.bookings[0].paidAmount, 600_000);
+    assert.equal(extended.bookings[0].paymentStatus, "DP_PAID");
+  }
+});
+
+test("COMPLETED requires PAID status and IN_PROGRESS prevents payment downgrade", () => {
+  const unpaidInProgress = [
+    {
+      ...SAMPLE_BOOKINGS[0],
+      id: "bk-ip-1",
+      status: "IN_PROGRESS",
+      paymentScheme: "DP_50",
+      paymentStatus: "DP_PAID",
+      paidAmount: 750_000,
+    },
+  ];
+
+  // Cannot complete while DP_PAID (unpaid balance remains)
+  const blockedComplete = transitionBookingStatus(
+    unpaidInProgress,
+    "bk-ip-1",
+    "COMPLETED"
+  );
+  assert.equal(blockedComplete.ok, false);
+
+  // In IN_PROGRESS with DP_PAID, only PAID is allowed as next payment status
+  assert.deepEqual(
+    getAllowedPaymentStatuses("IN_PROGRESS", "DP_50", "DP_PAID"),
+    ["PAID"]
+  );
+  const blockedDowngrade = updateBookingPayment(unpaidInProgress, "bk-ip-1", {
+    paymentScheme: "DP_50",
+    paymentStatus: "UNPAID",
+  });
+  assert.equal(blockedDowngrade.ok, false);
+
+  // Mark PAID, then COMPLETED succeeds
+  const paidRes = updateBookingPayment(unpaidInProgress, "bk-ip-1", {
+    paymentScheme: "DP_50",
+    paymentStatus: "PAID",
+  });
+  assert.equal(paidRes.ok, true);
+  if (paidRes.ok) {
+    const completed = transitionBookingStatus(
+      paidRes.bookings,
+      "bk-ip-1",
+      "COMPLETED"
+    );
+    assert.equal(completed.ok, true);
+  }
 });
 

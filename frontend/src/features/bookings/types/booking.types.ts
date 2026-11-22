@@ -1,5 +1,8 @@
 import type { RentalServiceType } from "@/features/cars/utils/booking";
 
+export type PaymentScheme = "FULL" | "DP_50";
+export type PaymentStatus = "UNPAID" | "DP_PAID" | "PAID";
+
 export type BookingStatus =
   | "PENDING"
   | "CONFIRMED"
@@ -21,6 +24,9 @@ export interface BookingItem {
   serviceType: RentalServiceType;
   estimatedPrice: number;
   finalPrice: number;
+  paymentScheme?: PaymentScheme;
+  paymentStatus?: PaymentStatus;
+  paidAmount?: number;
   status: BookingStatus;
   internalNote: string;
   createdAt: string;
