@@ -42,3 +42,4 @@ export function subscribeStoredTestimonials(onChange: () => void): () => void {
     window.removeEventListener("storage", handleStorage);
   };
 }
+

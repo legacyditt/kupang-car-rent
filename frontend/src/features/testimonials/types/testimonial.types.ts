@@ -21,3 +21,4 @@ export interface UpsertTestimonialInput {
   quote: string;
   status: TestimonialStatus;
 }
+

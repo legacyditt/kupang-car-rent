@@ -47,3 +47,4 @@ export const INITIAL_TESTIMONIALS: TestimonialItem[] = [
     createdAt: "2026-11-02",
   },
 ];
+

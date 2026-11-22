@@ -133,3 +133,4 @@ export function deleteTestimonial(
 ): TestimonialItem[] {
   return items.filter((item) => item.id !== id);
 }
+
