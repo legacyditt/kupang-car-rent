@@ -82,10 +82,10 @@ export function TestimonialsSection() {
         {/* Centered Editorial Header */}
         <div className="mx-auto max-w-2xl text-center">
           <p className="font-mono text-[11px] font-bold tracking-[0.16em] text-gold uppercase">
-            05 / Testimoni Pelanggan
+            Testimoni Pelanggan
           </p>
-          <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-white uppercase sm:text-4xl">
-            Suara Pelanggan yang Mengutamakan Kualitas
+          <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">
+            Dipercaya Pelanggan di Kupang.
           </h2>
         </div>
 
@@ -143,11 +143,8 @@ export function TestimonialsSection() {
                   </p>
                 </div>
 
-                <div className="mt-6 flex items-center justify-between border-t border-hairline pt-3 font-mono text-[10px] tracking-wider text-brand-muted uppercase">
+                <div className="mt-6 border-t border-hairline pt-3 font-mono text-[10px] tracking-wider text-brand-muted uppercase">
                   <span>Unit: {item.carName}</span>
-                  {item.bookingCode && (
-                    <span className="text-gold/80">Terverifikasi</span>
-                  )}
                 </div>
               </article>
             );
@@ -187,3 +184,4 @@ export function TestimonialsSection() {
     </section>
   );
 }
+
