@@ -73,7 +73,7 @@ export function AdminFinancePage() {
           <Button
             type="button"
             disabled={report.rows.length === 0}
-            onClick={() => exportFinanceToPdf(report, monthFilter, profile)}
+            onClick={() => void exportFinanceToPdf(report, monthFilter, profile)}
             className="h-10 gap-2 bg-gold font-mono text-xs font-bold tracking-wider text-obsidian uppercase hover:bg-gold-light disabled:opacity-45"
           >
             <FileText className="h-4 w-4" aria-hidden="true" />
@@ -146,6 +146,7 @@ export function AdminFinancePage() {
                 <th className="px-4 py-3">Unit &amp; Jadwal</th>
                 <th className="px-4 py-3">Skema</th>
                 <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3 text-right">Total</th>
                 <th className="px-4 py-3 text-right">Masuk</th>
                 <th className="px-4 py-3 text-right">Sisa</th>
               </tr>
@@ -181,6 +182,9 @@ export function AdminFinancePage() {
                       {row.paymentStatusLabel}
                     </span>
                   </td>
+                  <td className="px-4 py-3 text-right font-mono text-slate-300 tabular-nums">
+                    {formatRupiah(row.finalPrice)}
+                  </td>
                   <td className="px-4 py-3 text-right font-mono font-bold text-white tabular-nums">
                     {formatRupiah(row.paidAmount)}
                   </td>
@@ -198,6 +202,22 @@ export function AdminFinancePage() {
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr className="border-t border-hairline bg-obsidian/60 font-mono text-xs font-bold">
+                <td colSpan={5} className="px-4 py-3 text-right text-brand-muted uppercase">
+                  Total Periode
+                </td>
+                <td className="px-4 py-3 text-right text-white tabular-nums">
+                  {formatRupiah(report.totalFinalPrice)}
+                </td>
+                <td className="px-4 py-3 text-right text-gold tabular-nums">
+                  {formatRupiah(report.totalPaid)}
+                </td>
+                <td className="px-4 py-3 text-right text-amber-300 tabular-nums">
+                  {formatRupiah(report.totalRemaining)}
+                </td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       )}
