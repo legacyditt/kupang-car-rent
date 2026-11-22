@@ -30,8 +30,8 @@ function LandingPage() {
       <ServicesSection />
       <HowToBookSection />
       <AboutSection />
-      <WhatsAppCtaSection />
       <TestimonialsSection />
+      <WhatsAppCtaSection />
     </>
   );
 }
