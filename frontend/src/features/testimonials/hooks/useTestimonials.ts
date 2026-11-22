@@ -41,6 +41,7 @@ export function useTestimonials() {
 
   const submitPublic = (input: {
     bookingCode: string;
+    customerName?: string;
     rating: number;
     tripLabel: string;
     quote: string;

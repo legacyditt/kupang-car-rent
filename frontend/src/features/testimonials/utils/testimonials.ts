@@ -32,6 +32,7 @@ export function getPublishedTestimonials(
 export function submitCustomerTestimonial(
   input: {
     bookingCode: string;
+    customerName?: string;
     rating: number;
     tripLabel: string;
     quote: string;
@@ -74,11 +75,19 @@ export function submitCustomerTestimonial(
     return { ok: false, error: "Ulasan minimal 10 karakter." };
   }
 
+  const customerName =
+    input.customerName !== undefined
+      ? input.customerName.trim()
+      : booking.customerName;
+  if (!customerName) {
+    return { ok: false, error: "Nama wajib diisi." };
+  }
+
   const rating = Math.max(1, Math.min(5, Math.round(input.rating || 5)));
   const item: TestimonialItem = {
     id: `tm-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     bookingCode: booking.bookingCode,
-    customerName: booking.customerName,
+    customerName,
     carName: booking.carName,
     tripLabel: input.tripLabel.trim() || "Pelanggan Aventra",
     rating,

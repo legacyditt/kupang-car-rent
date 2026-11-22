@@ -13,7 +13,7 @@ import { guestLayoutRoute, indexRoute } from "@/routes/index";
 import { CustomerReviewPage } from "@/routes/ulasan";
 
 const ulasanRoute = createRoute({
-  getParentRoute: () => guestLayoutRoute,
+  getParentRoute: () => rootRoute,
   path: "/ulasan",
   component: CustomerReviewPage,
 });
@@ -73,7 +73,8 @@ const adminPengaturanRoute = createRoute({
 });
 
 const routeTree = rootRoute.addChildren([
-  guestLayoutRoute.addChildren([indexRoute, ulasanRoute]),
+  guestLayoutRoute.addChildren([indexRoute]),
+  ulasanRoute,
   adminLoginRoute,
   adminLayoutRoute.addChildren([
     adminOverviewRoute,
