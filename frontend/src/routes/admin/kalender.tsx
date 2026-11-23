@@ -5,8 +5,8 @@ import { AddBookingDialog } from "@/features/bookings/components/AddBookingDialo
 import { BookingDetailSheet } from "@/features/bookings/components/BookingDetailSheet";
 import { useAdminBookings } from "@/features/bookings/hooks/useAdminBookings";
 import type { BookingStatus } from "@/features/bookings/types/booking.types";
-import { readStoredCars } from "@/features/bookings/utils/bookings-storage";
 import { buildCalendarBoardCells } from "@/features/bookings/utils/calendar-board";
+import { useAdminCars } from "@/features/cars/hooks/useAdminCars";
 import { DAY_HEADERS, MONTH_NAMES } from "@/features/cars/utils/booking";
 import { cn } from "@/lib/utils";
 
@@ -52,7 +52,7 @@ export function AdminCalendarPage() {
     updatePayment,
     extendBooking,
   } = useAdminBookings();
-  const cars = useMemo(() => readStoredCars(), []);
+  const { cars } = useAdminCars();
   const todayStr = useMemo(() => getTodayYyyymmdd(), []);
 
   const [viewDate, setViewDate] = useState(() => {

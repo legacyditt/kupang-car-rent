@@ -1,14 +1,24 @@
+import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2, Star } from "lucide-react";
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { readStoredBookings } from "@/features/bookings/utils/bookings-storage";
 import { useBusinessProfile } from "@/features/business-profile/hooks/useBusinessProfile";
-import { SERVICE_TYPE_LABELS } from "@/features/cars/utils/booking";
-import { useTestimonials } from "@/features/testimonials/hooks/useTestimonials";
+import { ApiError, apiFetch } from "@/lib/api";
 import { useDocumentMeta } from "@/lib/seo";
 import { cn } from "@/lib/utils";
+
+interface EligibilityResponse {
+  eligible: boolean;
+  reason?: string;
+  booking?: {
+    bookingCode: string;
+    customerName: string;
+    carName: string;
+    tripLabel: string;
+  };
+}
 
 /** Halaman independen pengisian testimoni pelanggan setelah penyewaan selesai (COMPLETED). */
 export function CustomerReviewPage() {
@@ -16,7 +26,6 @@ export function CustomerReviewPage() {
     title: "Ulasan Pelanggan — Aventra Rental",
     robots: "noindex, nofollow",
   });
-  const { testimonials, submitPublic } = useTestimonials();
   const { profile } = useBusinessProfile();
 
   const bookingCode = useMemo(() => {
@@ -32,56 +41,55 @@ export function CustomerReviewPage() {
     }
   }, []);
 
-  const matchedBooking = useMemo(
-    () =>
-      readStoredBookings().find(
-        (b) => b.bookingCode.toUpperCase() === bookingCode
-      ) ?? null,
-    [bookingCode]
-  );
-
-  const alreadySubmitted = useMemo(
-    () =>
-      Boolean(
-        bookingCode &&
-          testimonials.some(
-            (t) => t.bookingCode?.toUpperCase() === bookingCode
-          )
+  const { data: eligibility, isLoading } = useQuery({
+    queryKey: ["testimonial-eligibility", bookingCode],
+    queryFn: () =>
+      apiFetch<EligibilityResponse>(
+        `/testimonials/eligibility?kode=${encodeURIComponent(bookingCode)}`
       ),
-    [bookingCode, testimonials]
-  );
+    enabled: Boolean(bookingCode),
+  });
 
-  const [customerName, setCustomerName] = useState(
-    matchedBooking?.customerName ?? ""
-  );
-  const [rating, setRating] = useState(1);
+  const [customerName, setCustomerName] = useState("");
+  const [rating, setRating] = useState(5);
   const [quote, setQuote] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedName, setSubmittedName] = useState<string | null>(null);
 
-  const isEligible =
-    Boolean(matchedBooking) &&
-    matchedBooking?.status === "COMPLETED" &&
-    !alreadySubmitted;
+  useEffect(() => {
+    if (eligibility?.booking?.customerName && !customerName) {
+      setCustomerName(eligibility.booking.customerName);
+    }
+  }, [eligibility, customerName]);
 
-  function handleSubmit(e: FormEvent) {
+  const isEligible = Boolean(bookingCode && eligibility?.eligible);
+
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setErrorMsg(null);
-    if (!matchedBooking) return;
+    if (!eligibility?.booking) return;
 
-    const tripLabel = SERVICE_TYPE_LABELS[matchedBooking.serviceType];
-    const res = submitPublic({
-      bookingCode: matchedBooking.bookingCode,
-      customerName,
-      rating,
-      tripLabel,
-      quote,
-    });
-    if (!res.ok) {
-      setErrorMsg(res.error);
-      return;
+    setIsSubmitting(true);
+    try {
+      const created = await apiFetch<{ customerName: string }>("/testimonials", {
+        method: "POST",
+        body: JSON.stringify({
+          bookingCode: eligibility.booking.bookingCode,
+          customerName,
+          rating,
+          tripLabel: eligibility.booking.tripLabel,
+          quote,
+        }),
+      });
+      setSubmittedName(created.customerName);
+    } catch (err) {
+      setErrorMsg(
+        err instanceof ApiError ? err.message : "Gagal mengirim ulasan."
+      );
+    } finally {
+      setIsSubmitting(false);
     }
-    setSubmittedName(res.item.customerName);
   }
 
   return (
@@ -119,11 +127,14 @@ export function CustomerReviewPage() {
               ditampilkan.
             </p>
           </div>
+        ) : isLoading ? (
+          <p className="mt-6 font-mono text-xs text-brand-muted">
+            Memeriksa kode booking...
+          </p>
         ) : !isEligible ? (
           <div className="mt-6 rounded-xl border border-amber-400/35 bg-amber-400/10 p-4 text-xs leading-relaxed text-amber-200">
-            {alreadySubmitted
-              ? "Ulasan untuk penyewaan ini sudah pernah dikirim. Terima kasih atas masukan Anda."
-              : "Link ulasan tidak valid atau penyewaan belum berstatus Selesai."}
+            {eligibility?.reason ??
+              "Link ulasan tidak valid atau penyewaan belum berstatus Selesai."}
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="mt-6 space-y-5">
@@ -153,7 +164,7 @@ export function CustomerReviewPage() {
               </Label>
               <Input
                 id="car-unit"
-                value={matchedBooking?.carName ?? ""}
+                value={eligibility?.booking?.carName ?? ""}
                 readOnly
                 tabIndex={-1}
                 aria-readonly="true"
@@ -216,9 +227,10 @@ export function CustomerReviewPage() {
 
             <Button
               type="submit"
+              disabled={isSubmitting}
               className="h-11 w-full cursor-pointer bg-gold font-mono text-xs font-bold tracking-wider text-obsidian uppercase hover:bg-gold-light"
             >
-              Kirim Testimoni →
+              {isSubmitting ? "Mengirim..." : "Kirim Testimoni →"}
             </Button>
           </form>
         )}

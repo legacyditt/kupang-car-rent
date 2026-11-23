@@ -1,16 +1,11 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
-import {
-  canUseDownPayment,
-  createBookingRecord,
-  ddmmyyyyToYyyymmdd,
-  getBookedCalendarDatesForCar,
-} from "@/features/bookings/utils/booking-admin";
-import type { PaymentScheme } from "@/features/bookings/types/booking.types";
-import {
-  readStoredBookings,
-  subscribeStoredBookings,
-  writeStoredBookings,
-} from "@/features/bookings/utils/bookings-storage";
+import { useQueryClient } from "@tanstack/react-query";
+import { useMemo, useRef, useState, type FormEvent } from "react";
+import { ddmmyyyyToYyyymmdd } from "@/features/bookings/utils/booking-admin";
+import type {
+  BookingItem,
+  PaymentScheme,
+} from "@/features/bookings/types/booking.types";
+import { ApiError, apiFetch } from "@/lib/api";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import type { CarItem } from "../types/car.types";
 import {
@@ -22,8 +17,10 @@ import {
   toTimestamp,
   type RentalServiceType,
 } from "../utils/booking";
+import { PUBLIC_CARS_QUERY_KEY } from "./useAdminCars";
 
 export function useBookingForm(car: CarItem, onSuccess: () => void) {
+  const qc = useQueryClient();
   const today = useMemo(() => new Date(), []);
   const todayIso = useMemo(() => toISODate(today), [today]);
 
@@ -35,48 +32,41 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
   const [startDate, setStartDate] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [viewDate, setViewDate] = useState(
-    () => new Date(today.getFullYear(), today.getMonth(), 1),
+    () => new Date(today.getFullYear(), today.getMonth(), 1)
   );
-  const [storedBookings, setStoredBookings] = useState(readStoredBookings);
-
-  // Sinkronkan tanggal terblokir jika ada perubahan booking di tab/halaman lain.
-  useEffect(() => {
-    return subscribeStoredBookings(() => {
-      setStoredBookings(readStoredBookings());
-    });
-  }, []);
+  const idempotencyKeyRef = useRef<string | null>(null);
 
   const bookedSet = useMemo(
-    () =>
-      new Set(
-        getBookedCalendarDatesForCar(
-          car.id,
-          storedBookings,
-          car.bookedDates ?? [],
-        ),
-      ),
-    [car.id, car.bookedDates, storedBookings],
+    () => new Set(car.bookedDates ?? []),
+    [car.bookedDates]
   );
 
   const calendarCells = useMemo(
     () => getCalendarCells(viewDate.getFullYear(), viewDate.getMonth()),
-    [viewDate],
+    [viewDate]
   );
 
   const totalDays =
     startDate && endDate ? calculateRentalDays(startDate, endDate) : 0;
   const totalPrice = totalDays * car.pricePerDay;
-  const isDpEligible = canUseDownPayment(totalDays);
+  const isDpEligible = totalDays >= 3;
   const effectivePaymentScheme: PaymentScheme = isDpEligible
     ? paymentScheme
     : "FULL";
   const dpAmount =
-    effectivePaymentScheme === "DP_50" ? Math.round(totalPrice * 0.5) : totalPrice;
+    effectivePaymentScheme === "DP_50"
+      ? Math.round(totalPrice * 0.5)
+      : totalPrice;
 
-  // Atur rentang tanggal mulai–selesai dan tolak rentang yang menabrak jadwal terbooking.
+  function resetIdempotencyKey() {
+    idempotencyKeyRef.current = null;
+  }
+
   function handleDateClick(iso: string) {
     setErrorMsg(null);
+    resetIdempotencyKey();
 
     if (!startDate || (startDate && endDate)) {
       setStartDate(iso);
@@ -97,7 +87,6 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
     setEndDate(iso);
   }
 
-  // Navigasi tampilan kalender ke bulan sebelumnya / berikutnya.
   function handlePrevMonth() {
     setViewDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
   }
@@ -106,8 +95,7 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
     setViewDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
   }
 
-  // Validasi input, simpan booking PENDING ke store, lalu arahkan ke WhatsApp admin.
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const trimmedName = name.trim();
 
@@ -120,51 +108,65 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
       return;
     }
 
-    const latestBookings = readStoredBookings();
-    const created = createBookingRecord(
-      {
-        customerName: trimmedName,
-        customerPhone: phone,
-        carId: car.id,
-        carName: car.name,
-        pricePerDay: car.pricePerDay,
-        startDate: ddmmyyyyToYyyymmdd(startDate),
-        endDate: ddmmyyyyToYyyymmdd(endDate),
-        serviceType,
-        paymentScheme: effectivePaymentScheme,
-      },
-      latestBookings,
-    );
-
-    if (!created.ok) {
-      setErrorMsg(created.error);
-      return;
+    if (!idempotencyKeyRef.current) {
+      idempotencyKeyRef.current =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `bk-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     }
 
-    writeStoredBookings(created.bookings);
-    setStoredBookings(created.bookings);
-
-    const message = buildBookingMessage({
-      car,
-      name: trimmedName,
-      phone: created.booking.customerPhone,
-      bookingCode: created.booking.bookingCode,
-      serviceType,
-      paymentScheme: effectivePaymentScheme,
-      startDate,
-      endDate,
-      totalDays,
-      totalPrice,
-    });
-
-    window.open(buildWhatsAppUrl(message), "_blank", "noopener,noreferrer");
-    setName("");
-    setPhone("");
-    setPaymentScheme("FULL");
-    setStartDate(null);
-    setEndDate(null);
+    setIsSubmitting(true);
     setErrorMsg(null);
-    onSuccess();
+    try {
+      const booking = await apiFetch<BookingItem>("/bookings", {
+        method: "POST",
+        headers: {
+          "Idempotency-Key": idempotencyKeyRef.current,
+        },
+        body: JSON.stringify({
+          carId: car.id,
+          customerName: trimmedName,
+          customerPhone: phone,
+          startDate: ddmmyyyyToYyyymmdd(startDate),
+          endDate: ddmmyyyyToYyyymmdd(endDate),
+          serviceType,
+          paymentScheme: effectivePaymentScheme,
+        }),
+      });
+
+      await qc.invalidateQueries({ queryKey: PUBLIC_CARS_QUERY_KEY });
+
+      const message = buildBookingMessage({
+        car,
+        name: trimmedName,
+        phone: booking.customerPhone,
+        bookingCode: booking.bookingCode,
+        serviceType,
+        paymentScheme: effectivePaymentScheme,
+        startDate,
+        endDate,
+        totalDays,
+        totalPrice,
+      });
+
+      window.open(buildWhatsAppUrl(message), "_blank", "noopener,noreferrer");
+      setName("");
+      setPhone("");
+      setPaymentScheme("FULL");
+      setStartDate(null);
+      setEndDate(null);
+      setErrorMsg(null);
+      resetIdempotencyKey();
+      onSuccess();
+    } catch (err) {
+      setErrorMsg(
+        err instanceof ApiError
+          ? err.message
+          : "Gagal mengirim booking. Silakan coba lagi."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return {
@@ -187,6 +189,7 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
     totalDays,
     totalPrice,
     errorMsg,
+    isSubmitting,
     handleDateClick,
     handlePrevMonth,
     handleNextMonth,

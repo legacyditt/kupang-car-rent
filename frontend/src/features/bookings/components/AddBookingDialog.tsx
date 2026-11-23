@@ -22,6 +22,7 @@ import {
 } from "@/features/cars/utils/booking";
 import { cn, formatRupiah } from "@/lib/utils";
 import type { BookingItem, PaymentScheme } from "../types/booking.types";
+import { useAdminCars } from "@/features/cars/hooks/useAdminCars";
 import {
   canUseDownPayment,
   ddmmyyyyToYyyymmdd,
@@ -29,7 +30,6 @@ import {
   yyyymmddToDdmmyyyy,
   type CreateBookingInput,
 } from "../utils/booking-admin";
-import { readStoredCars } from "../utils/bookings-storage";
 
 interface AddBookingDialogProps {
   open: boolean;
@@ -39,9 +39,10 @@ interface AddBookingDialogProps {
   initialDate?: string; // YYYY-MM-DD
   onCreateBooking: (
     input: CreateBookingInput
-  ) =>
+  ) => Promise<
     | { ok: true; booking: BookingItem; conflict: BookingItem | null }
-    | { ok: false; error: string };
+    | { ok: false; error: string }
+  >;
 }
 
 export function AddBookingDialog({
@@ -52,7 +53,7 @@ export function AddBookingDialog({
   initialDate,
   onCreateBooking,
 }: AddBookingDialogProps) {
-  const cars = useMemo(() => (open ? readStoredCars() : []), [open]);
+  const { cars } = useAdminCars();
   const today = useMemo(() => new Date(), []);
   const todayIso = useMemo(() => toISODate(today), [today]);
 
@@ -165,7 +166,7 @@ export function AddBookingDialog({
     setErrorMsg(null);
   }
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setErrorMsg(null);
     if (!selectedCar) {
@@ -179,7 +180,7 @@ export function AddBookingDialog({
     }
 
     const parsedFinalPrice = Number(finalPriceInput);
-    const result = onCreateBooking({
+    const result = await onCreateBooking({
       customerName,
       customerPhone,
       carId: selectedCar.id,

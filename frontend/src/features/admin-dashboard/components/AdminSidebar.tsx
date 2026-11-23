@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   CalendarDays,
@@ -13,10 +13,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { useAdminAuth } from "@/features/admin-auth/hooks/useAdminAuth";
-import {
-  readStoredBookings,
-  subscribeStoredBookings,
-} from "@/features/bookings/utils/bookings-storage";
+import { useAdminBookings } from "@/features/bookings/hooks/useAdminBookings";
 import { useBusinessProfile } from "@/features/business-profile/hooks/useBusinessProfile";
 import { cn } from "@/lib/utils";
 
@@ -46,18 +43,8 @@ export function AdminSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { logout } = useAdminAuth();
   const { profile } = useBusinessProfile();
-  const [pendingCount, setPendingCount] = useState<number>(
-    () => readStoredBookings().filter((b) => b.status === "PENDING").length
-  );
-
-  useEffect(() => {
-    const syncPending = () => {
-      setPendingCount(
-        readStoredBookings().filter((b) => b.status === "PENDING").length
-      );
-    };
-    return subscribeStoredBookings(syncPending);
-  }, []);
+  const { counts } = useAdminBookings();
+  const pendingCount = counts.PENDING;
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     try {
       return window.localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true";
