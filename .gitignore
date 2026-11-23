@@ -30,3 +30,6 @@ public/
 
 # Local utility scripts
 scripts/
+
+# Local backend planning doc
+docs/backend-plan.md
