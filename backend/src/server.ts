@@ -2,6 +2,7 @@ import "dotenv/config";
 import { createApp } from "./app.js";
 import { getEnv } from "./config/env.js";
 import { createAuth } from "./lib/auth.js";
+import { CloudinaryImageStorage } from "./lib/imageStorage.js";
 import { createOtpSender } from "./lib/otpSender.js";
 import { getPrisma } from "./lib/prisma.js";
 
@@ -10,6 +11,11 @@ const prisma = getPrisma();
 const otpSender = createOtpSender({
   provider: env.OTP_PROVIDER,
   fonnteToken: env.FONNTE_TOKEN,
+});
+const imageStorage = new CloudinaryImageStorage({
+  cloudName: env.CLOUDINARY_CLOUD_NAME,
+  apiKey: env.CLOUDINARY_API_KEY,
+  apiSecret: env.CLOUDINARY_API_SECRET,
 });
 
 const auth = createAuth({
@@ -26,6 +32,8 @@ const app = createApp({
   corsOrigin: env.CORS_ORIGIN,
   nodeEnv: env.NODE_ENV,
   auth,
+  prisma,
+  imageStorage,
 });
 
 const server = app.listen(env.PORT, () => {
