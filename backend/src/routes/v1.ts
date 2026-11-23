@@ -2,7 +2,10 @@ import { Router } from "express";
 import type { PrismaClient } from "../generated/prisma/client.js";
 import type { AuthInstance } from "../lib/auth.js";
 import type { ImageStorage } from "../lib/imageStorage.js";
-import { bookingRateLimiter } from "../middlewares/rateLimit.js";
+import {
+  bookingRateLimiter,
+  testimonialRateLimiter,
+} from "../middlewares/rateLimit.js";
 import { createRequireAdmin } from "../middlewares/requireAdmin.js";
 import { validateBody, validateQuery } from "../middlewares/validate.js";
 import { BookingController } from "../modules/bookings/booking.controller.js";
@@ -17,6 +20,9 @@ import {
   updateBookingStatusSchema,
 } from "../modules/bookings/booking.schema.js";
 import { BookingService } from "../modules/bookings/booking.service.js";
+import { CalendarController } from "../modules/calendar/calendar.controller.js";
+import { calendarQuerySchema } from "../modules/calendar/calendar.schema.js";
+import { CalendarService } from "../modules/calendar/calendar.service.js";
 import { CarController } from "../modules/cars/car.controller.js";
 import { CarRepository } from "../modules/cars/car.repository.js";
 import {
@@ -26,10 +32,24 @@ import {
   updateCarStatusSchema,
 } from "../modules/cars/car.schema.js";
 import { CarService } from "../modules/cars/car.service.js";
+import { DashboardController } from "../modules/dashboard/dashboard.controller.js";
+import { DashboardService } from "../modules/dashboard/dashboard.service.js";
+import { FinanceController } from "../modules/finance/finance.controller.js";
+import { financeQuerySchema } from "../modules/finance/finance.schema.js";
+import { FinanceService } from "../modules/finance/finance.service.js";
 import { BusinessProfileController } from "../modules/settings/businessProfile.controller.js";
 import { BusinessProfileRepository } from "../modules/settings/businessProfile.repository.js";
 import { updateBusinessProfileSchema } from "../modules/settings/businessProfile.schema.js";
 import { BusinessProfileService } from "../modules/settings/businessProfile.service.js";
+import { TestimonialController } from "../modules/testimonials/testimonial.controller.js";
+import { TestimonialRepository } from "../modules/testimonials/testimonial.repository.js";
+import {
+  adminUpsertTestimonialSchema,
+  eligibilityQuerySchema,
+  submitPublicTestimonialSchema,
+  updateTestimonialStatusSchema,
+} from "../modules/testimonials/testimonial.schema.js";
+import { TestimonialService } from "../modules/testimonials/testimonial.service.js";
 import {
   carImageUploadMiddleware,
   logoUploadMiddleware,
@@ -66,6 +86,18 @@ export function createV1Router(deps: V1RouterDeps = {}): Router {
     const bookingController = new BookingController(
       new BookingService(new BookingRepository(deps.prisma))
     );
+    const calendarController = new CalendarController(
+      new CalendarService(deps.prisma)
+    );
+    const financeController = new FinanceController(
+      new FinanceService(deps.prisma)
+    );
+    const dashboardController = new DashboardController(
+      new DashboardService(deps.prisma)
+    );
+    const testimonialController = new TestimonialController(
+      new TestimonialService(new TestimonialRepository(deps.prisma))
+    );
 
     // Public domain routes
     router.get("/business-profile", profileController.getPublicProfile);
@@ -85,6 +117,18 @@ export function createV1Router(deps: V1RouterDeps = {}): Router {
       "/bookings/code/:bookingCode",
       bookingController.getPublicByCode
     );
+    router.get("/testimonials", testimonialController.listPublic);
+    router.get(
+      "/testimonials/eligibility",
+      validateQuery(eligibilityQuerySchema),
+      testimonialController.checkEligibility
+    );
+    router.post(
+      "/testimonials",
+      testimonialRateLimiter,
+      validateBody(submitPublicTestimonialSchema),
+      testimonialController.submitPublic
+    );
 
     if (deps.auth) {
       const requireAdmin = createRequireAdmin(deps.auth);
@@ -92,6 +136,25 @@ export function createV1Router(deps: V1RouterDeps = {}): Router {
       router.get("/admin/me", requireAdmin, (req, res) => {
         res.status(200).json({ data: req.adminUser });
       });
+
+      // Admin Dashboard, Calendar & Finance
+      router.get(
+        "/admin/dashboard/summary",
+        requireAdmin,
+        dashboardController.getSummary
+      );
+      router.get(
+        "/admin/calendar",
+        requireAdmin,
+        validateQuery(calendarQuerySchema),
+        calendarController.getCalendar
+      );
+      router.get(
+        "/admin/finance/summary",
+        requireAdmin,
+        validateQuery(financeQuerySchema),
+        financeController.getSummary
+      );
 
       // Admin Business Profile
       router.patch(
@@ -169,6 +232,36 @@ export function createV1Router(deps: V1RouterDeps = {}): Router {
         requireAdmin,
         validateBody(extendBookingSchema),
         bookingController.extendBooking
+      );
+
+      // Admin Testimonials
+      router.get(
+        "/admin/testimonials",
+        requireAdmin,
+        testimonialController.listAdmin
+      );
+      router.post(
+        "/admin/testimonials",
+        requireAdmin,
+        validateBody(adminUpsertTestimonialSchema),
+        testimonialController.createAdmin
+      );
+      router.patch(
+        "/admin/testimonials/:id",
+        requireAdmin,
+        validateBody(adminUpsertTestimonialSchema.partial()),
+        testimonialController.updateAdmin
+      );
+      router.patch(
+        "/admin/testimonials/:id/status",
+        requireAdmin,
+        validateBody(updateTestimonialStatusSchema),
+        testimonialController.updateStatus
+      );
+      router.delete(
+        "/admin/testimonials/:id",
+        requireAdmin,
+        testimonialController.deleteAdmin
       );
 
       // Admin Uploads
