@@ -1,0 +1,194 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Better Auth Core + Username Plugin Models
+// ---------------------------------------------------------------------------
+
+model User {
+  id              String    @id
+  name            String
+  email           String    @unique
+  emailVerified   Boolean   @default(false)
+  image           String?
+  username        String?   @unique
+  displayUsername String?
+  role            String    @default("ADMIN")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  sessions        Session[]
+  accounts        Account[]
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+// ---------------------------------------------------------------------------
+// Domain Models — Kupang Car Rent (Aventra Rental)
+// ---------------------------------------------------------------------------
+
+enum CarStatus {
+  AVAILABLE
+  RENTED
+  MAINTENANCE
+  INACTIVE
+}
+
+enum RentalServiceType {
+  SELF_DRIVE
+  WITH_DRIVER
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
+enum PaymentScheme {
+  FULL
+  DP_50
+}
+
+enum PaymentStatus {
+  UNPAID
+  DP_PAID
+  PAID
+}
+
+enum TestimonialStatus {
+  PENDING
+  PUBLISHED
+  HIDDEN
+}
+
+model Car {
+  id            String    @id @default(cuid())
+  slug          String    @unique
+  name          String
+  brand         String
+  category      String?
+  transmission  String?
+  description   String?
+  capacityLabel String
+  pricePerDay   Int
+  imageUrl      String
+  status        CarStatus @default(AVAILABLE)
+  bookings      Booking[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([status])
+}
+
+model Booking {
+  id                  String            @id @default(cuid())
+  bookingCode         String            @unique
+  carId               String
+  car                 Car               @relation(fields: [carId], references: [id], onDelete: Restrict)
+  carNameSnapshot     String
+  customerName        String
+  customerPhone       String
+  startDate           DateTime          @db.Date
+  endDate             DateTime          @db.Date
+  totalDays           Int
+  serviceType         RentalServiceType
+  pickupLocation      String?
+  customerNotes       String?
+  pricePerDaySnapshot Int
+  estimatedPrice      Int
+  additionalFee       Int               @default(0)
+  finalPrice          Int
+  paymentScheme       PaymentScheme     @default(FULL)
+  paymentStatus       PaymentStatus     @default(UNPAID)
+  paidAmount          Int               @default(0)
+  status              BookingStatus     @default(PENDING)
+  internalNote        String            @default("")
+  testimonial         Testimonial?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  @@index([carId, status, startDate, endDate])
+  @@index([paymentStatus, startDate])
+  @@index([createdAt(sort: Desc)])
+}
+
+model Testimonial {
+  id           String            @id @default(cuid())
+  bookingId    String?           @unique
+  booking      Booking?          @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  bookingCode  String?           @unique
+  customerName String
+  carName      String
+  tripLabel    String
+  rating       Int
+  quote        String
+  status       TestimonialStatus @default(PENDING)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([status, createdAt(sort: Desc)])
+}
+
+model BusinessProfile {
+  id             String   @id @default("default")
+  name           String
+  tagline        String
+  description    String
+  location       String
+  operatingHours String
+  whatsappNumber String
+  logoPath       String
+  updatedAt      DateTime @updatedAt
+}
+
