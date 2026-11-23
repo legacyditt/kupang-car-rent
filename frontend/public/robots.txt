@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /ulasan
+
+Sitemap: https://rentalmobilkupang.com/sitemap.xml
