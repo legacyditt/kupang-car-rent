@@ -134,6 +134,7 @@ model Car {
 model Booking {
   id                  String            @id @default(cuid())
   bookingCode         String            @unique
+  idempotencyKey      String?           @unique
   carId               String
   car                 Car               @relation(fields: [carId], references: [id], onDelete: Restrict)
   carNameSnapshot     String

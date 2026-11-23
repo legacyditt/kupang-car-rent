@@ -35,6 +35,7 @@ export class FonnteOtpSender implements OtpSender {
         target: to,
         message,
       }),
+      signal: AbortSignal.timeout(5000),
     });
 
     if (!res.ok) {

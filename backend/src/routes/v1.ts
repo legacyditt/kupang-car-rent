@@ -2,8 +2,21 @@ import { Router } from "express";
 import type { PrismaClient } from "../generated/prisma/client.js";
 import type { AuthInstance } from "../lib/auth.js";
 import type { ImageStorage } from "../lib/imageStorage.js";
+import { bookingRateLimiter } from "../middlewares/rateLimit.js";
 import { createRequireAdmin } from "../middlewares/requireAdmin.js";
 import { validateBody, validateQuery } from "../middlewares/validate.js";
+import { BookingController } from "../modules/bookings/booking.controller.js";
+import { BookingRepository } from "../modules/bookings/booking.repository.js";
+import {
+  adminCreateBookingSchema,
+  createPublicBookingSchema,
+  extendBookingSchema,
+  listBookingsQuerySchema,
+  updateBookingDetailsSchema,
+  updateBookingPaymentSchema,
+  updateBookingStatusSchema,
+} from "../modules/bookings/booking.schema.js";
+import { BookingService } from "../modules/bookings/booking.service.js";
 import { CarController } from "../modules/cars/car.controller.js";
 import { CarRepository } from "../modules/cars/car.repository.js";
 import {
@@ -50,6 +63,9 @@ export function createV1Router(deps: V1RouterDeps = {}): Router {
     const carController = new CarController(
       new CarService(new CarRepository(deps.prisma))
     );
+    const bookingController = new BookingController(
+      new BookingService(new BookingRepository(deps.prisma))
+    );
 
     // Public domain routes
     router.get("/business-profile", profileController.getPublicProfile);
@@ -58,6 +74,16 @@ export function createV1Router(deps: V1RouterDeps = {}): Router {
       "/cars/:slug/availability",
       validateQuery(availabilityQuerySchema),
       carController.checkAvailability
+    );
+    router.post(
+      "/bookings",
+      bookingRateLimiter,
+      validateBody(createPublicBookingSchema),
+      bookingController.createPublicBooking
+    );
+    router.get(
+      "/bookings/code/:bookingCode",
+      bookingController.getPublicByCode
     );
 
     if (deps.auth) {
@@ -101,6 +127,49 @@ export function createV1Router(deps: V1RouterDeps = {}): Router {
         carController.updateCarStatus
       );
       router.delete("/admin/cars/:id", requireAdmin, carController.deleteCar);
+
+      // Admin Bookings
+      router.get(
+        "/admin/bookings",
+        requireAdmin,
+        validateQuery(listBookingsQuerySchema),
+        bookingController.listAdminBookings
+      );
+      router.get(
+        "/admin/bookings/:id",
+        requireAdmin,
+        bookingController.getAdminBooking
+      );
+      router.post(
+        "/admin/bookings",
+        requireAdmin,
+        validateBody(adminCreateBookingSchema),
+        bookingController.createAdminBooking
+      );
+      router.patch(
+        "/admin/bookings/:id",
+        requireAdmin,
+        validateBody(updateBookingDetailsSchema),
+        bookingController.updateBookingDetails
+      );
+      router.patch(
+        "/admin/bookings/:id/status",
+        requireAdmin,
+        validateBody(updateBookingStatusSchema),
+        bookingController.transitionStatus
+      );
+      router.patch(
+        "/admin/bookings/:id/payment",
+        requireAdmin,
+        validateBody(updateBookingPaymentSchema),
+        bookingController.updatePayment
+      );
+      router.post(
+        "/admin/bookings/:id/extend",
+        requireAdmin,
+        validateBody(extendBookingSchema),
+        bookingController.extendBooking
+      );
 
       // Admin Uploads
       if (deps.imageStorage) {

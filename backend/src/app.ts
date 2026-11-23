@@ -7,6 +7,7 @@ import type { PrismaClient } from "./generated/prisma/client.js";
 import type { AuthInstance } from "./lib/auth.js";
 import type { ImageStorage } from "./lib/imageStorage.js";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler.js";
+import { authRateLimiter } from "./middlewares/rateLimit.js";
 import { createV1Router } from "./routes/v1.js";
 
 export interface CreateAppOptions {
@@ -36,6 +37,7 @@ export function createApp(options: CreateAppOptions): Express {
 
   // Better Auth handler MUST be mounted before express.json() (Express 5 *splat syntax).
   if (options.auth) {
+    app.use("/api/auth", authRateLimiter);
     app.all("/api/auth/*splat", toNodeHandler(options.auth));
   }
 
