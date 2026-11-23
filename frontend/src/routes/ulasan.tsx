@@ -7,10 +7,15 @@ import { readStoredBookings } from "@/features/bookings/utils/bookings-storage";
 import { useBusinessProfile } from "@/features/business-profile/hooks/useBusinessProfile";
 import { SERVICE_TYPE_LABELS } from "@/features/cars/utils/booking";
 import { useTestimonials } from "@/features/testimonials/hooks/useTestimonials";
+import { useDocumentMeta } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
 /** Halaman independen pengisian testimoni pelanggan setelah penyewaan selesai (COMPLETED). */
 export function CustomerReviewPage() {
+  useDocumentMeta({
+    title: "Ulasan Pelanggan — Aventra Rental",
+    robots: "noindex, nofollow",
+  });
   const { testimonials, submitPublic } = useTestimonials();
   const { profile } = useBusinessProfile();
 

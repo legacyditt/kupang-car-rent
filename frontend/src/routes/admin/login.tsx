@@ -14,6 +14,7 @@ import {
   MOTION_MEDIA,
   registerMotionPlugins,
 } from "@/lib/motion";
+import { useDocumentMeta } from "@/lib/seo";
 
 registerMotionPlugins();
 
@@ -24,6 +25,10 @@ function maskWhatsAppDisplay(intl: string): string {
 
 /** Halaman login admin dengan form terpusat di atas logo Aventra gelap yang disinari cahaya emas bergerak. */
 export function AdminLoginPage() {
+  useDocumentMeta({
+    title: "Login Admin — Aventra Rental",
+    robots: "noindex, nofollow",
+  });
   const navigate = useNavigate();
   const containerRef = useRef<HTMLDivElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
