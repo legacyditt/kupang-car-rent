@@ -1,9 +1,14 @@
 import { Navigate, Outlet } from "@tanstack/react-router";
 import { useAdminAuth } from "@/features/admin-auth/hooks/useAdminAuth";
+import { useDocumentMeta } from "@/lib/seo";
 import { AdminMobileDock } from "./AdminMobileDock";
 import { AdminSidebar } from "./AdminSidebar";
 
 export function AdminLayout() {
+  useDocumentMeta({
+    title: "Dashboard Admin — Aventra Rental",
+    robots: "noindex, nofollow",
+  });
   const { isAuthenticated } = useAdminAuth();
 
   if (!isAuthenticated) {
