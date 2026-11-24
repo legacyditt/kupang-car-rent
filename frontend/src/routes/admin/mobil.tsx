@@ -27,6 +27,9 @@ export function AdminCarsPage() {
     setActiveTab,
     saveCar,
     changeCarStatus,
+    addCarUnit,
+    updateCarUnit,
+    deleteCarUnit,
   } = useAdminCars();
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -103,6 +106,11 @@ export function AdminCarsPage() {
               car={car}
               onEdit={openEdit}
               onStatusChange={changeCarStatus}
+              onAddUnit={addCarUnit}
+              onUpdateUnitStatus={(unitId, status) =>
+                updateCarUnit(unitId, { status })
+              }
+              onDeleteUnit={deleteCarUnit}
             />
           ))}
         </div>

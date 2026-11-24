@@ -21,6 +21,8 @@ export interface BookingItem {
   customerPhone: string;
   carId: string;
   carName: string;
+  carUnitId?: string | null;
+  carUnitLabel?: string | null;
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
   totalDays: number;

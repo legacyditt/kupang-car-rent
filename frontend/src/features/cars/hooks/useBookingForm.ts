@@ -43,10 +43,10 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
   );
   const idempotencyKeyRef = useRef<string | null>(null);
 
-  const bookedSet = useMemo(
-    () => new Set(car.bookedDates ?? []),
-    [car.bookedDates]
-  );
+  const bookedSet = useMemo(() => {
+    const byTrans = car.bookedDatesByTransmission?.[transmissionPreference];
+    return new Set(byTrans ?? car.bookedDates ?? []);
+  }, [car.bookedDates, car.bookedDatesByTransmission, transmissionPreference]);
 
   const calendarCells = useMemo(
     () => getCalendarCells(viewDate.getFullYear(), viewDate.getMonth()),

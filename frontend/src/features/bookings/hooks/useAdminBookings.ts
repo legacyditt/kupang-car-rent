@@ -63,7 +63,7 @@ export function useAdminBookings() {
   const changeStatus = async (
     bookingId: string,
     nextStatus: BookingStatus,
-    updates?: { finalPrice?: number; internalNote?: string }
+    updates?: { finalPrice?: number; internalNote?: string; carUnitId?: string }
   ): Promise<{ ok: true } | { ok: false; error: string }> => {
     try {
       await apiFetch<BookingItem>(`/admin/bookings/${bookingId}/status`, {
