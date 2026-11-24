@@ -140,7 +140,7 @@ export function AdminSidebar() {
             <Link
               key={item.to}
               to={item.to}
-              title={collapsed ? `${item.code} ${item.label}` : undefined}
+              title={collapsed ? item.label : undefined}
               className={cn(
                 "relative flex h-[42px] items-center rounded-lg border font-mono text-xs tracking-wider uppercase transition-colors",
                 collapsed ? "justify-center px-0" : "justify-between px-3",
@@ -151,11 +151,7 @@ export function AdminSidebar() {
             >
               <span className="flex items-center gap-2.5">
                 <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
-                {!collapsed && (
-                  <span className="truncate">
-                    {item.code} {item.label}
-                  </span>
-                )}
+                {!collapsed && <span className="truncate">{item.label}</span>}
               </span>
 
               {!collapsed && badgeCount > 0 && (

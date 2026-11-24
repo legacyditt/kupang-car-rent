@@ -133,16 +133,7 @@ export function HowToBookSection() {
                 data-step-item
                 className="py-5 md:px-6 md:py-6 md:first:pl-0 md:last:pr-0"
               >
-                <span
-                  className={`font-mono text-xs font-bold tracking-widest ${
-                    "isFinal" in item && item.isFinal
-                      ? "text-gold"
-                      : "text-brand-muted"
-                  }`}
-                >
-                  STEP {item.step}
-                </span>
-                <h3 className="mt-2 font-display text-lg font-bold text-white">
+                <h3 className="font-display text-lg font-bold text-white">
                   {item.title}
                 </h3>
                 <p className="mt-1.5 text-sm leading-relaxed text-brand-muted">

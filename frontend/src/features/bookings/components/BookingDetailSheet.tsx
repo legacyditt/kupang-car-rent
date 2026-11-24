@@ -15,7 +15,9 @@ import {
 } from "@/components/ui/sheet";
 import {
   SERVICE_TYPE_LABELS,
+  TRANSMISSION_LABELS,
   type RentalServiceType,
+  type TransmissionPreference,
 } from "@/features/cars/utils/booking";
 import { formatRupiah } from "@/lib/utils";
 import type {
@@ -42,7 +44,7 @@ interface BookingDetailSheetProps {
   onChangeStatus: (
     bookingId: string,
     nextStatus: BookingStatus,
-    updates?: { finalPrice?: number; internalNote?: string }
+    updates?: { finalPrice?: number; internalNote?: string; carUnitId?: string }
   ) => Promise<{ ok: true } | { ok: false; error: string }> | { ok: true } | { ok: false; error: string };
   onSaveDetails: (
     bookingId: string,
@@ -84,9 +86,14 @@ export function BookingDetailSheet({
   const [editEndDate, setEditEndDate] = useState("");
   const [editServiceType, setEditServiceType] =
     useState<RentalServiceType>("SELF_DRIVE");
+  const [editTransmission, setEditTransmission] =
+    useState<TransmissionPreference>("MANUAL");
+  const [selectedCarUnitId, setSelectedCarUnitId] = useState("");
   const [extendEndDate, setExtendEndDate] = useState("");
 
   const { cars } = useAdminCars();
+  const bookingCarUnits =
+    cars.find((c) => c.id === booking?.carId)?.units ?? [];
 
   useEffect(() => {
     if (!booking) return;
@@ -100,6 +107,8 @@ export function BookingDetailSheet({
     setEditStartDate(booking.startDate);
     setEditEndDate(booking.endDate);
     setEditServiceType(booking.serviceType);
+    setEditTransmission(booking.transmissionPreference ?? "MANUAL");
+    setSelectedCarUnitId(booking.carUnitId ?? "");
     setExtendEndDate(booking.endDate);
   }, [booking]);
 
@@ -122,6 +131,7 @@ export function BookingDetailSheet({
       startDate: editStartDate,
       endDate: editEndDate,
       serviceType: editServiceType,
+      transmissionPreference: editTransmission,
     });
     if (!res.ok) {
       setActionError(res.error);
@@ -135,6 +145,9 @@ export function BookingDetailSheet({
     const res = await onChangeStatus(booking.id, nextStatus, {
       finalPrice: parsedPrice,
       internalNote,
+      ...(nextStatus === "CONFIRMED" && selectedCarUnitId
+        ? { carUnitId: selectedCarUnitId }
+        : {}),
     });
     if (!res.ok) {
       setActionError(res.error);
@@ -251,6 +264,24 @@ export function BookingDetailSheet({
                     {SERVICE_TYPE_LABELS.WITH_DRIVER}
                   </option>
                 </select>
+                <div className="grid grid-cols-2 gap-2">
+                  {(["MATIC", "MANUAL"] as TransmissionPreference[]).map(
+                    (opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setEditTransmission(opt)}
+                        className={`h-8 rounded-md border font-mono text-[11px] font-medium transition-colors ${
+                          editTransmission === opt
+                            ? "border-gold bg-gold/15 text-gold"
+                            : "border-hairline bg-carbon text-brand-muted hover:text-white"
+                        }`}
+                      >
+                        {TRANSMISSION_LABELS[opt]}
+                      </button>
+                    )
+                  )}
+                </div>
                 <Button
                   type="button"
                   size="sm"
@@ -268,8 +299,45 @@ export function BookingDetailSheet({
                   hari)
                 </p>
                 <p className="font-mono text-[11px] text-brand-muted">
-                  Layanan: {SERVICE_TYPE_LABELS[booking.serviceType]}
+                  Layanan: {SERVICE_TYPE_LABELS[booking.serviceType]} •
+                  Transmisi:{" "}
+                  {
+                    TRANSMISSION_LABELS[
+                      booking.transmissionPreference ?? "MANUAL"
+                    ]
+                  }
                 </p>
+                {booking.carUnitLabel && (
+                  <p className="font-mono text-[11px] font-bold text-gold">
+                    Unit Fisik: {booking.carUnitLabel}
+                  </p>
+                )}
+                {isPending && bookingCarUnits.length > 0 && (
+                  <div className="pt-1">
+                    <label
+                      htmlFor="assign-car-unit"
+                      className="mb-1 block font-mono text-[10px] tracking-wider text-brand-muted uppercase"
+                    >
+                      Pilih Unit Fisik (Opsional / Otomatis)
+                    </label>
+                    <select
+                      id="assign-car-unit"
+                      value={selectedCarUnitId}
+                      onChange={(e) => setSelectedCarUnitId(e.target.value)}
+                      className="h-8 w-full rounded-md border border-hairline bg-carbon px-2 font-mono text-[11px] text-white focus:border-gold focus:outline-none"
+                    >
+                      <option value="">Otomatis (Unit Tersedia)</option>
+                      {bookingCarUnits
+                        .filter((u) => u.status === "AVAILABLE")
+                        .map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.plateNumber} — {u.label} (
+                            {u.transmission === "MATIC" ? "Matic" : "Manual"})
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                )}
               </>
             )}
 

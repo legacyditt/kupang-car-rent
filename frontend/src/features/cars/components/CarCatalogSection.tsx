@@ -19,7 +19,7 @@ export function CarCatalogSection() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [liveStatus, setLiveStatus] = useState("");
 
-  // Animasi masuk kartu katalog saat section terlihat di desktop.
+  // Animasi masuk kartu katalog saat section terlihat di desktop (tanpa opacity: 0 agar tidak pernah tersembunyi saat jump ke #katalog).
   useGSAP(
     () => {
       if (cars.length === 0) return;
@@ -27,13 +27,12 @@ export function CarCatalogSection() {
 
       mm.add(MOTION_MEDIA.desktop, () => {
         gsap.from("[data-catalog-card]", {
-          y: 24,
-          opacity: 0,
-          duration: 0.5,
-          stagger: 0.08,
+          y: 16,
+          duration: 0.45,
+          stagger: 0.06,
           ease: MOTION_EASE.ignition,
           force3D: true,
-          clearProps: "transform,opacity",
+          clearProps: "transform",
           scrollTrigger: {
             trigger: sectionRef.current,
             start: "top 95%",
@@ -103,7 +102,7 @@ export function CarCatalogSection() {
         <div className="flex items-end justify-between gap-4">
           <div>
             <p className="font-mono text-[11px] font-medium tracking-[0.16em] text-gold uppercase">
-              02 / Pilihan Mobil
+              Pilihan Mobil
             </p>
             <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">
               Harga Sewa Mobil Kupang.

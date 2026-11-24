@@ -85,10 +85,16 @@ export function hasBookedDateInRange(
 }
 
 export type RentalServiceType = "SELF_DRIVE" | "WITH_DRIVER";
+export type TransmissionPreference = "MATIC" | "MANUAL";
 
 export const SERVICE_TYPE_LABELS: Record<RentalServiceType, string> = {
   SELF_DRIVE: "Lepas Kunci",
   WITH_DRIVER: "Dengan Sopir",
+};
+
+export const TRANSMISSION_LABELS: Record<TransmissionPreference, string> = {
+  MATIC: "Matic",
+  MANUAL: "Manual",
 };
 
 /** Susun format pesan WhatsApp untuk booking. */
@@ -98,6 +104,7 @@ export function buildBookingMessage(params: {
   phone?: string;
   bookingCode?: string;
   serviceType: RentalServiceType;
+  transmissionPreference?: TransmissionPreference;
   paymentScheme?: "FULL" | "DP_50";
   startDate: string;
   endDate: string;
@@ -110,6 +117,7 @@ export function buildBookingMessage(params: {
     phone,
     bookingCode,
     serviceType,
+    transmissionPreference = "MANUAL",
     paymentScheme = "FULL",
     startDate,
     endDate,
@@ -123,6 +131,7 @@ export function buildBookingMessage(params: {
     `- Nama: ${name}`,
     ...(phone ? [`- No. WhatsApp: ${phone}`] : []),
     `- Mobil: ${car.name}`,
+    `- Transmisi: ${TRANSMISSION_LABELS[transmissionPreference]}`,
     `- Layanan: ${SERVICE_TYPE_LABELS[serviceType]}`,
     `- Tanggal Mulai: ${startDate}`,
     `- Tanggal Selesai: ${endDate}`,

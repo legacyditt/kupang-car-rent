@@ -6,9 +6,11 @@ import { createTestHarness } from "../helpers/testApp.js";
 describe("Bookings API, Payment Rules, Extend & BR-09 Concurrency", () => {
   const { prisma, app, loginAsAdmin } = createTestHarness();
   const testCarId = "test-car-booking-phase4";
+  const testUnitId = "test-unit-booking-phase4-1";
 
   beforeAll(async () => {
     await prisma.booking.deleteMany({ where: { carId: testCarId } });
+    await prisma.carUnit.deleteMany({ where: { carId: testCarId } });
     await prisma.car.deleteMany({ where: { id: testCarId } });
 
     await prisma.car.create({
@@ -21,12 +23,22 @@ describe("Bookings API, Payment Rules, Extend & BR-09 Concurrency", () => {
         pricePerDay: 300000,
         imageUrl: "/Toyota Avanza.jpg",
         status: "AVAILABLE",
+        units: {
+          create: {
+            id: testUnitId,
+            label: "Test Avanza #1",
+            plateNumber: "DH-P4-0001",
+            transmission: "MATIC",
+            status: "AVAILABLE",
+          },
+        },
       },
     });
   });
 
   afterAll(async () => {
     await prisma.booking.deleteMany({ where: { carId: testCarId } });
+    await prisma.carUnit.deleteMany({ where: { carId: testCarId } });
     await prisma.car.deleteMany({ where: { id: testCarId } });
     await prisma.$disconnect();
   });
@@ -40,6 +52,7 @@ describe("Bookings API, Payment Rules, Extend & BR-09 Concurrency", () => {
       startDate: "2026-12-01",
       endDate: "2026-12-03",
       serviceType: "SELF_DRIVE",
+      transmissionPreference: "MATIC",
       paymentScheme: "DP_50",
       pickupLocation: "Bandara El Tari",
     };
@@ -55,6 +68,7 @@ describe("Bookings API, Payment Rules, Extend & BR-09 Concurrency", () => {
       customerName: "Delano Kupang",
       customerPhone: "6281234567890",
       totalDays: 3,
+      transmissionPreference: "MATIC",
       estimatedPrice: 900000,
       finalPrice: 900000,
       paymentScheme: "DP_50",
@@ -72,12 +86,14 @@ describe("Bookings API, Payment Rules, Extend & BR-09 Concurrency", () => {
     expect(res2.status).toBe(200);
     expect(res2.body.data.id).toBe(res1.body.data.id);
 
-    // Public lookup strips internalNote
+    // Public lookup strips internalNote and carUnitLabel (plateNumber admin-only)
     const pubRes = await request(app).get(
       `/api/v1/bookings/code/${res1.body.data.bookingCode}`
     );
     expect(pubRes.status).toBe(200);
     expect(pubRes.body.data.internalNote).toBeUndefined();
+    expect(pubRes.body.data.carUnitId).toBeUndefined();
+    expect(pubRes.body.data.carUnitLabel).toBeUndefined();
   });
 
   it("enforces state machine, payment-gate for COMPLETED, non-regressive payment, and extend downgrade", async () => {

@@ -81,7 +81,7 @@ export function Navbar() {
                     : "font-medium text-brand-muted hover:text-white"
                 }`}
               >
-                {link.code} {link.label}
+                {link.label}
                 {isActive && (
                   <m.span
                     layoutId="navbar-active-line"

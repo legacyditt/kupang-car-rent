@@ -9,9 +9,9 @@ export const BUSINESS_INFO = {
 } as const;
 
 export const NAV_LINKS = [
-  { code: "01", label: "Beranda", href: "#beranda" },
-  { code: "02", label: "Pilihan Mobil", href: "#katalog" },
-  { code: "03", label: "Layanan", href: "#layanan" },
-  { code: "04", label: "Tentang", href: "#tentang" },
+  { label: "Beranda", href: "#beranda" },
+  { label: "Pilihan Mobil", href: "#katalog" },
+  { label: "Layanan", href: "#layanan" },
+  { label: "Tentang", href: "#tentang" },
 ] as const;
 

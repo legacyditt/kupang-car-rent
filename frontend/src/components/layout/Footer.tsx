@@ -37,7 +37,7 @@ export function Footer() {
                     href={link.href}
                     className="font-mono text-xs tracking-wider text-slate-300 uppercase transition-colors hover:text-gold"
                   >
-                    {link.code} {link.label}
+                    {link.label}
                   </a>
                 </li>
               ))}

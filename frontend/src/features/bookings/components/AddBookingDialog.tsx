@@ -16,9 +16,11 @@ import {
   getCalendarCells,
   hasBookedDateInRange,
   SERVICE_TYPE_LABELS,
+  TRANSMISSION_LABELS,
   toISODate,
   toTimestamp,
   type RentalServiceType,
+  type TransmissionPreference,
 } from "@/features/cars/utils/booking";
 import { cn, formatRupiah } from "@/lib/utils";
 import type { BookingItem, PaymentScheme } from "../types/booking.types";
@@ -62,6 +64,8 @@ export function AddBookingDialog({
   const [carId, setCarId] = useState("");
   const [serviceType, setServiceType] =
     useState<RentalServiceType>("SELF_DRIVE");
+  const [transmissionPreference, setTransmissionPreference] =
+    useState<TransmissionPreference>("MANUAL");
   const [paymentScheme, setPaymentScheme] = useState<PaymentScheme>("FULL");
   const [startDate, setStartDate] = useState<string | null>(null); // DD-MM-YYYY
   const [endDate, setEndDate] = useState<string | null>(null); // DD-MM-YYYY
@@ -189,6 +193,7 @@ export function AddBookingDialog({
       startDate: ddmmyyyyToYyyymmdd(startDate),
       endDate: ddmmyyyyToYyyymmdd(endDate),
       serviceType,
+      transmissionPreference,
       paymentScheme: canUseDownPayment(totalDays) ? paymentScheme : "FULL",
       finalPrice:
         Number.isFinite(parsedFinalPrice) && parsedFinalPrice >= 0
@@ -312,6 +317,32 @@ export function AddBookingDialog({
                   >
                     <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                     {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="font-mono text-[10px] tracking-wider text-brand-muted uppercase">
+              Transmisi
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
+              {(["MATIC", "MANUAL"] as TransmissionPreference[]).map((opt) => {
+                const active = transmissionPreference === opt;
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setTransmissionPreference(opt)}
+                    className={cn(
+                      "flex h-10 items-center justify-center rounded-lg border font-mono text-xs font-medium transition-colors",
+                      active
+                        ? "border-gold bg-gold/15 text-gold"
+                        : "border-hairline bg-obsidian text-brand-muted hover:border-gold/40 hover:text-white"
+                    )}
+                  >
+                    {TRANSMISSION_LABELS[opt]}
                   </button>
                 );
               })}

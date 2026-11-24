@@ -4,6 +4,7 @@ import {
   PaymentScheme,
   PaymentStatus,
   RentalServiceType,
+  TransmissionPreference,
 } from "../../generated/prisma/client.js";
 import { normalizeWhatsAppPhone } from "../../utils/phone.js";
 
@@ -29,6 +30,10 @@ export const createPublicBookingSchema = z
       .string()
       .regex(isoDateRegex, "Format endDate harus YYYY-MM-DD."),
     serviceType: z.enum(RentalServiceType),
+    transmissionPreference: z
+      .enum(TransmissionPreference)
+      .optional()
+      .default("MANUAL"),
     paymentScheme: z.enum(PaymentScheme).optional().default("FULL"),
     pickupLocation: z.string().trim().optional(),
     customerNotes: z.string().trim().optional(),
@@ -49,9 +54,11 @@ export const updateBookingDetailsSchema = z
     customerName: z.string().trim().min(1).optional(),
     customerPhone: phoneSchema.optional(),
     carId: z.string().trim().min(1).optional(),
+    carUnitId: z.string().trim().min(1).optional(),
     startDate: z.string().regex(isoDateRegex).optional(),
     endDate: z.string().regex(isoDateRegex).optional(),
     serviceType: z.enum(RentalServiceType).optional(),
+    transmissionPreference: z.enum(TransmissionPreference).optional(),
     additionalFee: z.coerce.number().int().nonnegative().optional(),
     finalPrice: z.coerce.number().int().nonnegative().optional(),
     internalNote: z.string().optional(),
@@ -66,6 +73,7 @@ export const updateBookingDetailsSchema = z
 
 export const updateBookingStatusSchema = z.object({
   status: z.enum(BookingStatus),
+  carUnitId: z.string().trim().min(1).optional(),
   finalPrice: z.coerce.number().int().nonnegative().optional(),
   internalNote: z.string().optional(),
 });

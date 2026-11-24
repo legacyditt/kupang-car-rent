@@ -53,7 +53,7 @@ export function AdminBookingsPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="font-mono text-[11px] font-bold tracking-[0.14em] text-gold uppercase">
-            03 / Manajemen Booking
+            Manajemen Booking
           </p>
           <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-white sm:text-3xl">
             Daftar Permintaan &amp; Jadwal.

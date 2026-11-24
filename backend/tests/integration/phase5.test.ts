@@ -47,8 +47,8 @@ describe("Phase 5: Calendar, Finance, Dashboard & Testimonials API", () => {
         carNameSnapshot: "Test Innova Phase 5",
         customerName: "Phase5 Siti",
         customerPhone: "6281234567801",
-        startDate: new Date("2026-11-10"),
-        endDate: new Date("2026-11-12"),
+        startDate: new Date("2099-11-10"),
+        endDate: new Date("2099-11-12"),
         totalDays: 3,
         serviceType: "WITH_DRIVER",
         pricePerDaySnapshot: 300000,
@@ -69,8 +69,8 @@ describe("Phase 5: Calendar, Finance, Dashboard & Testimonials API", () => {
         carNameSnapshot: "Test Innova Phase 5",
         customerName: "Phase5 Andi",
         customerPhone: "6281234567802",
-        startDate: new Date("2026-11-20"),
-        endDate: new Date("2026-11-22"),
+        startDate: new Date("2099-11-20"),
+        endDate: new Date("2099-11-22"),
         totalDays: 3,
         serviceType: "SELF_DRIVE",
         pricePerDaySnapshot: 300000,
@@ -91,8 +91,8 @@ describe("Phase 5: Calendar, Finance, Dashboard & Testimonials API", () => {
         carNameSnapshot: "Test Innova Phase 5",
         customerName: "Phase5 Rudi",
         customerPhone: "6281234567803",
-        startDate: new Date("2026-12-01"),
-        endDate: new Date("2026-12-02"),
+        startDate: new Date("2099-12-01"),
+        endDate: new Date("2099-12-02"),
         totalDays: 2,
         serviceType: "SELF_DRIVE",
         pricePerDaySnapshot: 300000,
@@ -140,7 +140,7 @@ describe("Phase 5: Calendar, Finance, Dashboard & Testimonials API", () => {
     const cookies = await loginAsAdmin();
 
     const res = await request(app)
-      .get("/api/v1/admin/calendar?month=2026-11&carId=" + testCarId)
+      .get("/api/v1/admin/calendar?month=2099-11&carId=" + testCarId)
       .set("Cookie", cookies);
 
     expect(res.status).toBe(200);
@@ -156,7 +156,7 @@ describe("Phase 5: Calendar, Finance, Dashboard & Testimonials API", () => {
     const cookies = await loginAsAdmin();
 
     const res = await request(app)
-      .get("/api/v1/admin/finance/summary?month=2026-11")
+      .get("/api/v1/admin/finance/summary?month=2099-11")
       .set("Cookie", cookies);
 
     expect(res.status).toBe(200);
@@ -167,7 +167,7 @@ describe("Phase 5: Calendar, Finance, Dashboard & Testimonials API", () => {
       dpCount: 1,
       paidCount: 1,
     });
-    expect(res.body.data.availableMonths).toContain("2026-11");
+    expect(res.body.data.availableMonths).toContain("2099-11");
   });
 
   it("handles public testimonial eligibility, single submit for COMPLETED, and admin moderation", async () => {

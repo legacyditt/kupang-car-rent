@@ -1,4 +1,4 @@
-import type { CarItem, CarStatus } from "../types/car.types";
+import type { CarItem, CarStatus, CarTransmission } from "../types/car.types";
 
 export type CarFilterTab = "ALL" | CarStatus;
 
@@ -9,10 +9,16 @@ export const CAR_STATUS_LABELS: Record<CarStatus, string> = {
   INACTIVE: "Nonaktif",
 };
 
+export const CAR_TRANSMISSION_LABELS: Record<CarTransmission, string> = {
+  MATIC: "Matic",
+  MANUAL: "Manual",
+  BOTH: "Matic / Manual",
+};
+
 export interface CarFormPayload {
   id?: string;
   name: string;
-  brand: string;
+  transmission: CarTransmission;
   capacityLabel: string;
   pricePerDay: number;
   imageUrl: string;
@@ -62,7 +68,7 @@ export function upsertCar(
             ...car,
             slug,
             name: payload.name.trim(),
-            brand: payload.brand.trim(),
+            transmission: payload.transmission,
             capacityLabel: payload.capacityLabel.trim() || "— Kursi",
             pricePerDay: payload.pricePerDay,
             imageUrl: payload.imageUrl.trim() || "/Toyota Avanza.jpg",
@@ -76,7 +82,7 @@ export function upsertCar(
     id: `car-${slug}-${Date.now()}`,
     slug,
     name: payload.name.trim(),
-    brand: payload.brand.trim(),
+    transmission: payload.transmission,
     capacityLabel: payload.capacityLabel.trim() || "— Kursi",
     pricePerDay: payload.pricePerDay,
     imageUrl: payload.imageUrl.trim() || "/Toyota Avanza.jpg",

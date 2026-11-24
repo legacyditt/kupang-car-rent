@@ -24,8 +24,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { CarItem, CarStatus } from "../types/car.types";
-import { CAR_STATUS_LABELS, type CarFormPayload } from "../utils/car-admin";
+import type {
+  CarItem,
+  CarStatus,
+  CarTransmission,
+} from "../types/car.types";
+import {
+  CAR_STATUS_LABELS,
+  CAR_TRANSMISSION_LABELS,
+  type CarFormPayload,
+} from "../utils/car-admin";
 import {
   MIN_IMAGE_HEIGHT,
   MIN_IMAGE_WIDTH,
@@ -48,6 +56,8 @@ const STATUS_VALUES: CarStatus[] = [
   "INACTIVE",
 ];
 
+const TRANSMISSION_VALUES: CarTransmission[] = ["MATIC", "MANUAL", "BOTH"];
+
 export function CarFormDialog({
   open,
   onOpenChange,
@@ -56,7 +66,7 @@ export function CarFormDialog({
 }: CarFormDialogProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState("");
-  const [brand, setBrand] = useState("");
+  const [transmission, setTransmission] = useState<CarTransmission>("BOTH");
   const [capacityLabel, setCapacityLabel] = useState("7 Kursi");
   const [pricePerDay, setPricePerDay] = useState("300000");
   const [imageUrl, setImageUrl] = useState("");
@@ -71,14 +81,14 @@ export function CarFormDialog({
     setImageMeta(null);
     if (editingCar) {
       setName(editingCar.name);
-      setBrand(editingCar.brand);
+      setTransmission(editingCar.transmission ?? "BOTH");
       setCapacityLabel(editingCar.capacityLabel);
       setPricePerDay(String(editingCar.pricePerDay));
       setImageUrl(editingCar.imageUrl);
       setStatus(editingCar.status);
     } else {
       setName("");
-      setBrand("Toyota");
+      setTransmission("BOTH");
       setCapacityLabel("7 Kursi");
       setPricePerDay("300000");
       setImageUrl("");
@@ -120,7 +130,7 @@ export function CarFormDialog({
     onSave({
       id: editingCar?.id,
       name,
-      brand,
+      transmission,
       capacityLabel,
       pricePerDay: parsedPrice,
       imageUrl,
@@ -161,20 +171,28 @@ export function CarFormDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label
-                htmlFor="car-brand"
-                className="font-mono text-[11px] tracking-wider text-brand-muted uppercase"
-              >
-                Merek
+              <Label className="font-mono text-[11px] tracking-wider text-brand-muted uppercase">
+                Transmisi
               </Label>
-              <Input
-                id="car-brand"
-                required
-                value={brand}
-                onChange={(e) => setBrand(e.target.value)}
-                placeholder="Toyota"
-                className="border-hairline bg-obsidian text-white focus-visible:border-gold focus-visible:ring-0"
-              />
+              <Select
+                value={transmission}
+                onValueChange={(val) => setTransmission(val as CarTransmission)}
+              >
+                <SelectTrigger className="w-full border-hairline bg-obsidian font-mono text-xs text-white focus:border-gold">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="border-hairline bg-carbon text-white">
+                  {TRANSMISSION_VALUES.map((val) => (
+                    <SelectItem
+                      key={val}
+                      value={val}
+                      className="font-mono text-xs focus:bg-obsidian focus:text-gold"
+                    >
+                      {CAR_TRANSMISSION_LABELS[val]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-1.5">

@@ -27,6 +27,9 @@ export function AdminCarsPage() {
     setActiveTab,
     saveCar,
     changeCarStatus,
+    addCarUnit,
+    updateCarUnit,
+    deleteCarUnit,
   } = useAdminCars();
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -48,7 +51,7 @@ export function AdminCarsPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="font-mono text-[11px] font-bold tracking-[0.14em] text-gold uppercase">
-            02 / Manajemen Kendaraan
+            Manajemen Kendaraan
           </p>
           <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-white sm:text-3xl">
             Unit &amp; Tarif Sewa.
@@ -103,6 +106,11 @@ export function AdminCarsPage() {
               car={car}
               onEdit={openEdit}
               onStatusChange={changeCarStatus}
+              onAddUnit={addCarUnit}
+              onUpdateUnitStatus={(unitId, status) =>
+                updateCarUnit(unitId, { status })
+              }
+              onDeleteUnit={deleteCarUnit}
             />
           ))}
         </div>

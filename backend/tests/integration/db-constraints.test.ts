@@ -11,9 +11,11 @@ describe("PostgreSQL BR-09 & integrity constraints", () => {
 
   const prisma = createPrismaClient(connectionString);
   const testCarId = "test-car-br09-constraint";
+  const testUnitId = "test-unit-br09-constraint-1";
 
   beforeAll(async () => {
     await prisma.booking.deleteMany({ where: { carId: testCarId } });
+    await prisma.carUnit.deleteMany({ where: { carId: testCarId } });
     await prisma.car.deleteMany({ where: { id: testCarId } });
 
     await prisma.car.create({
@@ -26,12 +28,22 @@ describe("PostgreSQL BR-09 & integrity constraints", () => {
         pricePerDay: 300000,
         imageUrl: "/Toyota Avanza.jpg",
         status: "AVAILABLE",
+        units: {
+          create: {
+            id: testUnitId,
+            label: "Test Unit #1",
+            plateNumber: "DH-BR09-01",
+            transmission: "MANUAL",
+            status: "AVAILABLE",
+          },
+        },
       },
     });
   });
 
   afterAll(async () => {
     await prisma.booking.deleteMany({ where: { carId: testCarId } });
+    await prisma.carUnit.deleteMany({ where: { carId: testCarId } });
     await prisma.car.deleteMany({ where: { id: testCarId } });
     await prisma.$disconnect();
   });
@@ -77,11 +89,12 @@ describe("PostgreSQL BR-09 & integrity constraints", () => {
     expect(b2.status).toBe("PENDING");
   });
 
-  it("rejects overlapping CONFIRMED bookings on the same car (exclusion_violation 23P01)", async () => {
+  it("rejects overlapping CONFIRMED bookings on the same carUnitId (exclusion_violation 23P01)", async () => {
     await prisma.booking.create({
       data: {
         bookingCode: "BK-TEST-CONF-001",
         carId: testCarId,
+        carUnitId: testUnitId,
         carNameSnapshot: "Test Car BR-09",
         customerName: "Pelanggan C",
         customerPhone: "6281234567892",
@@ -101,6 +114,7 @@ describe("PostgreSQL BR-09 & integrity constraints", () => {
         data: {
           bookingCode: "BK-TEST-CONF-002",
           carId: testCarId,
+          carUnitId: testUnitId,
           carNameSnapshot: "Test Car BR-09",
           customerName: "Pelanggan D",
           customerPhone: "6281234567893",
@@ -114,7 +128,7 @@ describe("PostgreSQL BR-09 & integrity constraints", () => {
           status: "CONFIRMED",
         },
       })
-    ).rejects.toThrow(/booking_no_overlap_confirmed_or_active|23P01/);
+    ).rejects.toThrow(/booking_unit_no_overlap_confirmed_or_active|23P01/);
   });
 
   it("allows adjacent non-overlapping CONFIRMED bookings", async () => {
@@ -122,6 +136,7 @@ describe("PostgreSQL BR-09 & integrity constraints", () => {
       data: {
         bookingCode: "BK-TEST-CONF-003",
         carId: testCarId,
+        carUnitId: testUnitId,
         carNameSnapshot: "Test Car BR-09",
         customerName: "Pelanggan E",
         customerPhone: "6281234567894",

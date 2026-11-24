@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { INITIAL_CARS } from "../data/cars.mock";
-import type { CarItem, CarStatus } from "../types/car.types";
+import type { CarItem, CarStatus, CarUnitItem } from "../types/car.types";
 import {
   countCarsByStatus,
   filterCarsByStatus,
@@ -46,7 +46,7 @@ export function useAdminCars() {
   const saveCar = async (payload: CarFormPayload) => {
     const body = {
       name: payload.name,
-      brand: payload.brand,
+      transmission: payload.transmission,
       capacityLabel: payload.capacityLabel,
       pricePerDay: payload.pricePerDay,
       imageUrl: payload.imageUrl,
@@ -76,6 +76,45 @@ export function useAdminCars() {
     await invalidateCars();
   };
 
+  const addCarUnit = async (
+    carId: string,
+    input: {
+      label: string;
+      plateNumber: string;
+      transmission: "MATIC" | "MANUAL";
+      status?: CarStatus;
+    }
+  ) => {
+    await apiFetch<CarUnitItem>(`/admin/cars/${carId}/units`, {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    await invalidateCars();
+  };
+
+  const updateCarUnit = async (
+    unitId: string,
+    input: Partial<{
+      label: string;
+      plateNumber: string;
+      transmission: "MATIC" | "MANUAL";
+      status: CarStatus;
+    }>
+  ) => {
+    await apiFetch<CarUnitItem>(`/admin/car-units/${unitId}`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    });
+    await invalidateCars();
+  };
+
+  const deleteCarUnit = async (unitId: string) => {
+    await apiFetch(`/admin/car-units/${unitId}`, {
+      method: "DELETE",
+    });
+    await invalidateCars();
+  };
+
   return {
     cars,
     isLoading,
@@ -85,5 +124,8 @@ export function useAdminCars() {
     setActiveTab,
     saveCar,
     changeCarStatus,
+    addCarUnit,
+    updateCarUnit,
+    deleteCarUnit,
   };
 }
