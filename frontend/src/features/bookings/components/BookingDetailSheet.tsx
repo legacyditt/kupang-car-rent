@@ -15,7 +15,9 @@ import {
 } from "@/components/ui/sheet";
 import {
   SERVICE_TYPE_LABELS,
+  TRANSMISSION_LABELS,
   type RentalServiceType,
+  type TransmissionPreference,
 } from "@/features/cars/utils/booking";
 import { formatRupiah } from "@/lib/utils";
 import type {
@@ -84,6 +86,8 @@ export function BookingDetailSheet({
   const [editEndDate, setEditEndDate] = useState("");
   const [editServiceType, setEditServiceType] =
     useState<RentalServiceType>("SELF_DRIVE");
+  const [editTransmission, setEditTransmission] =
+    useState<TransmissionPreference>("MANUAL");
   const [extendEndDate, setExtendEndDate] = useState("");
 
   const { cars } = useAdminCars();
@@ -100,6 +104,7 @@ export function BookingDetailSheet({
     setEditStartDate(booking.startDate);
     setEditEndDate(booking.endDate);
     setEditServiceType(booking.serviceType);
+    setEditTransmission(booking.transmissionPreference ?? "MANUAL");
     setExtendEndDate(booking.endDate);
   }, [booking]);
 
@@ -122,6 +127,7 @@ export function BookingDetailSheet({
       startDate: editStartDate,
       endDate: editEndDate,
       serviceType: editServiceType,
+      transmissionPreference: editTransmission,
     });
     if (!res.ok) {
       setActionError(res.error);
@@ -251,6 +257,24 @@ export function BookingDetailSheet({
                     {SERVICE_TYPE_LABELS.WITH_DRIVER}
                   </option>
                 </select>
+                <div className="grid grid-cols-2 gap-2">
+                  {(["MATIC", "MANUAL"] as TransmissionPreference[]).map(
+                    (opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setEditTransmission(opt)}
+                        className={`h-8 rounded-md border font-mono text-[11px] font-medium transition-colors ${
+                          editTransmission === opt
+                            ? "border-gold bg-gold/15 text-gold"
+                            : "border-hairline bg-carbon text-brand-muted hover:text-white"
+                        }`}
+                      >
+                        {TRANSMISSION_LABELS[opt]}
+                      </button>
+                    )
+                  )}
+                </div>
                 <Button
                   type="button"
                   size="sm"
@@ -268,7 +292,13 @@ export function BookingDetailSheet({
                   hari)
                 </p>
                 <p className="font-mono text-[11px] text-brand-muted">
-                  Layanan: {SERVICE_TYPE_LABELS[booking.serviceType]}
+                  Layanan: {SERVICE_TYPE_LABELS[booking.serviceType]} •
+                  Transmisi:{" "}
+                  {
+                    TRANSMISSION_LABELS[
+                      booking.transmissionPreference ?? "MANUAL"
+                    ]
+                  }
                 </p>
               </>
             )}

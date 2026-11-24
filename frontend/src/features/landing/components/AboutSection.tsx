@@ -113,7 +113,7 @@ export function AboutSection() {
 
         <div>
           <p className="font-mono text-[11px] font-medium tracking-[0.16em] text-gold uppercase">
-            03 / Tentang {profile.name}
+            Tentang {profile.name}
           </p>
           <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">
             {profile.tagline}.

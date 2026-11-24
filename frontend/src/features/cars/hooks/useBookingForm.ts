@@ -16,6 +16,7 @@ import {
   toISODate,
   toTimestamp,
   type RentalServiceType,
+  type TransmissionPreference,
 } from "../utils/booking";
 import { PUBLIC_CARS_QUERY_KEY } from "./useAdminCars";
 
@@ -28,6 +29,10 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
   const [phone, setPhone] = useState("");
   const [serviceType, setServiceType] =
     useState<RentalServiceType>("SELF_DRIVE");
+  const defaultTransmission: TransmissionPreference =
+    car.transmission === "MATIC" ? "MATIC" : "MANUAL";
+  const [transmissionPreference, setTransmissionPreference] =
+    useState<TransmissionPreference>(defaultTransmission);
   const [paymentScheme, setPaymentScheme] = useState<PaymentScheme>("FULL");
   const [startDate, setStartDate] = useState<string | null>(null);
   const [endDate, setEndDate] = useState<string | null>(null);
@@ -130,6 +135,7 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
           startDate: ddmmyyyyToYyyymmdd(startDate),
           endDate: ddmmyyyyToYyyymmdd(endDate),
           serviceType,
+          transmissionPreference,
           paymentScheme: effectivePaymentScheme,
         }),
       });
@@ -142,6 +148,7 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
         phone: booking.customerPhone,
         bookingCode: booking.bookingCode,
         serviceType,
+        transmissionPreference,
         paymentScheme: effectivePaymentScheme,
         startDate,
         endDate,
@@ -176,6 +183,8 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
     setPhone,
     serviceType,
     setServiceType,
+    transmissionPreference,
+    setTransmissionPreference,
     paymentScheme: effectivePaymentScheme,
     setPaymentScheme,
     isDpEligible,

@@ -46,7 +46,7 @@ export function useAdminCars() {
   const saveCar = async (payload: CarFormPayload) => {
     const body = {
       name: payload.name,
-      brand: payload.brand,
+      transmission: payload.transmission,
       capacityLabel: payload.capacityLabel,
       pricePerDay: payload.pricePerDay,
       imageUrl: payload.imageUrl,

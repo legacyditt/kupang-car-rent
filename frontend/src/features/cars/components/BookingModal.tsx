@@ -14,7 +14,9 @@ import type { CarItem } from "../types/car.types";
 import { useBookingForm } from "../hooks/useBookingForm";
 import {
   SERVICE_TYPE_LABELS,
+  TRANSMISSION_LABELS,
   type RentalServiceType,
+  type TransmissionPreference,
 } from "../utils/booking";
 import { AvailabilityCalendar } from "./AvailabilityCalendar";
 
@@ -46,6 +48,8 @@ export function BookingModal({ car, open, onOpenChange }: BookingModalProps) {
     setPhone,
     serviceType,
     setServiceType,
+    transmissionPreference,
+    setTransmissionPreference,
     paymentScheme,
     setPaymentScheme,
     isDpEligible,
@@ -153,6 +157,43 @@ export function BookingModal({ car, open, onOpenChange }: BookingModalProps) {
             </div>
           </div>
 
+          <div>
+            <Label className="mb-1.5 block font-mono text-[11px] font-medium tracking-wider text-brand-muted uppercase">
+              Transmisi
+            </Label>
+            <div
+              role="radiogroup"
+              aria-label="Transmisi"
+              className="grid grid-cols-2 gap-2"
+            >
+              {(["MATIC", "MANUAL"] as TransmissionPreference[]).map((opt) => {
+                const isSelected = transmissionPreference === opt;
+                const isAllowed =
+                  !car.transmission ||
+                  car.transmission === "BOTH" ||
+                  car.transmission === opt;
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    disabled={!isAllowed}
+                    onClick={() => setTransmissionPreference(opt)}
+                    className={cn(
+                      "flex h-10 items-center justify-center rounded-lg border font-mono text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-45",
+                      isSelected
+                        ? "border-gold bg-gold/15 text-gold"
+                        : "border-hairline bg-obsidian text-brand-muted hover:border-gold/40 hover:text-white"
+                    )}
+                  >
+                    {TRANSMISSION_LABELS[opt]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <AvailabilityCalendar
             viewDate={viewDate}
             calendarCells={calendarCells}
@@ -178,7 +219,7 @@ export function BookingModal({ car, open, onOpenChange }: BookingModalProps) {
                 Skema Pembayaran
               </Label>
               {!isDpEligible && (
-                <span className="font-mono text-[10px] text-brand-muted">
+                <span className="font-mono text-[10px] text-brand-muted text-gold">
                   DP 50% tersedia min. 3 hari
                 </span>
               )}
@@ -217,6 +258,12 @@ export function BookingModal({ car, open, onOpenChange }: BookingModalProps) {
               <span className="text-brand-muted">Layanan</span>
               <span className="font-mono font-semibold text-white">
                 {SERVICE_TYPE_LABELS[serviceType]}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-brand-muted">Transmisi</span>
+              <span className="font-mono font-semibold text-white">
+                {TRANSMISSION_LABELS[transmissionPreference]}
               </span>
             </div>
             <div className="flex justify-between">

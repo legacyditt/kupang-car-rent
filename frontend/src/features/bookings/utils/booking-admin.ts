@@ -1,4 +1,7 @@
-import type { RentalServiceType } from "../../cars/utils/booking";
+import type {
+  RentalServiceType,
+  TransmissionPreference,
+} from "../../cars/utils/booking";
 import type {
   BookingItem,
   BookingStatus,
@@ -267,6 +270,7 @@ export interface CreateBookingInput {
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
   serviceType: RentalServiceType;
+  transmissionPreference?: TransmissionPreference;
   paymentScheme?: PaymentScheme;
   finalPrice?: number;
   internalNote?: string;
@@ -351,6 +355,7 @@ export interface UpdateBookingDetailsInput {
   startDate?: string;
   endDate?: string;
   serviceType?: RentalServiceType;
+  transmissionPreference?: TransmissionPreference;
   finalPrice?: number;
   internalNote?: string;
 }

@@ -118,10 +118,7 @@ export function ServicesSection() {
                     <Icon className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-mono text-[10px] tracking-widest text-brand-muted uppercase">
-                      OPSI {service.code}
-                    </p>
-                    <h3 className="mt-1 font-display text-xl font-bold text-white">
+                    <h3 className="font-display text-xl font-bold text-white">
                       {service.title}
                     </h3>
                     <p className="mt-2 text-sm leading-relaxed text-brand-muted">

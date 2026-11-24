@@ -11,7 +11,10 @@ import {
 } from "@/components/ui/select";
 import { cn, formatRupiah } from "@/lib/utils";
 import type { CarItem, CarStatus } from "../types/car.types";
-import { CAR_STATUS_LABELS } from "../utils/car-admin";
+import {
+  CAR_STATUS_LABELS,
+  CAR_TRANSMISSION_LABELS,
+} from "../utils/car-admin";
 
 interface AdminCarCardProps {
   car: CarItem;
@@ -62,7 +65,9 @@ export function AdminCarCard({
 
             <div className="min-w-0">
               <p className="truncate font-mono text-[10px] tracking-widest text-brand-muted uppercase">
-                {car.brand} • {car.capacityLabel}
+                {CAR_TRANSMISSION_LABELS[car.transmission ?? "BOTH"] ??
+                  "Matic / Manual"}{" "}
+                • {car.capacityLabel}
               </p>
               <h3 className="mt-1 truncate font-display text-lg font-bold text-white">
                 {car.name}

@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { TAP_SPRING } from "@/lib/motion";
 import { formatRupiah } from "@/lib/utils";
 import type { CarItem } from "../types/car.types";
+import { CAR_TRANSMISSION_LABELS } from "../utils/car-admin";
 import { BookingModal } from "./BookingModal";
 
 interface CarCardProps {
@@ -14,11 +15,13 @@ interface CarCardProps {
 }
 
 export function CarCard({ car, prioritizeImage = false }: CarCardProps) {
+  const transmissionLabel =
+    CAR_TRANSMISSION_LABELS[car.transmission ?? "BOTH"] ?? "Matic / Manual";
   const metadata = [
     car.capacityLabel !== "—" && car.capacityLabel !== "— Kursi"
       ? car.capacityLabel
       : null,
-    car.brand,
+    transmissionLabel,
   ].filter(Boolean);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
 

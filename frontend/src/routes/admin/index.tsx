@@ -70,7 +70,7 @@ export function AdminOverviewPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="font-mono text-[11px] font-bold tracking-[0.14em] text-gold uppercase">
-            01 / Dashboard Overview
+            Dashboard Overview
           </p>
           <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-white sm:text-3xl">
             Ringkasan Operasional.
