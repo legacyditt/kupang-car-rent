@@ -30,12 +30,12 @@ export function AdminSettingsPage() {
     setDescription(profile.description);
   }, [profile]);
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setErrorMsg(null);
     setSavedToast(false);
 
-    const res = saveProfile({
+    const res = await saveProfile({
       name,
       whatsappNumber,
       location,
@@ -179,10 +179,10 @@ export function AdminSettingsPage() {
             <LogoUploadCard
               businessName={name || profile.name}
               logoPath={profile.logoPath}
-              onLogoChange={(dataUrl) => {
+              onLogoChange={async (dataUrl) => {
                 setSavedToast(false);
                 setErrorMsg(null);
-                const res = saveProfile({
+                const res = await saveProfile({
                   name,
                   whatsappNumber,
                   location,
@@ -197,9 +197,9 @@ export function AdminSettingsPage() {
                 }
                 setSavedToast(true);
               }}
-              onResetLogo={() => {
+              onResetLogo={async () => {
                 setSavedToast(false);
-                resetLogo();
+                await resetLogo();
                 setSavedToast(true);
               }}
             />

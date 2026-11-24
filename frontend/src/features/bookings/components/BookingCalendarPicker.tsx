@@ -13,10 +13,8 @@ import {
   getBookedCalendarDatesForCar,
   yyyymmddToDdmmyyyy,
 } from "../utils/booking-admin";
-import {
-  readStoredBookings,
-  readStoredCars,
-} from "../utils/bookings-storage";
+import { useAdminBookings } from "@/features/bookings/hooks/useAdminBookings";
+import { useAdminCars } from "@/features/cars/hooks/useAdminCars";
 
 interface BookingCalendarPickerProps {
   mode: "range" | "extend-end";
@@ -63,15 +61,16 @@ export function BookingCalendarPicker({
 
   const [viewDate, setViewDate] = useState<Date>(initialMonthDate);
 
+  const { bookings } = useAdminBookings();
+  const { cars } = useAdminCars();
+
   const bookedSet = useMemo(() => {
-    const allBookings = readStoredBookings().filter(
-      (b) => b.id !== excludeBookingId
-    );
-    const car = readStoredCars().find((c) => c.id === carId);
+    const allBookings = bookings.filter((b) => b.id !== excludeBookingId);
+    const car = cars.find((c) => c.id === carId);
     return new Set(
       getBookedCalendarDatesForCar(carId, allBookings, car?.bookedDates ?? [])
     );
-  }, [carId, excludeBookingId]);
+  }, [bookings, cars, carId, excludeBookingId]);
 
   const calendarCells = useMemo(
     () => getCalendarCells(viewDate.getFullYear(), viewDate.getMonth()),

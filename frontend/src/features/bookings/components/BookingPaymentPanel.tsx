@@ -17,7 +17,7 @@ interface BookingPaymentPanelProps {
   onUpdatePayment: (
     bookingId: string,
     updates: { paymentScheme: PaymentScheme; paymentStatus: PaymentStatus }
-  ) => { ok: true } | { ok: false; error: string };
+  ) => Promise<{ ok: true } | { ok: false; error: string }> | { ok: true } | { ok: false; error: string };
   onError: (message: string | null) => void;
 }
 
@@ -85,9 +85,9 @@ export function BookingPaymentPanel({
               aria-label="Skema Pembayaran"
               value={currentScheme}
               disabled={!dpEligible}
-              onChange={(e) => {
+              onChange={async (e) => {
                 onError(null);
-                const res = onUpdatePayment(booking.id, {
+                const res = await onUpdatePayment(booking.id, {
                   paymentScheme: e.target.value as PaymentScheme,
                   paymentStatus: currentPayStatus,
                 });
@@ -109,9 +109,9 @@ export function BookingPaymentPanel({
               disabled={
                 booking.status === "IN_PROGRESS" && currentPayStatus === "PAID"
               }
-              onChange={(e) => {
+              onChange={async (e) => {
                 onError(null);
-                const res = onUpdatePayment(booking.id, {
+                const res = await onUpdatePayment(booking.id, {
                   paymentScheme: currentScheme,
                   paymentStatus: e.target.value as PaymentStatus,
                 });

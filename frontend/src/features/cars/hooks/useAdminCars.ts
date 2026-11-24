@@ -1,39 +1,34 @@
-import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { apiFetch } from "@/lib/api";
 import { INITIAL_CARS } from "../data/cars.mock";
 import type { CarItem, CarStatus } from "../types/car.types";
 import {
   countCarsByStatus,
   filterCarsByStatus,
-  updateCarStatus,
-  upsertCar,
   type CarFilterTab,
   type CarFormPayload,
 } from "../utils/car-admin";
 
-const STORAGE_KEY = "aventra-admin-cars";
+export const PUBLIC_CARS_QUERY_KEY = ["public-cars"] as const;
+export const ADMIN_CARS_QUERY_KEY = ["admin-cars"] as const;
 
-function loadInitialCars(): CarItem[] {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return INITIAL_CARS;
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_CARS;
-  } catch {
-    return INITIAL_CARS;
-  }
+export function usePublicCars() {
+  return useQuery({
+    queryKey: PUBLIC_CARS_QUERY_KEY,
+    queryFn: () => apiFetch<CarItem[]>("/cars"),
+    placeholderData: INITIAL_CARS,
+  });
 }
 
 export function useAdminCars() {
-  const [cars, setCars] = useState<CarItem[]>(loadInitialCars);
+  const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState<CarFilterTab>("ALL");
 
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cars));
-    } catch {
-      // Ignore storage write failure in restricted contexts
-    }
-  }, [cars]);
+  const { data: cars = [], isLoading } = useQuery({
+    queryKey: ADMIN_CARS_QUERY_KEY,
+    queryFn: () => apiFetch<CarItem[]>("/admin/cars"),
+  });
 
   const counts = useMemo(() => countCarsByStatus(cars), [cars]);
   const filteredCars = useMemo(
@@ -41,16 +36,49 @@ export function useAdminCars() {
     [cars, activeTab]
   );
 
-  const saveCar = (payload: CarFormPayload) => {
-    setCars((prev) => upsertCar(prev, payload));
+  const invalidateCars = async () => {
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: ADMIN_CARS_QUERY_KEY }),
+      qc.invalidateQueries({ queryKey: PUBLIC_CARS_QUERY_KEY }),
+    ]);
   };
 
-  const changeCarStatus = (carId: string, status: CarStatus) => {
-    setCars((prev) => updateCarStatus(prev, carId, status));
+  const saveCar = async (payload: CarFormPayload) => {
+    const body = {
+      name: payload.name,
+      brand: payload.brand,
+      capacityLabel: payload.capacityLabel,
+      pricePerDay: payload.pricePerDay,
+      imageUrl: payload.imageUrl,
+      status: payload.status,
+    };
+
+    if (payload.id) {
+      await apiFetch<CarItem>(`/admin/cars/${payload.id}`, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      });
+    } else {
+      await apiFetch<CarItem>("/admin/cars", {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+    }
+
+    await invalidateCars();
+  };
+
+  const changeCarStatus = async (carId: string, status: CarStatus) => {
+    await apiFetch<CarItem>(`/admin/cars/${carId}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    });
+    await invalidateCars();
   };
 
   return {
     cars,
+    isLoading,
     filteredCars,
     counts,
     activeTab,
@@ -59,4 +87,3 @@ export function useAdminCars() {
     changeCarStatus,
   };
 }
-

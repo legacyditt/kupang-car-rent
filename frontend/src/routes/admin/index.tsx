@@ -1,37 +1,46 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { INITIAL_CARS } from "@/features/cars/data/cars.mock";
+import { useAdminCars } from "@/features/cars/hooks/useAdminCars";
 import { CAR_STATUS_LABELS } from "@/features/cars/utils/car-admin";
+import { apiFetch } from "@/lib/api";
 import { formatRupiah } from "@/lib/utils";
 
-const RECENT_BOOKINGS = [
-  {
-    code: "BK-20261119-A001",
-    customer: "Delano K.",
-    summary: "Toyota Avanza • 26–30 Nov (5 hari) • Lepas Kunci",
-    price: 1_500_000,
-    status: "PENDING",
-  },
-  {
-    code: "BK-20261118-B014",
-    customer: "Maria N.",
-    summary: "Toyota Innova Reborn • 19–21 Nov (3 hari) • Dengan Sopir",
-    price: 900_000,
-    status: "IN_PROGRESS",
-  },
-  {
-    code: "BK-20261117-C008",
-    customer: "Hendra P.",
-    summary: "Honda Brio • 22–23 Nov (2 hari) • Lepas Kunci",
-    price: 600_000,
-    status: "CONFIRMED",
-  },
-] as const;
+interface DashboardSummaryDto {
+  carStats: {
+    total: number;
+    available: number;
+    rented: number;
+    maintenance: number;
+    inactive: number;
+  };
+  bookingStats: {
+    total: number;
+    pending: number;
+    confirmed: number;
+    inProgress: number;
+    completed: number;
+    rejected: number;
+    cancelled: number;
+  };
+  recentBookings: Array<{
+    id: string;
+    bookingCode: string;
+    customerName: string;
+    carName: string;
+    startDate: string;
+    endDate: string;
+    finalPrice: number;
+    status: string;
+    paymentStatus: string;
+  }>;
+}
 
 const STATUS_BADGE_STYLE: Record<string, string> = {
   PENDING: "border-gold/40 bg-gold/15 text-gold",
   IN_PROGRESS: "border-sky-400/40 bg-sky-400/15 text-sky-400",
   CONFIRMED: "border-emerald-400/40 bg-emerald-400/15 text-emerald-400",
+  COMPLETED: "border-emerald-400/40 bg-emerald-400/15 text-emerald-400",
 };
 
 const CAR_STATUS_COLOR: Record<string, string> = {
@@ -42,7 +51,18 @@ const CAR_STATUS_COLOR: Record<string, string> = {
 };
 
 export function AdminOverviewPage() {
-  const availableCount = INITIAL_CARS.filter((c) => c.status === "AVAILABLE").length;
+  const { cars } = useAdminCars();
+  const { data: summary } = useQuery({
+    queryKey: ["admin-dashboard"],
+    queryFn: () => apiFetch<DashboardSummaryDto>("/admin/dashboard/summary"),
+  });
+
+  const totalCars = summary?.carStats.total ?? cars.length;
+  const availableCars = summary?.carStats.available ?? 0;
+  const pendingCount = summary?.bookingStats.pending ?? 0;
+  const activeCount = summary?.bookingStats.inProgress ?? 0;
+  const confirmedCount = summary?.bookingStats.confirmed ?? 0;
+  const recentBookings = summary?.recentBookings ?? [];
 
   return (
     <div className="space-y-6">
@@ -58,9 +78,6 @@ export function AdminOverviewPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="hidden rounded-lg border border-hairline bg-carbon px-3.5 py-2 font-mono text-[11px] text-brand-muted uppercase sm:inline-flex">
-            Kam, 19 Nov 2026
-          </span>
           <Button
             asChild
             variant="accent"
@@ -78,10 +95,10 @@ export function AdminOverviewPage() {
             Total Armada
           </p>
           <p className="mt-2 font-display text-2xl font-bold text-white tabular-nums sm:text-3xl">
-            {INITIAL_CARS.length} Unit
+            {totalCars} Unit
           </p>
           <p className="mt-1.5 font-mono text-[11px] text-emerald-400">
-            {availableCount} Tersedia siap jalan
+            {availableCars} Tersedia siap jalan
           </p>
         </div>
 
@@ -90,7 +107,7 @@ export function AdminOverviewPage() {
             Booking Pending
           </p>
           <p className="mt-2 font-display text-2xl font-bold text-gold tabular-nums sm:text-3xl">
-            3 Menunggu
+            {pendingCount} Menunggu
           </p>
           <p className="mt-1.5 font-mono text-[11px] text-brand-muted">
             Perlu konfirmasi admin
@@ -102,22 +119,22 @@ export function AdminOverviewPage() {
             Sedang Disewa
           </p>
           <p className="mt-2 font-display text-2xl font-bold text-sky-400 tabular-nums sm:text-3xl">
-            1 Aktif
+            {activeCount} Aktif
           </p>
           <p className="mt-1.5 font-mono text-[11px] text-brand-muted">
-            2 Confirmed minggu ini
+            {confirmedCount} Confirmed
           </p>
         </div>
 
         <div className="col-span-2 rounded-xl border border-hairline bg-carbon p-4 sm:p-5 lg:col-span-1">
           <p className="font-mono text-[10px] tracking-[0.12em] text-brand-muted uppercase">
-            Estimasi Bulan Ini
+            Total Booking
           </p>
           <p className="mt-2 font-mono text-xl font-bold text-white tabular-nums sm:text-2xl">
-            Rp 4.800.000
+            {summary?.bookingStats.total ?? 0} Transaksi
           </p>
           <p className="mt-1.5 font-mono text-[11px] text-emerald-400">
-            8 Booking Selesai/Aktif
+            {summary?.bookingStats.completed ?? 0} Selesai
           </p>
         </div>
       </div>
@@ -139,24 +156,24 @@ export function AdminOverviewPage() {
           </div>
 
           <div className="mt-4 space-y-2.5">
-            {RECENT_BOOKINGS.map((booking) => (
+            {recentBookings.map((booking) => (
               <div
-                key={booking.code}
+                key={booking.bookingCode}
                 className="flex flex-col justify-between gap-3 rounded-xl border border-hairline bg-obsidian p-3.5 sm:flex-row sm:items-center"
               >
                 <div className="min-w-0">
                   <p className="font-mono text-[11px] font-bold text-gold">
-                    {booking.code}{" "}
-                    <span className="text-white">• {booking.customer}</span>
+                    {booking.bookingCode}{" "}
+                    <span className="text-white">• {booking.customerName}</span>
                   </p>
                   <p className="mt-1 truncate text-xs text-brand-muted">
-                    {booking.summary}
+                    {booking.carName} • {booking.startDate} s/d {booking.endDate}
                   </p>
                 </div>
 
                 <div className="flex items-center justify-between gap-3 sm:justify-end">
                   <span className="font-mono text-xs font-bold text-white tabular-nums">
-                    {formatRupiah(booking.price)}
+                    {formatRupiah(booking.finalPrice)}
                   </span>
                   <span
                     className={`rounded-md border px-2.5 py-1 font-mono text-[10px] font-bold uppercase ${
@@ -179,7 +196,7 @@ export function AdminOverviewPage() {
           </h2>
 
           <div className="mt-4 space-y-2.5">
-            {INITIAL_CARS.map((car) => (
+            {cars.map((car) => (
               <div
                 key={car.id}
                 className="flex items-center justify-between gap-2 rounded-xl border border-hairline bg-obsidian px-3.5 py-3"
@@ -202,4 +219,3 @@ export function AdminOverviewPage() {
     </div>
   );
 }
-

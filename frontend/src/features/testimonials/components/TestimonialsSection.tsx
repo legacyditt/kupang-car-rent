@@ -1,6 +1,6 @@
 import { ArrowLeft, ArrowRight, Star } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useTestimonials } from "@/features/testimonials/hooks/useTestimonials";
+import { usePublicTestimonials } from "@/features/testimonials/hooks/useTestimonials";
 import { cn } from "@/lib/utils";
 
 const CARD_TILTS = [
@@ -15,7 +15,7 @@ const CARD_TILTS = [
  * dalam carousel kartu miring (tilted-arc) dengan arrow kiri/kanan kontekstual.
  */
 export function TestimonialsSection() {
-  const { publishedTestimonials } = useTestimonials();
+  const { data: publishedTestimonials = [] } = usePublicTestimonials();
   const trackRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);

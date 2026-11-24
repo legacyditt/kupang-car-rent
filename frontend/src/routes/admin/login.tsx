@@ -34,7 +34,8 @@ export function AdminLoginPage() {
   const backdropRef = useRef<HTMLDivElement>(null);
   const cardBorderRef = useRef<HTMLDivElement>(null);
   const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
-  const { isAuthenticated, login, register } = useAdminAuth();
+  const { isAuthenticated, login, requestOtpReset, resetPasswordWithOtp } =
+    useAdminAuth();
   const { profile } = useBusinessProfile();
 
   const [view, setView] = useState<"login" | "otp" | "reset">("login");
@@ -123,10 +124,18 @@ export function AdminLoginPage() {
     return <Navigate to="/admin" replace />;
   }
 
-  function openForgotOtp() {
+  async function openForgotOtp() {
     setErrorMsg(null);
     setInfoMsg(null);
     setOtpDigits(["", "", "", "", "", ""]);
+    const targetEmail = identifier.trim().includes("@")
+      ? identifier.trim()
+      : DEFAULT_ADMIN_CREDENTIALS.email;
+    const res = await requestOtpReset(targetEmail);
+    if (!res.ok) {
+      setErrorMsg(res.error);
+      return;
+    }
     setView("otp");
   }
 
@@ -140,12 +149,12 @@ export function AdminLoginPage() {
     setView("login");
   }
 
-  function handleLoginSubmit(e: FormEvent) {
+  async function handleLoginSubmit(e: FormEvent) {
     e.preventDefault();
     setErrorMsg(null);
     setInfoMsg(null);
 
-    const res = login(identifier, password);
+    const res = await login(identifier, password);
     if (!res.ok) {
       setErrorMsg(res.error);
       return;
@@ -183,17 +192,30 @@ export function AdminLoginPage() {
     setView("reset");
   }
 
-  function handleResetSubmit(e: FormEvent) {
+  async function handleResetSubmit(e: FormEvent) {
     e.preventDefault();
     setErrorMsg(null);
-    const targetAccount =
-      identifier.trim() || DEFAULT_ADMIN_CREDENTIALS.email;
-    const res = register(targetAccount, newPassword, confirmPassword);
+    if (newPassword.length < 6) {
+      setErrorMsg("Password minimal 6 karakter.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setErrorMsg("Konfirmasi password tidak cocok.");
+      return;
+    }
+    const targetAccount = identifier.trim().includes("@")
+      ? identifier.trim()
+      : DEFAULT_ADMIN_CREDENTIALS.email;
+    const res = await resetPasswordWithOtp({
+      email: targetAccount,
+      otp: otpDigits.join(""),
+      newPassword,
+    });
     if (!res.ok) {
       setErrorMsg(res.error);
       return;
     }
-    navigate({ to: "/admin", replace: true });
+    backToLogin("Password berhasil diperbarui. Silakan login.");
   }
 
   const maskStyle: CSSProperties = {

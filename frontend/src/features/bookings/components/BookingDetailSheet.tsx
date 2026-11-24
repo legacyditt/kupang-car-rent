@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -29,7 +29,7 @@ import {
   yyyymmddToDdmmyyyy,
   type UpdateBookingDetailsInput,
 } from "../utils/booking-admin";
-import { readStoredCars } from "../utils/bookings-storage";
+import { useAdminCars } from "@/features/cars/hooks/useAdminCars";
 import { BookingCalendarPicker } from "./BookingCalendarPicker";
 import { BookingPaymentPanel } from "./BookingPaymentPanel";
 import { BookingStatusBadge } from "./BookingStatusBadge";
@@ -43,23 +43,23 @@ interface BookingDetailSheetProps {
     bookingId: string,
     nextStatus: BookingStatus,
     updates?: { finalPrice?: number; internalNote?: string }
-  ) => { ok: true } | { ok: false; error: string };
+  ) => Promise<{ ok: true } | { ok: false; error: string }> | { ok: true } | { ok: false; error: string };
   onSaveDetails: (
     bookingId: string,
     updates: { finalPrice: number; internalNote: string }
-  ) => void;
+  ) => Promise<unknown> | void;
   onEditBooking: (
     bookingId: string,
     patch: UpdateBookingDetailsInput
-  ) => { ok: true } | { ok: false; error: string };
+  ) => Promise<{ ok: true } | { ok: false; error: string }> | { ok: true } | { ok: false; error: string };
   onUpdatePayment?: (
     bookingId: string,
     updates: { paymentScheme: PaymentScheme; paymentStatus: PaymentStatus }
-  ) => { ok: true } | { ok: false; error: string };
+  ) => Promise<{ ok: true } | { ok: false; error: string }> | { ok: true } | { ok: false; error: string };
   onExtendBooking?: (
     bookingId: string,
     newEndDate: string
-  ) => { ok: true } | { ok: false; error: string };
+  ) => Promise<{ ok: true } | { ok: false; error: string }> | { ok: true } | { ok: false; error: string };
 }
 
 export function BookingDetailSheet({
@@ -86,7 +86,7 @@ export function BookingDetailSheet({
     useState<RentalServiceType>("SELF_DRIVE");
   const [extendEndDate, setExtendEndDate] = useState("");
 
-  const cars = useMemo(() => (open ? readStoredCars() : []), [open]);
+  const { cars } = useAdminCars();
 
   useEffect(() => {
     if (!booking) return;
@@ -110,10 +110,10 @@ export function BookingDetailSheet({
     booking.status === "PENDING" || booking.status === "CONFIRMED";
   const parsedPrice = Math.max(0, Number(finalPrice) || booking.finalPrice);
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     setActionError(null);
     const chosenCar = cars.find((c) => c.id === editCarId);
-    const res = onEditBooking(booking.id, {
+    const res = await onEditBooking(booking.id, {
       customerName: editName,
       customerPhone: editPhone,
       carId: chosenCar?.id ?? booking.carId,
@@ -130,9 +130,9 @@ export function BookingDetailSheet({
     setIsEditing(false);
   };
 
-  const handleTransition = (nextStatus: BookingStatus) => {
+  const handleTransition = async (nextStatus: BookingStatus) => {
     setActionError(null);
-    const res = onChangeStatus(booking.id, nextStatus, {
+    const res = await onChangeStatus(booking.id, nextStatus, {
       finalPrice: parsedPrice,
       internalNote,
     });
@@ -349,9 +349,9 @@ export function BookingDetailSheet({
                 type="button"
                 size="sm"
                 disabled={!extendEndDate || extendEndDate <= booking.endDate}
-                onClick={() => {
+                onClick={async () => {
                   setActionError(null);
-                  const res = onExtendBooking(booking.id, extendEndDate);
+                  const res = await onExtendBooking(booking.id, extendEndDate);
                   if (!res.ok) setActionError(res.error);
                 }}
                 className="h-9 w-full bg-sky-500 font-mono text-[11px] font-bold text-obsidian uppercase hover:bg-sky-400 disabled:opacity-45"

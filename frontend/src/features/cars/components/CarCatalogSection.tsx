@@ -6,13 +6,14 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MOTION_EASE, MOTION_MEDIA, registerMotionPlugins } from "@/lib/motion";
 import { cn } from "@/lib/utils";
-import { INITIAL_CARS } from "../data/cars.mock";
+import { usePublicCars } from "../hooks/useAdminCars";
 import { CarCard } from "./CarCard";
 
 registerMotionPlugins();
 
 /** Katalog armada pada landing page: grid 2-4 kolom di desktop dan carousel di mobile. */
 export function CarCatalogSection() {
+  const { data: cars = [] } = usePublicCars();
   const sectionRef = useRef<HTMLElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -21,6 +22,7 @@ export function CarCatalogSection() {
   // Animasi masuk kartu katalog saat section terlihat di desktop.
   useGSAP(
     () => {
+      if (cars.length === 0) return;
       const mm = gsap.matchMedia();
 
       mm.add(MOTION_MEDIA.desktop, () => {
@@ -34,28 +36,28 @@ export function CarCatalogSection() {
           clearProps: "transform,opacity",
           scrollTrigger: {
             trigger: sectionRef.current,
-            start: "top 78%",
+            start: "top 95%",
             once: true,
           },
         });
       });
     },
-    { scope: sectionRef }
+    { scope: sectionRef, dependencies: [cars.length], revertOnUpdate: true }
   );
 
   // Geser carousel mobile ke indeks unit yang dipilih.
   const scrollToSlide = useCallback((index: number) => {
     const track = trackRef.current;
     if (!track) return;
-    const bounded = Math.max(0, Math.min(index, INITIAL_CARS.length - 1));
+    const bounded = Math.max(0, Math.min(index, cars.length - 1));
     const slide = track.children[bounded] as HTMLElement | undefined;
     if (!slide) return;
     track.scrollTo({
       left: slide.offsetLeft - track.offsetLeft,
     });
     setActiveIndex(bounded);
-    setLiveStatus(`Mobil ${bounded + 1} dari ${INITIAL_CARS.length}`);
-  }, []);
+    setLiveStatus(`Mobil ${bounded + 1} dari ${cars.length}`);
+  }, [cars.length]);
 
   // Sinkronkan indikator slide aktif saat user menggeser carousel mobile.
   useEffect(() => {
@@ -128,7 +130,7 @@ export function CarCatalogSection() {
               variant="outline"
               size="icon"
               onClick={() => scrollToSlide(activeIndex + 1)}
-              disabled={activeIndex === INITIAL_CARS.length - 1}
+              disabled={activeIndex === cars.length - 1}
               aria-label="Mobil berikutnya"
               className="h-11 w-11 rounded-md border-hairline bg-carbon text-gold"
             >
@@ -139,7 +141,7 @@ export function CarCatalogSection() {
 
         {/* Desktop & Tablet: 2-4 Column Grid */}
         <div className="mt-10 hidden gap-6 md:grid md:grid-cols-2 lg:grid-cols-4">
-          {INITIAL_CARS.map((car) => (
+          {cars.map((car) => (
             <div key={car.id} data-catalog-card className="h-full">
               <CarCard car={car} />
             </div>
@@ -160,14 +162,14 @@ export function CarCatalogSection() {
             aria-label="Daftar Mobil"
             className="carousel-track gap-4 pb-2"
           >
-            {INITIAL_CARS.map((car, index) => {
+            {cars.map((car, index) => {
               const isFocused = index === activeIndex;
               return (
                 <div
                   key={car.id}
                   role="group"
                   aria-roledescription="slide"
-                  aria-label={`${index + 1} dari ${INITIAL_CARS.length}`}
+                  aria-label={`${index + 1} dari ${cars.length}`}
                   className={cn(
                     "w-[80%] shrink-0 snap-start transition-[transform,opacity] duration-300 ease-out will-change-transform",
                     isFocused ? "scale-100 opacity-100" : "scale-[0.95] opacity-75"
@@ -187,7 +189,7 @@ export function CarCatalogSection() {
             aria-label="Pilih mobil"
             className="mt-5 flex items-center gap-2"
           >
-            {INITIAL_CARS.map((car, index) => {
+            {cars.map((car, index) => {
               const isActive = index === activeIndex;
               return (
                 <button

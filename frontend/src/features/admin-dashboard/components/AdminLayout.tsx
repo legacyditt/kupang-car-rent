@@ -9,7 +9,15 @@ export function AdminLayout() {
     title: "Dashboard Admin — Aventra Rental",
     robots: "noindex, nofollow",
   });
-  const { isAuthenticated } = useAdminAuth();
+  const { isAuthenticated, isPending } = useAdminAuth();
+
+  if (isPending) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-obsidian font-mono text-xs text-brand-muted">
+        Memeriksa sesi admin...
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/admin/login" replace />;
@@ -27,4 +35,3 @@ export function AdminLayout() {
     </div>
   );
 }
-

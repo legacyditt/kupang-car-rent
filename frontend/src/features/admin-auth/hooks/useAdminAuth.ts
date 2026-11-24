@@ -1,80 +1,82 @@
-import { useEffect, useState } from "react";
-import {
-  validateAdminLogin,
-  validateAdminRegister,
-  type AdminSession,
-} from "../utils/admin-auth";
-import {
-  clearAdminSession,
-  readAdminAccounts,
-  readAdminSession,
-  subscribeAdminSession,
-  writeAdminAccounts,
-  writeAdminSession,
-} from "../utils/admin-auth-storage";
+import { authClient } from "@/lib/auth-client";
+import { queryClient } from "@/lib/query-client";
 
 export function useAdminAuth() {
-  const [session, setSession] = useState<AdminSession | null>(readAdminSession);
+  const { data: sessionData, isPending } = authClient.useSession();
 
-  useEffect(() => {
-    return subscribeAdminSession(() => {
-      setSession(readAdminSession());
-    });
-  }, []);
-
-  const login = (
+  const login = async (
     identifier: string,
     password: string
-  ): { ok: true; session: AdminSession } | { ok: false; error: string } => {
-    const result = validateAdminLogin(
-      identifier,
-      password,
-      readAdminAccounts()
-    );
-    if (!result.ok) {
-      return result;
+  ): Promise<{ ok: true } | { ok: false; error: string }> => {
+    const trimmed = identifier.trim();
+    if (!trimmed) {
+      return { ok: false, error: "Email atau username wajib diisi." };
     }
-    setSession(result.session);
-    writeAdminSession(result.session);
-    return result;
+    if (!password) {
+      return { ok: false, error: "Password wajib diisi." };
+    }
+
+    const res = trimmed.includes("@")
+      ? await authClient.signIn.email({ email: trimmed, password })
+      : await authClient.signIn.username({ username: trimmed, password });
+
+    if (res.error) {
+      return {
+        ok: false,
+        error: res.error.message || "Email/username atau password salah.",
+      };
+    }
+
+    return { ok: true };
   };
 
-  const register = (
-    identifier: string,
-    password: string,
-    confirmPassword: string
-  ): { ok: true; session: AdminSession } | { ok: false; error: string } => {
-    const result = validateAdminRegister(
-      identifier,
-      password,
-      confirmPassword,
-      readAdminAccounts()
-    );
-    if (!result.ok) {
-      return result;
+  const requestOtpReset = async (
+    email: string
+  ): Promise<{ ok: true } | { ok: false; error: string }> => {
+    const res = await authClient.emailOtp.requestPasswordReset({
+      email: email.trim(),
+    });
+    if (res.error) {
+      return {
+        ok: false,
+        error: res.error.message || "Gagal mengirim kode OTP.",
+      };
     }
-    writeAdminAccounts(result.accounts);
-    const nextSession: AdminSession = {
-      email: result.account.email,
-      username: result.account.username,
-      loggedInAt: new Date().toISOString(),
-    };
-    setSession(nextSession);
-    writeAdminSession(nextSession);
-    return { ok: true, session: nextSession };
+    return { ok: true };
   };
 
-  const logout = () => {
-    setSession(null);
-    clearAdminSession();
+  const resetPasswordWithOtp = async (params: {
+    email: string;
+    otp: string;
+    newPassword: string;
+  }): Promise<{ ok: true } | { ok: false; error: string }> => {
+    const res = await authClient.emailOtp.resetPassword({
+      email: params.email.trim(),
+      otp: params.otp.trim(),
+      password: params.newPassword,
+    });
+    if (res.error) {
+      return {
+        ok: false,
+        error: res.error.message || "Kode OTP tidak valid atau sudah kedaluwarsa.",
+      };
+    }
+    return { ok: true };
+  };
+
+  const logout = async () => {
+    await authClient.signOut();
+    queryClient.clear();
   };
 
   return {
-    session,
-    isAuthenticated: Boolean(session),
+    session: sessionData?.session ?? null,
+    user: sessionData?.user ?? null,
+    isPending,
+    isAuthenticated: Boolean(sessionData?.user),
     login,
-    register,
+    requestOtpReset,
+    resetPasswordWithOtp,
     logout,
   };
 }
-

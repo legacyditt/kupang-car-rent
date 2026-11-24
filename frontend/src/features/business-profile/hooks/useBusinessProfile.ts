@@ -1,54 +1,65 @@
-import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ApiError, apiFetch } from "@/lib/api";
 import type {
   BusinessProfile,
   BusinessProfileInput,
 } from "../types/business-profile.types";
-import {
-  DEFAULT_BUSINESS_PROFILE,
-  validateAndNormalizeProfile,
-} from "../utils/business-profile";
-import {
-  readStoredBusinessProfile,
-  subscribeBusinessProfile,
-  writeStoredBusinessProfile,
-} from "../utils/business-profile-storage";
+import { DEFAULT_BUSINESS_PROFILE } from "../utils/business-profile";
+
+export const BUSINESS_PROFILE_QUERY_KEY = ["business-profile"] as const;
 
 export function useBusinessProfile() {
-  const [profile, setProfile] = useState<BusinessProfile>(
-    readStoredBusinessProfile
-  );
+  const qc = useQueryClient();
 
-  useEffect(() => {
-    return subscribeBusinessProfile(() => {
-      setProfile(readStoredBusinessProfile());
-    });
-  }, []);
+  const { data: profile = DEFAULT_BUSINESS_PROFILE, isLoading } = useQuery({
+    queryKey: BUSINESS_PROFILE_QUERY_KEY,
+    queryFn: () => apiFetch<BusinessProfile>("/business-profile"),
+    placeholderData: DEFAULT_BUSINESS_PROFILE,
+  });
 
-  const saveProfile = (
+  const saveProfile = async (
     input: BusinessProfileInput
-  ): { ok: true; profile: BusinessProfile } | { ok: false; error: string } => {
-    const validated = validateAndNormalizeProfile(input);
-    if (!validated.ok) {
-      return validated;
+  ): Promise<{ ok: true; profile: BusinessProfile } | { ok: false; error: string }> => {
+    try {
+      const updated = await apiFetch<BusinessProfile>(
+        "/admin/business-profile",
+        {
+          method: "PATCH",
+          body: JSON.stringify(input),
+        }
+      );
+      qc.setQueryData(BUSINESS_PROFILE_QUERY_KEY, updated);
+      return { ok: true, profile: updated };
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : "Gagal menyimpan profil bisnis.";
+      return { ok: false, error: message };
     }
-    setProfile(validated.profile);
-    writeStoredBusinessProfile(validated.profile);
-    return { ok: true, profile: validated.profile };
   };
 
-  const resetLogo = () => {
-    const next: BusinessProfile = {
-      ...profile,
-      logoPath: DEFAULT_BUSINESS_PROFILE.logoPath,
-    };
-    setProfile(next);
-    writeStoredBusinessProfile(next);
+  const resetLogo = async (): Promise<
+    { ok: true; profile: BusinessProfile } | { ok: false; error: string }
+  > => {
+    try {
+      const updated = await apiFetch<BusinessProfile>(
+        "/admin/business-profile/reset-logo",
+        { method: "POST" }
+      );
+      qc.setQueryData(BUSINESS_PROFILE_QUERY_KEY, updated);
+      return { ok: true, profile: updated };
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : "Gagal mereset logo.";
+      return { ok: false, error: message };
+    }
   };
 
   return {
     profile,
+    isLoading,
     saveProfile,
     resetLogo,
   };
 }
-
