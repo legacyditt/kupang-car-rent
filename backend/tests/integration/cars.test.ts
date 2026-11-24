@@ -11,6 +11,9 @@ describe("Cars & Availability API", () => {
     await prisma.booking.deleteMany({
       where: { bookingCode: { startsWith: "BK-CAR-TEST-" } },
     });
+    await prisma.carUnit.deleteMany({
+      where: { plateNumber: { startsWith: "DH-CARTEST" } },
+    });
     await prisma.car.deleteMany({
       where: { slug: { startsWith: "test-unit-" } },
     });
@@ -19,6 +22,9 @@ describe("Cars & Availability API", () => {
   afterAll(async () => {
     await prisma.booking.deleteMany({
       where: { bookingCode: { startsWith: "BK-CAR-TEST-" } },
+    });
+    await prisma.carUnit.deleteMany({
+      where: { plateNumber: { startsWith: "DH-CARTEST" } },
     });
     if (createdCarIds.length > 0) {
       await prisma.car.deleteMany({ where: { id: { in: createdCarIds } } });
@@ -60,6 +66,7 @@ describe("Cars & Availability API", () => {
     expect(activeRes.status).toBe(201);
     const activeCarId = activeRes.body.data.id as string;
     const activeSlug = activeRes.body.data.slug as string;
+    const activeUnitId = activeRes.body.data.units[0].id as string;
     createdCarIds.push(activeCarId);
 
     // Add 1 CONFIRMED booking on 2026-12-20..2026-12-21
@@ -67,6 +74,7 @@ describe("Cars & Availability API", () => {
       data: {
         bookingCode: "BK-CAR-TEST-001",
         carId: activeCarId,
+        carUnitId: activeUnitId,
         carNameSnapshot: "Test Unit Active",
         customerName: "Tester",
         customerPhone: "6281234567890",
@@ -91,13 +99,50 @@ describe("Cars & Availability API", () => {
     expect(slugs).not.toContain(inactiveRes.body.data.slug);
 
     const activeCar = (
-      publicRes.body.data as Array<{ slug: string; bookedDates: string[] }>
+      publicRes.body.data as Array<{
+        slug: string;
+        bookedDates: string[];
+        units?: unknown;
+      }>
     ).find((c) => c.slug === activeSlug);
     expect(activeCar?.bookedDates).toEqual(["20-12-2026", "21-12-2026"]);
+    expect(activeCar?.units).toBeUndefined(); // Plat nomor strictly admin-only
 
-    // Availability check: overlapping -> false, non-overlapping -> true
+    // Admin list includes units with plateNumber
+    const adminCarsRes = await request(app)
+      .get("/api/v1/admin/cars")
+      .set("Cookie", cookies);
+    expect(adminCarsRes.status).toBe(200);
+    const adminActive = (
+      adminCarsRes.body.data as Array<{
+        id: string;
+        units: Array<{ plateNumber: string }>;
+      }>
+    ).find((c) => c.id === activeCarId);
+    expect(adminActive?.units.length).toBe(1);
+
+    // Add 2nd physical unit -> Dec 20-21 becomes available again!
+    const addUnitRes = await request(app)
+      .post(`/api/v1/admin/cars/${activeCarId}/units`)
+      .set("Cookie", cookies)
+      .send({
+        label: "Test Unit #2",
+        plateNumber: "DH-CARTEST-2",
+        transmission: "MATIC",
+        status: "AVAILABLE",
+      });
+    expect(addUnitRes.status).toBe(201);
+
+    const multiUnitAvail = await request(app).get(
+      `/api/v1/cars/${activeSlug}/availability?startDate=2026-12-20&endDate=2026-12-21`
+    );
+    expect(multiUnitAvail.status).toBe(200);
+    expect(multiUnitAvail.body.data.available).toBe(true);
+    expect(multiUnitAvail.body.data.availableUnitCount).toBe(1);
+
+    // Availability check for MANUAL (unit #1 booked) -> false, while MATIC (unit #2) -> true
     const conflictAvail = await request(app).get(
-      `/api/v1/cars/${activeSlug}/availability?startDate=2026-12-21&endDate=2026-12-22`
+      `/api/v1/cars/${activeSlug}/availability?startDate=2026-12-21&endDate=2026-12-22&transmission=MANUAL`
     );
     expect(conflictAvail.status).toBe(200);
     expect(conflictAvail.body.data.available).toBe(false);

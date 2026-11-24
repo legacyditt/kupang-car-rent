@@ -122,13 +122,13 @@ model Car {
   slug          String    @unique
   name          String
   brand         String    @default("-")
-  category      String?
   transmission  String    @default("BOTH")
   description   String?
   capacityLabel String
   pricePerDay   Int
   imageUrl      String
   status        CarStatus @default(AVAILABLE)
+  units         CarUnit[]
   bookings      Booking[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -136,13 +136,31 @@ model Car {
   @@index([status])
 }
 
+model CarUnit {
+  id           String                 @id @default(cuid())
+  carId        String
+  car          Car                    @relation(fields: [carId], references: [id], onDelete: Cascade)
+  label        String
+  plateNumber  String                 @unique
+  transmission TransmissionPreference @default(MANUAL)
+  status       CarStatus              @default(AVAILABLE)
+  bookings     Booking[]
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  @@index([carId, status, transmission])
+}
+
 model Booking {
-  id                  String            @id @default(cuid())
-  bookingCode         String            @unique
-  idempotencyKey      String?           @unique
-  carId               String
-  car                 Car               @relation(fields: [carId], references: [id], onDelete: Restrict)
-  carNameSnapshot     String
+  id                     String                 @id @default(cuid())
+  bookingCode            String                 @unique
+  idempotencyKey         String?                @unique
+  carId                  String
+  car                    Car                    @relation(fields: [carId], references: [id], onDelete: Restrict)
+  carUnitId              String?
+  carUnit                CarUnit?               @relation(fields: [carUnitId], references: [id], onDelete: Restrict)
+  carNameSnapshot        String
+  carUnitLabelSnapshot   String?
   customerName        String
   customerPhone       String
   startDate           DateTime          @db.Date
@@ -166,6 +184,7 @@ model Booking {
   updatedAt           DateTime          @updatedAt
 
   @@index([carId, status, startDate, endDate])
+  @@index([carUnitId, status, startDate, endDate])
   @@index([paymentStatus, startDate])
   @@index([createdAt(sort: Desc)])
 }

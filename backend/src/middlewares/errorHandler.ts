@@ -87,7 +87,11 @@ export function errorHandler(
     err instanceof Error ? err.message : "Terjadi kesalahan pada server.";
 
   // PostgreSQL 23P01 exclusion_violation (BR-09 double booking protection)
-  if (message.includes("23P01") || message.includes("booking_no_overlap_confirmed_or_active")) {
+  if (
+    message.includes("23P01") ||
+    message.includes("booking_no_overlap_confirmed_or_active") ||
+    message.includes("booking_unit_no_overlap_confirmed_or_active")
+  ) {
     res.status(409).json({
       error: {
         code: "SCHEDULE_CONFLICT",

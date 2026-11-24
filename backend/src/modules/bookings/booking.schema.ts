@@ -54,6 +54,7 @@ export const updateBookingDetailsSchema = z
     customerName: z.string().trim().min(1).optional(),
     customerPhone: phoneSchema.optional(),
     carId: z.string().trim().min(1).optional(),
+    carUnitId: z.string().trim().min(1).optional(),
     startDate: z.string().regex(isoDateRegex).optional(),
     endDate: z.string().regex(isoDateRegex).optional(),
     serviceType: z.enum(RentalServiceType).optional(),
@@ -72,6 +73,7 @@ export const updateBookingDetailsSchema = z
 
 export const updateBookingStatusSchema = z.object({
   status: z.enum(BookingStatus),
+  carUnitId: z.string().trim().min(1).optional(),
   finalPrice: z.coerce.number().int().nonnegative().optional(),
   internalNote: z.string().optional(),
 });

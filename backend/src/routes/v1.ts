@@ -28,8 +28,10 @@ import { CarRepository } from "../modules/cars/car.repository.js";
 import {
   availabilityQuerySchema,
   createCarSchema,
+  createCarUnitSchema,
   updateCarSchema,
   updateCarStatusSchema,
+  updateCarUnitSchema,
 } from "../modules/cars/car.schema.js";
 import { CarService } from "../modules/cars/car.service.js";
 import { DashboardController } from "../modules/dashboard/dashboard.controller.js";
@@ -190,6 +192,23 @@ export function createV1Router(deps: V1RouterDeps = {}): Router {
         carController.updateCarStatus
       );
       router.delete("/admin/cars/:id", requireAdmin, carController.deleteCar);
+      router.post(
+        "/admin/cars/:id/units",
+        requireAdmin,
+        validateBody(createCarUnitSchema),
+        carController.addCarUnit
+      );
+      router.patch(
+        "/admin/car-units/:unitId",
+        requireAdmin,
+        validateBody(updateCarUnitSchema),
+        carController.updateCarUnit
+      );
+      router.delete(
+        "/admin/car-units/:unitId",
+        requireAdmin,
+        carController.deleteCarUnit
+      );
 
       // Admin Bookings
       router.get(

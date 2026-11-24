@@ -36,6 +36,8 @@ export interface BookingDto {
   customerPhone: string;
   carId: string;
   carName: string;
+  carUnitId: string | null;
+  carUnitLabel: string | null;
   startDate: string;
   endDate: string;
   totalDays: number;
@@ -55,7 +57,10 @@ export interface BookingDto {
   createdAt: string;
 }
 
-export type PublicBookingDto = Omit<BookingDto, "internalNote">;
+export type PublicBookingDto = Omit<
+  BookingDto,
+  "internalNote" | "carUnitId" | "carUnitLabel"
+>;
 
 function toBookingDto(b: Booking): BookingDto {
   return {
@@ -65,6 +70,8 @@ function toBookingDto(b: Booking): BookingDto {
     customerPhone: b.customerPhone,
     carId: b.carId,
     carName: b.carNameSnapshot,
+    carUnitId: b.carUnitId,
+    carUnitLabel: b.carUnitLabelSnapshot,
     startDate: formatUtcDateYyyyMmDd(b.startDate),
     endDate: formatUtcDateYyyyMmDd(b.endDate),
     totalDays: b.totalDays,
@@ -86,7 +93,12 @@ function toBookingDto(b: Booking): BookingDto {
 }
 
 function toPublicBookingDto(b: Booking): PublicBookingDto {
-  const { internalNote: _, ...pub } = toBookingDto(b);
+  const {
+    internalNote: _n,
+    carUnitId: _uid,
+    carUnitLabel: _ulbl,
+    ...pub
+  } = toBookingDto(b);
   return pub;
 }
 
@@ -129,18 +141,34 @@ export class BookingService {
     const startDate = parseYyyyMmDdToUtc(input.startDate);
     const endDate = parseYyyyMmDdToUtc(input.endDate);
 
-    // Cek ketersediaan jadwal (BR-08 / ADR-0001)
-    const conflict = await this.repo.findScheduleConflict({
-      excludeBookingId: "",
-      carId: car.id,
-      startDate,
-      endDate,
-    });
-    if (conflict) {
+    // Cek ketersediaan berdasarkan unit fisik AVAILABLE (Opsi B)
+    const units = await this.repo.findCarUnits(car.id);
+    const availableUnits = units.filter((u) => u.status === "AVAILABLE");
+
+    if (availableUnits.length > 0) {
+      const preferred = availableUnits.filter(
+        (u) => u.transmission === (input.transmissionPreference ?? "MANUAL")
+      );
+      const candidateUnits = preferred.length > 0 ? preferred : availableUnits;
+      const busyIds = await this.repo.findBusyUnitIds({
+        excludeBookingId: "",
+        unitIds: candidateUnits.map((u) => u.id),
+        startDate,
+        endDate,
+      });
+      const hasFreeUnit = candidateUnits.some((u) => !busyIds.has(u.id));
+      if (!hasFreeUnit) {
+        throw new AppError(
+          409,
+          "SCHEDULE_CONFLICT",
+          "Semua unit untuk pilihan transmisi tersebut sudah dipesan pada rentang tanggal yang dipilih."
+        );
+      }
+    } else {
       throw new AppError(
         409,
-        "SCHEDULE_CONFLICT",
-        "Unit sudah dipesan pada rentang tanggal yang dipilih."
+        "CAR_UNAVAILABLE",
+        `Belum ada unit fisik tersedia untuk ${car.name}.`
       );
     }
 
@@ -162,7 +190,6 @@ export class BookingService {
     const todayCompact = formatUtcDateYyyyMmDd(new Date()).replace(/-/g, "");
     const prefix = `BK-${todayCompact}-A`;
 
-    // Retry loop handles rare concurrent bookingCode P2002 collisions atomically.
     for (let attempt = 0; attempt < 5; attempt++) {
       const count = await this.repo.countByCodePrefix(prefix);
       const seq = count + 1 + attempt;
@@ -297,11 +324,28 @@ export class BookingService {
       const startDate = parseYyyyMmDdToUtc(startStr);
       const endDate = parseYyyyMmDdToUtc(endStr);
 
-      if (target.status === "CONFIRMED") {
+      let nextCarUnitId = patch.carUnitId ?? target.carUnitId;
+      let nextUnitLabel = target.carUnitLabelSnapshot;
+
+      if (patch.carUnitId) {
+        const chosenUnit = await this.repo.findUnitById(patch.carUnitId, tx);
+        if (!chosenUnit || chosenUnit.carId !== nextCarId) {
+          throw new AppError(
+            400,
+            "INVALID_CAR_UNIT",
+            "Unit fisik tidak sesuai dengan model mobil."
+          );
+        }
+        nextCarUnitId = chosenUnit.id;
+        nextUnitLabel = `${chosenUnit.label} (${chosenUnit.plateNumber})`;
+      }
+
+      if (target.status === "CONFIRMED" && nextCarUnitId) {
         const conflict = await this.repo.findScheduleConflict(
           {
             excludeBookingId: target.id,
             carId: nextCarId,
+            carUnitId: nextCarUnitId,
             startDate,
             endDate,
           },
@@ -326,6 +370,12 @@ export class BookingService {
             ? { customerPhone: patch.customerPhone }
             : {}),
           car: { connect: { id: nextCarId } },
+          ...(nextCarUnitId
+            ? {
+                carUnit: { connect: { id: nextCarUnitId } },
+                carUnitLabelSnapshot: nextUnitLabel,
+              }
+            : {}),
           carNameSnapshot,
           pricePerDaySnapshot: pricePerDay,
           startDate,
@@ -369,6 +419,9 @@ export class BookingService {
         );
       }
 
+      let assignedUnitId: string | undefined;
+      let assignedUnitLabel: string | undefined;
+
       if (input.status === "CONFIRMED") {
         const car = await this.repo.findCarById(target.carId, tx);
         if (!car || car.status === "MAINTENANCE" || car.status === "INACTIVE") {
@@ -379,21 +432,63 @@ export class BookingService {
           );
         }
 
-        const conflict = await this.repo.findScheduleConflict(
-          {
-            excludeBookingId: target.id,
-            carId: target.carId,
-            startDate: target.startDate,
-            endDate: target.endDate,
-          },
-          tx
-        );
-        if (conflict) {
-          throw new AppError(
-            409,
-            "SCHEDULE_CONFLICT",
-            `Jadwal bentrok dengan ${conflict.bookingCode} (${conflict.customerName}).`
+        const units = await this.repo.findCarUnits(target.carId, tx);
+        const availableUnits = units.filter((u) => u.status === "AVAILABLE");
+
+        if (input.carUnitId) {
+          const chosen = availableUnits.find((u) => u.id === input.carUnitId);
+          if (!chosen) {
+            throw new AppError(
+              409,
+              "CAR_UNAVAILABLE",
+              "Unit fisik yang dipilih tidak tersedia atau sedang perawatan."
+            );
+          }
+          const conflict = await this.repo.findScheduleConflict(
+            {
+              excludeBookingId: target.id,
+              carId: target.carId,
+              carUnitId: chosen.id,
+              startDate: target.startDate,
+              endDate: target.endDate,
+            },
+            tx
           );
+          if (conflict) {
+            throw new AppError(
+              409,
+              "SCHEDULE_CONFLICT",
+              `Jadwal unit ${chosen.label} (${chosen.plateNumber}) bentrok dengan ${conflict.bookingCode}.`
+            );
+          }
+          assignedUnitId = chosen.id;
+          assignedUnitLabel = `${chosen.label} (${chosen.plateNumber})`;
+        } else {
+          // Auto-assign free AVAILABLE unit (prefer matching transmissionPreference)
+          const busyIds = await this.repo.findBusyUnitIds(
+            {
+              excludeBookingId: target.id,
+              unitIds: availableUnits.map((u) => u.id),
+              startDate: target.startDate,
+              endDate: target.endDate,
+            },
+            tx
+          );
+          const freeUnits = availableUnits.filter((u) => !busyIds.has(u.id));
+          const picked =
+            freeUnits.find(
+              (u) => u.transmission === target.transmissionPreference
+            ) ?? freeUnits[0];
+
+          if (!picked) {
+            throw new AppError(
+              409,
+              "SCHEDULE_CONFLICT",
+              "Semua unit fisik untuk model ini sudah dipesan pada tanggal tersebut."
+            );
+          }
+          assignedUnitId = picked.id;
+          assignedUnitLabel = `${picked.label} (${picked.plateNumber})`;
         }
       }
 
@@ -417,6 +512,12 @@ export class BookingService {
         id,
         {
           status: input.status,
+          ...(assignedUnitId
+            ? {
+                carUnit: { connect: { id: assignedUnitId } },
+                carUnitLabelSnapshot: assignedUnitLabel,
+              }
+            : {}),
           ...(input.finalPrice !== undefined
             ? { finalPrice: input.finalPrice }
             : {}),
@@ -545,6 +646,7 @@ export class BookingService {
         {
           excludeBookingId: target.id,
           carId: target.carId,
+          carUnitId: target.carUnitId,
           startDate: target.startDate,
           endDate: newEndDate,
         },
@@ -575,4 +677,3 @@ export class BookingService {
     return toBookingDto(updated);
   }
 }
-

@@ -2,8 +2,10 @@ import type { Request, Response } from "express";
 import type {
   AvailabilityQuery,
   CreateCarInput,
+  CreateCarUnitInput,
   UpdateCarInput,
   UpdateCarStatusInput,
+  UpdateCarUnitInput,
 } from "./car.schema.js";
 import { CarService } from "./car.service.js";
 
@@ -52,5 +54,24 @@ export class CarController {
     await this.service.deleteCar(id);
     res.status(200).json({ data: { deleted: true } });
   };
-}
 
+  addCarUnit = async (req: Request, res: Response): Promise<void> => {
+    const carId = String(req.params.id ?? "");
+    const input = req.body as CreateCarUnitInput;
+    const data = await this.service.addUnit(carId, input);
+    res.status(201).json({ data });
+  };
+
+  updateCarUnit = async (req: Request, res: Response): Promise<void> => {
+    const unitId = String(req.params.unitId ?? "");
+    const input = req.body as UpdateCarUnitInput;
+    const data = await this.service.updateUnit(unitId, input);
+    res.status(200).json({ data });
+  };
+
+  deleteCarUnit = async (req: Request, res: Response): Promise<void> => {
+    const unitId = String(req.params.unitId ?? "");
+    await this.service.deleteUnit(unitId);
+    res.status(200).json({ data: { deleted: true } });
+  };
+}
