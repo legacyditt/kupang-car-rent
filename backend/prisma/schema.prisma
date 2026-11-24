@@ -86,6 +86,11 @@ enum RentalServiceType {
   WITH_DRIVER
 }
 
+enum TransmissionPreference {
+  MATIC
+  MANUAL
+}
+
 enum BookingStatus {
   PENDING
   CONFIRMED
@@ -116,9 +121,9 @@ model Car {
   id            String    @id @default(cuid())
   slug          String    @unique
   name          String
-  brand         String
+  brand         String    @default("-")
   category      String?
-  transmission  String?
+  transmission  String    @default("BOTH")
   description   String?
   capacityLabel String
   pricePerDay   Int
@@ -142,9 +147,10 @@ model Booking {
   customerPhone       String
   startDate           DateTime          @db.Date
   endDate             DateTime          @db.Date
-  totalDays           Int
-  serviceType         RentalServiceType
-  pickupLocation      String?
+  totalDays              Int
+  serviceType            RentalServiceType
+  transmissionPreference TransmissionPreference @default(MANUAL)
+  pickupLocation         String?
   customerNotes       String?
   pricePerDaySnapshot Int
   estimatedPrice      Int

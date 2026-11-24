@@ -40,6 +40,7 @@ describe("Bookings API, Payment Rules, Extend & BR-09 Concurrency", () => {
       startDate: "2026-12-01",
       endDate: "2026-12-03",
       serviceType: "SELF_DRIVE",
+      transmissionPreference: "MATIC",
       paymentScheme: "DP_50",
       pickupLocation: "Bandara El Tari",
     };
@@ -55,6 +56,7 @@ describe("Bookings API, Payment Rules, Extend & BR-09 Concurrency", () => {
       customerName: "Delano Kupang",
       customerPhone: "6281234567890",
       totalDays: 3,
+      transmissionPreference: "MATIC",
       estimatedPrice: 900000,
       finalPrice: 900000,
       paymentScheme: "DP_50",

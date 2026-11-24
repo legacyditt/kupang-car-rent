@@ -37,7 +37,7 @@ describe("Cars & Availability API", () => {
       .set("Cookie", cookies)
       .send({
         name: "Test Unit Inactive",
-        brand: "Suzuki",
+        transmission: "MANUAL",
         capacityLabel: "7 Kursi",
         pricePerDay: 350000,
         imageUrl: "/Toyota Avanza.jpg",

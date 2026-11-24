@@ -40,6 +40,7 @@ export interface BookingDto {
   endDate: string;
   totalDays: number;
   serviceType: Booking["serviceType"];
+  transmissionPreference: Booking["transmissionPreference"];
   pickupLocation: string | null;
   customerNotes: string | null;
   pricePerDaySnapshot: number;
@@ -68,6 +69,7 @@ function toBookingDto(b: Booking): BookingDto {
     endDate: formatUtcDateYyyyMmDd(b.endDate),
     totalDays: b.totalDays,
     serviceType: b.serviceType,
+    transmissionPreference: b.transmissionPreference,
     pickupLocation: b.pickupLocation,
     customerNotes: b.customerNotes,
     pricePerDaySnapshot: b.pricePerDaySnapshot,
@@ -178,6 +180,7 @@ export class BookingService {
           endDate,
           totalDays,
           serviceType: input.serviceType,
+          transmissionPreference: input.transmissionPreference ?? "MANUAL",
           pickupLocation: input.pickupLocation,
           customerNotes: input.customerNotes,
           pricePerDaySnapshot: car.pricePerDay,
@@ -330,6 +333,9 @@ export class BookingService {
           totalDays,
           ...(patch.serviceType !== undefined
             ? { serviceType: patch.serviceType }
+            : {}),
+          ...(patch.transmissionPreference !== undefined
+            ? { transmissionPreference: patch.transmissionPreference }
             : {}),
           estimatedPrice,
           additionalFee,

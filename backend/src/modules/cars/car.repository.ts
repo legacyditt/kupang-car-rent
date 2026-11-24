@@ -85,7 +85,7 @@ export class CarRepository {
       name: string;
       brand: string;
       category: string | null;
-      transmission: string | null;
+      transmission: string;
       description: string | null;
       capacityLabel: string;
       pricePerDay: number;

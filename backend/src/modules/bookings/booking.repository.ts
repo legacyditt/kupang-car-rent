@@ -7,6 +7,7 @@ import type {
   Prisma,
   PrismaClient,
   RentalServiceType,
+  TransmissionPreference,
 } from "../../generated/prisma/client.js";
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
@@ -80,6 +81,7 @@ export class BookingRepository {
       endDate: Date;
       totalDays: number;
       serviceType: RentalServiceType;
+      transmissionPreference: TransmissionPreference;
       pickupLocation?: string;
       customerNotes?: string;
       pricePerDaySnapshot: number;

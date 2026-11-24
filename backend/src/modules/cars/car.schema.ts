@@ -3,11 +3,13 @@ import { CarStatus } from "../../generated/prisma/client.js";
 
 const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
 
+export const carTransmissionSchema = z.enum(["MATIC", "MANUAL", "BOTH"]);
+
 export const createCarSchema = z.object({
   name: z.string().trim().min(1, "Nama unit wajib diisi."),
-  brand: z.string().trim().min(1, "Merek wajib diisi."),
+  brand: z.string().trim().optional().default("-"),
   category: z.string().trim().optional(),
-  transmission: z.string().trim().optional(),
+  transmission: carTransmissionSchema.default("BOTH"),
   description: z.string().trim().optional(),
   capacityLabel: z.string().trim().min(1).default("— Kursi"),
   pricePerDay: z.coerce.number().int().nonnegative(),
