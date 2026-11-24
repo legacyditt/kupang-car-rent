@@ -22,6 +22,7 @@ export function CarCatalogSection() {
   // Animasi masuk kartu katalog saat section terlihat di desktop.
   useGSAP(
     () => {
+      if (cars.length === 0) return;
       const mm = gsap.matchMedia();
 
       mm.add(MOTION_MEDIA.desktop, () => {
@@ -35,13 +36,13 @@ export function CarCatalogSection() {
           clearProps: "transform,opacity",
           scrollTrigger: {
             trigger: sectionRef.current,
-            start: "top 78%",
+            start: "top 95%",
             once: true,
           },
         });
       });
     },
-    { scope: sectionRef }
+    { scope: sectionRef, dependencies: [cars.length], revertOnUpdate: true }
   );
 
   // Geser carousel mobile ke indeks unit yang dipilih.
