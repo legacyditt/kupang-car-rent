@@ -1,15 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import gsap from "gsap";
-import { useGSAP } from "@gsap/react";
 import * as m from "motion/react-m";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { MOTION_EASE, MOTION_MEDIA, registerMotionPlugins } from "@/lib/motion";
+import { MOTION_EASE, useDesktopGsap } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import { usePublicCars } from "../hooks/useAdminCars";
 import { CarCard } from "./CarCard";
-
-registerMotionPlugins();
 
 /** Katalog armada pada landing page: grid 2-4 kolom di desktop dan carousel di mobile. */
 export function CarCatalogSection() {
@@ -20,28 +16,25 @@ export function CarCatalogSection() {
   const [liveStatus, setLiveStatus] = useState("");
 
   // Animasi masuk kartu katalog saat section terlihat di desktop (tanpa opacity: 0 agar tidak pernah tersembunyi saat jump ke #katalog).
-  useGSAP(
-    () => {
+  useDesktopGsap(
+    sectionRef,
+    (gsap) => {
       if (cars.length === 0) return;
-      const mm = gsap.matchMedia();
-
-      mm.add(MOTION_MEDIA.desktop, () => {
-        gsap.from("[data-catalog-card]", {
-          y: 16,
-          duration: 0.45,
-          stagger: 0.06,
-          ease: MOTION_EASE.ignition,
-          force3D: true,
-          clearProps: "transform",
-          scrollTrigger: {
-            trigger: sectionRef.current,
-            start: "top 95%",
-            once: true,
-          },
-        });
+      gsap.from("[data-catalog-card]", {
+        y: 16,
+        duration: 0.45,
+        stagger: 0.06,
+        ease: MOTION_EASE.ignition,
+        force3D: true,
+        clearProps: "transform",
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: "top 95%",
+          once: true,
+        },
       });
     },
-    { scope: sectionRef, dependencies: [cars.length], revertOnUpdate: true }
+    [cars.length]
   );
 
   // Geser carousel mobile ke indeks unit yang dipilih.

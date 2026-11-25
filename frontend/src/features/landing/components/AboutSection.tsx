@@ -4,11 +4,11 @@ import { useGSAP } from "@gsap/react";
 import * as m from "motion/react-m";
 import { Button } from "@/components/ui/button";
 import { useBusinessProfile } from "@/features/business-profile/hooks/useBusinessProfile";
+import { registerMotionPlugins } from "@/lib/motion-plugins";
 import {
   MOTION_EASE,
   MOTION_MEDIA,
   TAP_SPRING,
-  registerMotionPlugins,
 } from "@/lib/motion";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 

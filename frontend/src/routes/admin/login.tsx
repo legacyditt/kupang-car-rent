@@ -10,10 +10,10 @@ import { useAdminAuth } from "@/features/admin-auth/hooks/useAdminAuth";
 import { DEFAULT_ADMIN_CREDENTIALS } from "@/features/admin-auth/utils/admin-auth";
 import { useBusinessProfile } from "@/features/business-profile/hooks/useBusinessProfile";
 import { useSubmitLock } from "@/hooks/useSubmitLock";
+import { registerMotionPlugins } from "@/lib/motion-plugins";
 import {
   MOTION_EASE,
   MOTION_MEDIA,
-  registerMotionPlugins,
 } from "@/lib/motion";
 import { useDocumentMeta } from "@/lib/seo";
 

@@ -1,135 +1,111 @@
 import { useRef } from "react";
-import gsap from "gsap";
-import { useGSAP } from "@gsap/react";
 import * as m from "motion/react-m";
 import { Button } from "@/components/ui/button";
 import {
   MOTION_EASE,
-  MOTION_MEDIA,
   TAP_SPRING,
-  registerMotionPlugins,
+  useDesktopGsap,
 } from "@/lib/motion";
-
-registerMotionPlugins();
 
 /** Section pembuka (above-the-fold) dengan visual armada utama dan CTA menuju katalog atau WhatsApp. */
 export function HeroSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const desktopImgRef = useRef<HTMLImageElement>(null);
 
-  // Animasi masuk hero (zoom-out gambar, garis aksen, dan teks) saat pertama tampil di desktop.
-  useGSAP(
-    () => {
-      const mm = gsap.matchMedia();
+  // Animasi masuk hero (zoom-out gambar, garis aksen, dan teks) hanya dimuat & dijalankan di desktop.
+  useDesktopGsap(sectionRef, (gsap) => {
+    const section = sectionRef.current;
+    const img = desktopImgRef.current;
 
-      mm.add(MOTION_MEDIA.desktop, () => {
-        const section = sectionRef.current;
-        const img = desktopImgRef.current;
+    gsap.fromTo(
+      img,
+      { scale: 1.05 },
+      {
+        scale: 1,
+        duration: 1.0,
+        ease: MOTION_EASE.precision,
+        force3D: true,
+      }
+    );
 
-        gsap.fromTo(
-          img,
-          { scale: 1.05 },
-          {
-            scale: 1,
-            duration: 1.0,
-            ease: MOTION_EASE.precision,
-            force3D: true,
-          }
-        );
+    gsap.from("[data-hero-beam]", {
+      scaleX: 0,
+      transformOrigin: "left center",
+      duration: 0.7,
+      ease: MOTION_EASE.ignition,
+      force3D: true,
+      clearProps: "transform",
+    });
 
-        gsap.from("[data-hero-beam]", {
-          scaleX: 0,
-          transformOrigin: "left center",
-          duration: 0.7,
-          ease: MOTION_EASE.ignition,
-          force3D: true,
-          clearProps: "transform",
-        });
+    gsap.from("[data-hero-headline]", {
+      clipPath: "inset(0 0 100% 0)",
+      y: 16,
+      duration: 0.75,
+      ease: MOTION_EASE.ignition,
+      force3D: true,
+      clearProps: "clipPath,transform",
+    });
 
-        gsap.from("[data-hero-headline]", {
-          clipPath: "inset(0 0 100% 0)",
-          y: 16,
-          duration: 0.75,
-          ease: MOTION_EASE.ignition,
-          force3D: true,
-          clearProps: "clipPath,transform",
-        });
+    gsap.from("[data-hero-item]", {
+      y: 16,
+      opacity: 0,
+      duration: 0.5,
+      stagger: 0.08,
+      delay: 0.12,
+      ease: MOTION_EASE.ignition,
+      force3D: true,
+      clearProps: "transform,opacity",
+    });
 
-        gsap.from("[data-hero-item]", {
-          y: 16,
-          opacity: 0,
-          duration: 0.5,
-          stagger: 0.08,
-          delay: 0.12,
-          ease: MOTION_EASE.ignition,
-          force3D: true,
-          clearProps: "transform,opacity",
-        });
+    gsap.to(img, {
+      yPercent: 8,
+      ease: "none",
+      force3D: true,
+      scrollTrigger: {
+        trigger: section,
+        start: "top top",
+        end: "bottom top",
+        scrub: 0.4,
+      },
+    });
 
-        gsap.to(img, {
-          yPercent: 8,
-          ease: "none",
-          force3D: true,
-          scrollTrigger: {
-            trigger: section,
-            start: "top top",
-            end: "bottom top",
-            scrub: 0.4,
-          },
-        });
-
-        if (section && img) {
-          const quickX = gsap.quickTo(img, "x", {
-            duration: 0.6,
-            ease: "power2.out",
-          });
-          const quickY = gsap.quickTo(img, "y", {
-            duration: 0.6,
-            ease: "power2.out",
-          });
-
-          const handlePointerMove = (e: PointerEvent) => {
-            if (e.pointerType !== "mouse") return;
-            const rect = section.getBoundingClientRect();
-            const nx = (e.clientX - rect.left) / rect.width - 0.5;
-            const ny = (e.clientY - rect.top) / rect.height - 0.5;
-            quickX(nx * -16);
-            quickY(ny * -10);
-          };
-
-          const handlePointerLeave = () => {
-            quickX(0);
-            quickY(0);
-          };
-
-          section.addEventListener("pointermove", handlePointerMove, {
-            passive: true,
-          });
-          section.addEventListener("pointerleave", handlePointerLeave, {
-            passive: true,
-          });
-
-          return () => {
-            section.removeEventListener("pointermove", handlePointerMove);
-            section.removeEventListener("pointerleave", handlePointerLeave);
-          };
-        }
+    if (section && img) {
+      const quickX = gsap.quickTo(img, "x", {
+        duration: 0.6,
+        ease: "power2.out",
+      });
+      const quickY = gsap.quickTo(img, "y", {
+        duration: 0.6,
+        ease: "power2.out",
       });
 
-      mm.add(MOTION_MEDIA.mobile, () => {
-        gsap.from("[data-hero-item]", {
-          y: 10,
-          opacity: 0,
-          duration: 0.35,
-          stagger: 0.05,
-          ease: MOTION_EASE.precision,
-          force3D: true,
-          clearProps: "transform,opacity",
-        });
+      const handlePointerMove = (e: PointerEvent) => {
+        if (e.pointerType !== "mouse") return;
+        const rect = section.getBoundingClientRect();
+        const nx = (e.clientX - rect.left) / rect.width - 0.5;
+        const ny = (e.clientY - rect.top) / rect.height - 0.5;
+        quickX(nx * -16);
+        quickY(ny * -10);
+      };
+
+      const handlePointerLeave = () => {
+        quickX(0);
+        quickY(0);
+      };
+
+      section.addEventListener("pointermove", handlePointerMove, {
+        passive: true,
       });
-    },
-    { scope: sectionRef }
-  );
+      section.addEventListener("pointerleave", handlePointerLeave, {
+        passive: true,
+      });
+
+      return () => {
+        section.removeEventListener("pointermove", handlePointerMove);
+        section.removeEventListener("pointerleave", handlePointerLeave);
+      };
+    }
+  });
 
   return (
     <section
