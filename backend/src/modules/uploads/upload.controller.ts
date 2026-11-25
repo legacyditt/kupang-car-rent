@@ -1,9 +1,13 @@
 import type { Request, Response } from "express";
 import multer from "multer";
-import { UploadService } from "./upload.service.js";
+import type { CreateUploadSignatureInput } from "./upload.schema.js";
+import {
+  MAX_CAR_IMAGE_BYTES,
+  MAX_LOGO_BYTES,
+  UploadService,
+} from "./upload.service.js";
 
-export const MAX_CAR_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
-export const MAX_LOGO_BYTES = 1_048_576; // 1 MB
+export { MAX_CAR_IMAGE_BYTES, MAX_LOGO_BYTES };
 
 export const carImageUploadMiddleware = multer({
   storage: multer.memoryStorage(),
@@ -17,6 +21,13 @@ export const logoUploadMiddleware = multer({
 
 export class UploadController {
   constructor(private readonly service: UploadService) {}
+
+  createSignature = (req: Request, res: Response): void => {
+    const data = this.service.createSignature(
+      req.body as CreateUploadSignatureInput
+    );
+    res.status(200).json({ data });
+  };
 
   uploadCarImage = async (req: Request, res: Response): Promise<void> => {
     const data = await this.service.uploadImage({

@@ -1,5 +1,21 @@
-import type { ImageStorage, UploadResult } from "../../lib/imageStorage.js";
+import type {
+  ImageStorage,
+  UploadResult,
+  UploadSignatureResult,
+} from "../../lib/imageStorage.js";
 import { AppError } from "../../utils/AppError.js";
+import type { CreateUploadSignatureInput } from "./upload.schema.js";
+
+export const MAX_CAR_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
+export const MAX_LOGO_BYTES = 1_048_576; // 1 MB
+
+const UPLOAD_TARGET_POLICIES: Record<
+  CreateUploadSignatureInput["target"],
+  { folder: string; maxBytes: number }
+> = {
+  "car-image": { folder: "aventra-rental/cars", maxBytes: MAX_CAR_IMAGE_BYTES },
+  logo: { folder: "aventra-rental/brand", maxBytes: MAX_LOGO_BYTES },
+};
 
 const ALLOWED_MIME_TYPES = new Set([
   "image/jpeg",
@@ -28,6 +44,19 @@ function hasValidImageMagicBytes(buffer: Buffer): boolean {
 
 export class UploadService {
   constructor(private readonly storage: ImageStorage) {}
+
+  /** Validates file metadata against target limits and issues a signed direct-upload payload. */
+  createSignature(input: CreateUploadSignatureInput): UploadSignatureResult {
+    const policy = UPLOAD_TARGET_POLICIES[input.target];
+    if (input.fileSize > policy.maxBytes) {
+      throw new AppError(
+        400,
+        "FILE_TOO_LARGE",
+        "Ukuran file melebihi batas maksimum yang diizinkan."
+      );
+    }
+    return this.storage.createUploadSignature(policy.folder);
+  }
 
   async uploadImage(params: {
     file: Express.Multer.File | undefined;
