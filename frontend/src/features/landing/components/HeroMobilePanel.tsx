@@ -2,16 +2,15 @@ import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { usePublicCars } from "@/features/cars/hooks/useAdminCars";
 import { formatRupiahCompact } from "@/lib/utils";
-import { HeroFleetRail } from "./HeroFleetRail";
 
 const FALLBACK_MIN_PRICE = 300_000;
 
 /**
- * Mobile-only bottom-anchored action stack: large starting rate numeral,
- * full-width 52px CTA, and horizontal fleet chip rail.
+ * Mobile-only bottom-anchored action stack: large starting rate numeral
+ * and full-width 52px CTA.
  */
 export function HeroMobilePanel() {
-  const { data: cars = [], isLoading } = usePublicCars();
+  const { data: cars = [] } = usePublicCars();
 
   const minPrice = useMemo(() => {
     if (cars.length === 0) return FALLBACK_MIN_PRICE;
@@ -46,8 +45,6 @@ export function HeroMobilePanel() {
           <a href="#katalog">Cek Ketersediaan →</a>
         </Button>
       </div>
-
-      <HeroFleetRail cars={cars} isLoading={isLoading} />
     </div>
   );
 }
