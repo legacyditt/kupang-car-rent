@@ -1,4 +1,4 @@
-import { MapPin, Phone } from "lucide-react";
+import { Instagram, Mail, MapPin, Phone } from "lucide-react";
 import { useBusinessProfile } from "@/features/business-profile/hooks/useBusinessProfile";
 import { NAV_LINKS } from "@/lib/constants";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
@@ -68,10 +68,30 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 border-t border-hairline pt-6">
+        <div className="mt-10 flex flex-col gap-3 border-t border-hairline pt-6 sm:flex-row sm:items-center sm:justify-between">
           <p className="font-mono text-[11px] tracking-wider text-slate-500 uppercase">
             © 2026 {profile.name.toUpperCase()} KUPANG
           </p>
+
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-[11px] tracking-wider text-slate-500">
+            <span className="uppercase">Developed by Delano Manafe</span>
+            <a
+              href="mailto:delanomanafe05@gmail.com"
+              className="inline-flex items-center gap-1.5 transition-colors hover:text-gold"
+            >
+              <Mail className="h-3.5 w-3.5 shrink-0 text-gold" aria-hidden="true" />
+              <span>delanomanafe05@gmail.com</span>
+            </a>
+            <a
+              href="https://www.instagram.com/delano__manafe/?__pwa=1"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 transition-colors hover:text-gold"
+            >
+              <Instagram className="h-3.5 w-3.5 shrink-0 text-gold" aria-hidden="true" />
+              <span>@delano__manafe</span>
+            </a>
+          </div>
         </div>
       </div>
     </footer>
