@@ -147,6 +147,35 @@
     .booking-sheet[data-state="closed"] {
       animation: aventra-sheet-out 0.22s ease-in forwards;
     }
+
+    .hero-mobile-photo {
+      animation: aventra-hero-settle 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    .hero-mobile-beam {
+      transform-origin: left center;
+      animation: aventra-hero-beam 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
+    }
+
+    .hero-mobile-rise-1 {
+      animation: aventra-hero-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+    }
+
+    .hero-mobile-rise-2 {
+      animation: aventra-hero-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.18s both;
+    }
+
+    .hero-mobile-rise-3 {
+      animation: aventra-hero-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.26s both;
+    }
+
+    @supports (animation-timeline: scroll()) {
+      .hero-mobile-parallax {
+        animation: aventra-hero-scroll-parallax linear both;
+        animation-timeline: scroll(root block);
+        animation-range: 0px 420px;
+      }
+    }
   }
 
   @media (min-width: 768px) {
@@ -234,6 +263,44 @@
   to {
     transform: scale(0.96);
     opacity: 0;
+  }
+}
+
+@keyframes aventra-hero-settle {
+  from {
+    transform: scale(1.06);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes aventra-hero-beam {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes aventra-hero-rise {
+  from {
+    transform: translate3d(0, 14px, 0);
+    opacity: 0;
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes aventra-hero-scroll-parallax {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 36px, 0);
   }
 }
 

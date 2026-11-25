@@ -6,6 +6,7 @@ import {
   TAP_SPRING,
   useDesktopGsap,
 } from "@/lib/motion";
+import { HeroMobilePanel } from "./HeroMobilePanel";
 
 /** Section pembuka (above-the-fold) dengan visual armada utama dan CTA menuju katalog atau WhatsApp. */
 export function HeroSection() {
@@ -111,21 +112,27 @@ export function HeroSection() {
     <section
       ref={sectionRef}
       id="beranda"
-      className="relative min-h-[78svh] overflow-hidden bg-obsidian text-white md:min-h-[680px] lg:min-h-[760px]"
+      className="relative min-h-[100dvh] overflow-hidden bg-obsidian text-white md:min-h-[680px] lg:min-h-[760px]"
     >
-      {/* Mobile: Seamless editorial stage melting Hilux photo into obsidian */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[58%] overflow-hidden md:hidden">
-        <img
-          src="/hero-mobile.webp"
-          alt="Unit Toyota Hilux Aventra Rental di Kota Kupang"
-          fetchPriority="high"
-          width={640}
-          height={360}
-          className="h-full w-full object-cover object-[58%_42%]"
+      {/* Mobile: Full-bleed Hilux stage under transparent header with top/bottom contrast scrims */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden md:hidden">
+        <div className="hero-mobile-parallax h-full w-full">
+          <img
+            src="/hero-mobile.webp"
+            alt="Unit Toyota Hilux Aventra Rental di Kota Kupang"
+            fetchPriority="high"
+            width={820}
+            height={720}
+            className="hero-mobile-photo h-full w-full object-cover object-[50%_28%]"
+          />
+        </div>
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-obsidian/80 via-obsidian/30 to-transparent"
         />
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-gradient-to-b from-obsidian/15 via-obsidian/55 via-60% to-obsidian"
+          className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/80 via-45% to-transparent"
         />
       </div>
 
@@ -157,17 +164,17 @@ export function HeroSection() {
       />
 
       {/* Foreground Content */}
-      <div className="relative mx-auto flex min-h-[78svh] max-w-7xl flex-col justify-end px-5 pb-10 pt-[36svh] sm:px-6 md:min-h-[680px] md:justify-center md:py-24 lg:min-h-[760px] lg:px-8">
+      <div className="relative mx-auto flex min-h-[100dvh] max-w-7xl flex-col justify-end px-5 pb-24 pt-24 sm:px-6 md:min-h-[680px] md:justify-center md:py-24 lg:min-h-[760px] lg:px-8">
         <div className="max-w-xl">
           <div
             data-hero-beam
             aria-hidden="true"
-            className="mb-5 hidden h-[2px] w-16 bg-gradient-to-r from-gold to-gold/10 md:block"
+            className="hero-mobile-beam mb-4 h-[2px] w-14 bg-gradient-to-r from-gold to-gold/10 md:mb-5 md:w-16"
           />
 
           <p
             data-hero-headline
-            className="font-display text-[40px] font-bold leading-[1.05] tracking-[-0.03em] text-white sm:text-5xl lg:text-[68px]"
+            className="hero-mobile-rise-1 font-display text-[38px] font-bold leading-[1.03] tracking-[-0.03em] text-white sm:text-5xl lg:text-[68px]"
           >
             DRIVEN IN{" "}
             <span className="block text-gold">GOLD STANDARD.</span>
@@ -175,15 +182,18 @@ export function HeroSection() {
 
           <h1
             data-hero-item
-            className="mt-4 max-w-md text-sm leading-relaxed font-normal text-slate-300 sm:text-base"
+            className="hero-mobile-rise-1 mt-3 max-w-md text-sm leading-relaxed font-normal text-slate-200 sm:mt-4 sm:text-base md:text-slate-300"
           >
-            Sewa mobil harian di Kota Kupang. Avanza, Innova Reborn, Brio, dan Hilux—lepas kunci atau dengan sopir.
+            Sewa mobil harian di Kota Kupang. Avanza, Innova Reborn, Brio, dan Hilux. Lepas kunci atau dengan sopir.
           </h1>
 
-          {/* Compact Quick-Action Spec Strip */}
+          {/* Mobile-only thumb-zone rate numeral, CTA & fleet chip rail */}
+          <HeroMobilePanel />
+
+          {/* Desktop Compact Quick-Action Spec Strip */}
           <div
             data-hero-item
-            className="mt-7 flex flex-col gap-3 rounded-lg border border-hairline bg-carbon/90 p-3 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between sm:gap-0 sm:p-2.5"
+            className="mt-7 hidden flex-col gap-3 rounded-lg border border-hairline bg-carbon/90 p-3 backdrop-blur-sm md:flex md:flex-row md:items-center md:justify-between md:gap-0 md:p-2.5"
           >
             <div className="grid grid-cols-2 divide-x divide-hairline sm:flex sm:items-center">
               <div className="pr-3 sm:px-3">
