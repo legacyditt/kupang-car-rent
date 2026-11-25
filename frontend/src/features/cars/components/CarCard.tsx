@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import * as m from "motion/react-m";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,10 @@ import { TAP_SPRING } from "@/lib/motion";
 import { formatRupiah } from "@/lib/utils";
 import type { CarItem } from "../types/car.types";
 import { CAR_TRANSMISSION_LABELS } from "../utils/car-admin";
-import { BookingModal } from "./BookingModal";
+
+const BookingModal = lazy(() =>
+  import("./BookingModal").then((mod) => ({ default: mod.BookingModal }))
+);
 
 interface CarCardProps {
   car: CarItem;
@@ -78,11 +81,15 @@ export function CarCard({ car, prioritizeImage = false }: CarCardProps) {
         </m.div>
       </CardContent>
 
-      <BookingModal
-        car={car}
-        open={isBookingOpen}
-        onOpenChange={setIsBookingOpen}
-      />
+      {isBookingOpen && (
+        <Suspense fallback={null}>
+          <BookingModal
+            car={car}
+            open={isBookingOpen}
+            onOpenChange={setIsBookingOpen}
+          />
+        </Suspense>
+      )}
     </Card>
   );
 }

@@ -1,18 +1,42 @@
 import { createRoute } from "@tanstack/react-router";
+import { lazy, Suspense, type ComponentType } from "react";
 import { GuestLayout } from "@/components/layout/GuestLayout";
 import { CarCatalogSection } from "@/features/cars/components/CarCatalogSection";
-import { AboutSection } from "@/features/landing/components/AboutSection";
 import { HeroSection } from "@/features/landing/components/HeroSection";
-import { HowToBookSection } from "@/features/landing/components/HowToBookSection";
-import { ServicesSection } from "@/features/landing/components/ServicesSection";
-import { WhatsAppCtaSection } from "@/features/landing/components/WhatsAppCtaSection";
-import { TestimonialsSection } from "@/features/testimonials/components/TestimonialsSection";
 import {
   DEFAULT_DOCUMENT_TITLE,
   DEFAULT_ROBOTS_META,
   useDocumentMeta,
 } from "@/lib/seo";
 import { rootRoute } from "./__root";
+
+/** Wraps named-export React components for `React.lazy` code-splitting without repeating `.then()` adapters. */
+function lazyNamed<T extends ComponentType<Record<string, never>>>(
+  loader: () => Promise<Record<string, T>>
+) {
+  return lazy(async () => {
+    const mod = await loader();
+    const firstExport = Object.values(mod)[0];
+    return { default: firstExport };
+  });
+}
+
+// Below-the-fold sections load lazily so mobile initial paint prioritizes hero + catalog.
+const ServicesSection = lazyNamed(
+  () => import("@/features/landing/components/ServicesSection")
+);
+const HowToBookSection = lazyNamed(
+  () => import("@/features/landing/components/HowToBookSection")
+);
+const AboutSection = lazyNamed(
+  () => import("@/features/landing/components/AboutSection")
+);
+const TestimonialsSection = lazyNamed(
+  () => import("@/features/testimonials/components/TestimonialsSection")
+);
+const WhatsAppCtaSection = lazyNamed(
+  () => import("@/features/landing/components/WhatsAppCtaSection")
+);
 
 export const guestLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -37,11 +61,13 @@ function LandingPage() {
     <>
       <HeroSection />
       <CarCatalogSection />
-      <ServicesSection />
-      <HowToBookSection />
-      <AboutSection />
-      <TestimonialsSection />
-      <WhatsAppCtaSection />
+      <Suspense fallback={null}>
+        <ServicesSection />
+        <HowToBookSection />
+        <AboutSection />
+        <TestimonialsSection />
+        <WhatsAppCtaSection />
+      </Suspense>
     </>
   );
 }
