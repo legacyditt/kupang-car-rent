@@ -57,6 +57,7 @@ import {
   logoUploadMiddleware,
   UploadController,
 } from "../modules/uploads/upload.controller.js";
+import { createUploadSignatureSchema } from "../modules/uploads/upload.schema.js";
 import { UploadService } from "../modules/uploads/upload.service.js";
 
 export interface V1RouterDeps {
@@ -68,11 +69,26 @@ export interface V1RouterDeps {
 export function createV1Router(deps: V1RouterDeps = {}): Router {
   const router = Router();
 
-  router.get("/health", (_req, res) => {
+  router.get("/health", async (_req, res) => {
+    if (deps.prisma) {
+      try {
+        await deps.prisma.$queryRaw`SELECT 1`;
+      } catch {
+        res.status(503).json({
+          error: {
+            code: "DATABASE_UNAVAILABLE",
+            message: "Database connection check failed.",
+          },
+        });
+        return;
+      }
+    }
+
     res.status(200).json({
       data: {
         status: "ok",
         service: "kupang-car-rent-backend",
+        database: deps.prisma ? "connected" : "not_configured",
         timestamp: new Date().toISOString(),
       },
     });
@@ -287,6 +303,12 @@ export function createV1Router(deps: V1RouterDeps = {}): Router {
       if (deps.imageStorage) {
         const uploadController = new UploadController(
           new UploadService(deps.imageStorage)
+        );
+        router.post(
+          "/admin/uploads/signature",
+          requireAdmin,
+          validateBody(createUploadSignatureSchema),
+          uploadController.createSignature
         );
         router.post(
           "/admin/uploads/car-image",

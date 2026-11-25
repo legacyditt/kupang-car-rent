@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useBusinessProfile } from "@/features/business-profile/hooks/useBusinessProfile";
+import { useSubmitLock } from "@/hooks/useSubmitLock";
 import { ApiError, apiFetch } from "@/lib/api";
 import { useDocumentMeta } from "@/lib/seo";
 import { cn } from "@/lib/utils";
@@ -54,7 +55,7 @@ export function CustomerReviewPage() {
   const [rating, setRating] = useState(5);
   const [quote, setQuote] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { isSubmitting, runWithLock } = useSubmitLock();
   const [submittedName, setSubmittedName] = useState<string | null>(null);
 
   useEffect(() => {
@@ -69,27 +70,27 @@ export function CustomerReviewPage() {
     e.preventDefault();
     setErrorMsg(null);
     if (!eligibility?.booking) return;
+    const booking = eligibility.booking;
 
-    setIsSubmitting(true);
-    try {
-      const created = await apiFetch<{ customerName: string }>("/testimonials", {
-        method: "POST",
-        body: JSON.stringify({
-          bookingCode: eligibility.booking.bookingCode,
-          customerName,
-          rating,
-          tripLabel: eligibility.booking.tripLabel,
-          quote,
-        }),
-      });
-      setSubmittedName(created.customerName);
-    } catch (err) {
-      setErrorMsg(
-        err instanceof ApiError ? err.message : "Gagal mengirim ulasan."
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+    await runWithLock(async () => {
+      try {
+        const created = await apiFetch<{ customerName: string }>("/testimonials", {
+          method: "POST",
+          body: JSON.stringify({
+            bookingCode: booking.bookingCode,
+            customerName,
+            rating,
+            tripLabel: booking.tripLabel,
+            quote,
+          }),
+        });
+        setSubmittedName(created.customerName);
+      } catch (err) {
+        setErrorMsg(
+          err instanceof ApiError ? err.message : "Gagal mengirim ulasan."
+        );
+      }
+    });
   }
 
   return (

@@ -1,46 +1,16 @@
 import "dotenv/config";
-import { createApp } from "./app.js";
-import { getEnv } from "./config/env.js";
-import { createAuth } from "./lib/auth.js";
-import { CloudinaryImageStorage } from "./lib/imageStorage.js";
-import { createOtpSender } from "./lib/otpSender.js";
-import { getPrisma } from "./lib/prisma.js";
+import { bootstrapApp } from "./bootstrap.js";
 
-const env = getEnv();
-const prisma = getPrisma();
-const otpSender = createOtpSender({
-  provider: env.OTP_PROVIDER,
-  fonnteToken: env.FONNTE_TOKEN,
-});
-const imageStorage = new CloudinaryImageStorage({
-  cloudName: env.CLOUDINARY_CLOUD_NAME,
-  apiKey: env.CLOUDINARY_API_KEY,
-  apiSecret: env.CLOUDINARY_API_SECRET,
-});
-
-const auth = createAuth({
-  prisma,
-  secret: env.BETTER_AUTH_SECRET,
-  baseUrl: env.BETTER_AUTH_URL,
-  corsOrigin: env.CORS_ORIGIN,
-  cookieSameSite: env.COOKIE_SAME_SITE,
-  isProduction: env.NODE_ENV === "production",
-  otpSender,
-});
-
-const app = createApp({
-  corsOrigin: env.CORS_ORIGIN,
-  nodeEnv: env.NODE_ENV,
-  auth,
-  prisma,
-  imageStorage,
-});
+const { app, env, prisma } = bootstrapApp();
 
 const server = app.listen(env.PORT, () => {
   console.log(
     `[server] kupang-car-rent-backend listening on http://localhost:${env.PORT} (${env.NODE_ENV})`
   );
 });
+
+// Prevent slow/stalled clients from holding sockets open indefinitely in production.
+server.requestTimeout = 30_000;
 
 function shutdown(signal: string): void {
   console.log(`[server] ${signal} received, shutting down gracefully...`);

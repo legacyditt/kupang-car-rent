@@ -42,6 +42,7 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
     () => new Date(today.getFullYear(), today.getMonth(), 1)
   );
   const idempotencyKeyRef = useRef<string | null>(null);
+  const submitLockRef = useRef(false);
 
   const bookedSet = useMemo(() => {
     const byTrans = car.bookedDatesByTransmission?.[transmissionPreference];
@@ -102,6 +103,7 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (submitLockRef.current) return;
     const trimmedName = name.trim();
 
     if (!trimmedName) {
@@ -120,6 +122,7 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
           : `bk-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     }
 
+    submitLockRef.current = true;
     setIsSubmitting(true);
     setErrorMsg(null);
     try {
@@ -172,6 +175,7 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
           : "Gagal mengirim booking. Silakan coba lagi."
       );
     } finally {
+      submitLockRef.current = false;
       setIsSubmitting(false);
     }
   }

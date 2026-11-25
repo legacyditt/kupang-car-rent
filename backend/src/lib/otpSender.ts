@@ -17,7 +17,11 @@ export class ConsoleOtpSender implements OtpSender {
 
 /** Production OTP sender using Fonnte WhatsApp Gateway API (text-only free tier compatible). */
 export class FonnteOtpSender implements OtpSender {
-  constructor(private readonly token: string) {}
+  constructor(
+    private readonly token: string,
+    private readonly maxRetries = 1,
+    private readonly retryDelayMs = 500
+  ) {}
 
   async send({ to, otp }: SendOtpPayload): Promise<void> {
     const message = [
@@ -26,21 +30,45 @@ export class FonnteOtpSender implements OtpSender {
       `Berlaku selama 5 menit. Jangan bagikan kode ini kepada siapa pun.`,
     ].join("\n");
 
-    const res = await fetch("https://api.fonnte.com/send", {
-      method: "POST",
-      headers: {
-        Authorization: this.token,
-      },
-      body: new URLSearchParams({
-        target: to,
-        message,
-      }),
-      signal: AbortSignal.timeout(5000),
-    });
+    let lastError: Error | undefined;
 
-    if (!res.ok) {
-      throw new Error(`Fonnte API error: HTTP ${res.status}`);
+    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+      try {
+        const res = await fetch("https://api.fonnte.com/send", {
+          method: "POST",
+          headers: {
+            Authorization: this.token,
+          },
+          body: new URLSearchParams({
+            target: to,
+            message,
+          }),
+          // Keep per-attempt timeout short so total retry time stays well within serverless limits.
+          signal: AbortSignal.timeout(4000),
+        });
+
+        if (res.ok) return;
+
+        lastError = new Error(`Fonnte API error: HTTP ${res.status}`);
+        // Do not retry 4xx errors (invalid token/payload); only retry transient 5xx responses.
+        if (res.status < 500) {
+          throw lastError;
+        }
+      } catch (err) {
+        if (err instanceof Error && err.message.startsWith("Fonnte API error: HTTP 4")) {
+          throw err;
+        }
+        lastError = err instanceof Error ? err : new Error(String(err));
+      }
+
+      if (attempt < this.maxRetries) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, this.retryDelayMs * (attempt + 1))
+        );
+      }
     }
+
+    throw lastError ?? new Error("Fonnte API error: unknown failure");
   }
 }
 

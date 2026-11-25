@@ -16,6 +16,7 @@ import type {
   TestimonialStatus,
 } from "@/features/testimonials/types/testimonial.types";
 import { TESTIMONIAL_STATUS_LABELS } from "@/features/testimonials/utils/testimonials";
+import { useSubmitLock } from "@/hooks/useSubmitLock";
 import { cn } from "@/lib/utils";
 
 type FilterTab = "ALL" | TestimonialStatus;
@@ -69,19 +70,25 @@ export function AdminTestimonialsPage() {
     setIsDialogOpen(true);
   }
 
-  function handleSave(e: FormEvent) {
+  const { isSubmitting, runWithLock } = useSubmitLock();
+
+  async function handleSave(e: FormEvent) {
     e.preventDefault();
     if (!customerName.trim() || !quote.trim()) return;
-    saveTestimonial({
-      id: editingItem?.id,
-      customerName,
-      carName,
-      tripLabel,
-      rating,
-      quote,
-      status,
+    await runWithLock(async () => {
+      await Promise.resolve(
+        saveTestimonial({
+          id: editingItem?.id,
+          customerName,
+          carName,
+          tripLabel,
+          rating,
+          quote,
+          status,
+        })
+      );
+      setIsDialogOpen(false);
     });
-    setIsDialogOpen(false);
   }
 
   return (
@@ -345,9 +352,10 @@ export function AdminTestimonialsPage() {
               </Button>
               <Button
                 type="submit"
+                disabled={isSubmitting}
                 className="h-9 bg-gold font-mono text-xs font-bold text-obsidian uppercase hover:bg-gold-light"
               >
-                Simpan
+                {isSubmitting ? "Menyimpan..." : "Simpan"}
               </Button>
             </div>
           </form>

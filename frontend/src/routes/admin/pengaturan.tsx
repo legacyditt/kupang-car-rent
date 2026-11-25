@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LogoUploadCard } from "@/features/business-profile/components/LogoUploadCard";
 import { useBusinessProfile } from "@/features/business-profile/hooks/useBusinessProfile";
+import { useSubmitLock } from "@/hooks/useSubmitLock";
 
 export function AdminSettingsPage() {
   const { profile, saveProfile, resetLogo } = useBusinessProfile();
+  const { isSubmitting, runWithLock } = useSubmitLock();
 
   const [name, setName] = useState(profile.name);
   const [whatsappNumber, setWhatsappNumber] = useState(
@@ -35,22 +37,24 @@ export function AdminSettingsPage() {
     setErrorMsg(null);
     setSavedToast(false);
 
-    const res = await saveProfile({
-      name,
-      whatsappNumber,
-      location,
-      operatingHours,
-      tagline,
-      description,
-      logoPath: profile.logoPath,
+    await runWithLock(async () => {
+      const res = await saveProfile({
+        name,
+        whatsappNumber,
+        location,
+        operatingHours,
+        tagline,
+        description,
+        logoPath: profile.logoPath,
+      });
+
+      if (!res.ok) {
+        setErrorMsg(res.error);
+        return;
+      }
+
+      setSavedToast(true);
     });
-
-    if (!res.ok) {
-      setErrorMsg(res.error);
-      return;
-    }
-
-    setSavedToast(true);
   }
 
   return (
@@ -68,10 +72,11 @@ export function AdminSettingsPage() {
 
         <Button
           type="submit"
+          disabled={isSubmitting}
           className="h-10 gap-2 self-start bg-gold font-mono text-xs font-bold tracking-wider text-obsidian uppercase hover:bg-gold-light sm:self-auto"
         >
           <Save className="h-4 w-4" aria-hidden="true" />
-          Simpan Perubahan
+          {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
         </Button>
       </div>
 
