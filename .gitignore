@@ -26,9 +26,6 @@ Thumbs.db
 backend/prisma/migrations/*.sql.bak
 backend/src/generated/
 
-# public 
-public/
-
 # Local utility scripts
 scripts/
 
