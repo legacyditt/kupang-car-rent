@@ -4,11 +4,11 @@ import { useGSAP } from "@gsap/react";
 import * as m from "motion/react-m";
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { registerMotionPlugins } from "@/lib/motion-plugins";
 import {
   MOTION_EASE,
   MOTION_MEDIA,
   TAP_SPRING,
-  registerMotionPlugins,
 } from "@/lib/motion";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 

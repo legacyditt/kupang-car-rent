@@ -1,7 +1,8 @@
 import { useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
-import { MOTION_EASE, MOTION_MEDIA, registerMotionPlugins } from "@/lib/motion";
+import { registerMotionPlugins } from "@/lib/motion-plugins";
+import { MOTION_EASE, MOTION_MEDIA } from "@/lib/motion";
 
 registerMotionPlugins();
 

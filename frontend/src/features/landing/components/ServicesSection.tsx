@@ -3,7 +3,8 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { ArrowRight, KeyRound, UserCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { MOTION_EASE, MOTION_MEDIA, registerMotionPlugins } from "@/lib/motion";
+import { registerMotionPlugins } from "@/lib/motion-plugins";
+import { MOTION_EASE, MOTION_MEDIA } from "@/lib/motion";
 
 registerMotionPlugins();
 

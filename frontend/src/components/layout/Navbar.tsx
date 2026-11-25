@@ -1,6 +1,4 @@
 import { useRef } from "react";
-import gsap from "gsap";
-import { useGSAP } from "@gsap/react";
 import * as m from "motion/react-m";
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,36 +6,27 @@ import { useBusinessProfile } from "@/features/business-profile/hooks/useBusines
 import { NAV_LINKS } from "@/lib/constants";
 import {
   MOTION_EASE,
-  MOTION_MEDIA,
   TAP_SPRING,
-  registerMotionPlugins,
+  useDesktopGsap,
 } from "@/lib/motion";
 import { useActiveSection } from "@/lib/useActiveSection";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
-
-registerMotionPlugins();
 
 export function Navbar() {
   const headerRef = useRef<HTMLElement>(null);
   const { activeHref, isScrolled, handleNavClick } = useActiveSection();
   const { profile } = useBusinessProfile();
 
-  useGSAP(
-    () => {
-      const mm = gsap.matchMedia();
-      mm.add(MOTION_MEDIA.any, () => {
-        gsap.from(headerRef.current, {
-          y: -10,
-          opacity: 0,
-          duration: 0.4,
-          ease: MOTION_EASE.precision,
-          force3D: true,
-          clearProps: "transform,opacity",
-        });
-      });
-    },
-    { scope: headerRef }
-  );
+  useDesktopGsap(headerRef, (gsap) => {
+    gsap.from(headerRef.current, {
+      y: -10,
+      opacity: 0,
+      duration: 0.4,
+      ease: MOTION_EASE.precision,
+      force3D: true,
+      clearProps: "transform,opacity",
+    });
+  });
 
   return (
     <header
