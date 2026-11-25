@@ -1,75 +1,103 @@
-import { createRoute, createRouter } from "@tanstack/react-router";
-import { AdminLayout } from "@/features/admin-dashboard/components/AdminLayout";
+import {
+  createRoute,
+  createRouter,
+  lazyRouteComponent,
+} from "@tanstack/react-router";
 import { rootRoute } from "@/routes/__root";
-import { AdminOverviewPage } from "@/routes/admin/index";
-import { AdminCarsPage } from "@/routes/admin/mobil";
-import { AdminBookingsPage } from "@/routes/admin/booking";
-import { AdminCalendarPage } from "@/routes/admin/kalender";
-import { AdminFinancePage } from "@/routes/admin/keuangan";
-import { AdminTestimonialsPage } from "@/routes/admin/testimoni";
-import { AdminSettingsPage } from "@/routes/admin/pengaturan";
-import { AdminLoginPage } from "@/routes/admin/login";
 import { guestLayoutRoute, indexRoute } from "@/routes/index";
-import { CustomerReviewPage } from "@/routes/ulasan";
 
+/**
+ * Code-split secondary and admin routes so landing-page visitors do not
+ * download heavy admin/export bundles (jspdf, html2canvas, xlsx) on initial load.
+ */
 const ulasanRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/ulasan",
-  component: CustomerReviewPage,
+  component: lazyRouteComponent(
+    () => import("@/routes/ulasan"),
+    "CustomerReviewPage"
+  ),
 });
 
 const adminLoginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/admin/login",
-  component: AdminLoginPage,
+  component: lazyRouteComponent(
+    () => import("@/routes/admin/login"),
+    "AdminLoginPage"
+  ),
 });
 
 const adminLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/admin",
-  component: AdminLayout,
+  component: lazyRouteComponent(
+    () => import("@/features/admin-dashboard/components/AdminLayout"),
+    "AdminLayout"
+  ),
 });
 
 const adminOverviewRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: "/",
-  component: AdminOverviewPage,
+  component: lazyRouteComponent(
+    () => import("@/routes/admin/index"),
+    "AdminOverviewPage"
+  ),
 });
 
 const adminMobilRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: "/mobil",
-  component: AdminCarsPage,
+  component: lazyRouteComponent(
+    () => import("@/routes/admin/mobil"),
+    "AdminCarsPage"
+  ),
 });
 
 const adminBookingRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: "/booking",
-  component: AdminBookingsPage,
+  component: lazyRouteComponent(
+    () => import("@/routes/admin/booking"),
+    "AdminBookingsPage"
+  ),
 });
 
 const adminKalenderRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: "/kalender",
-  component: AdminCalendarPage,
+  component: lazyRouteComponent(
+    () => import("@/routes/admin/kalender"),
+    "AdminCalendarPage"
+  ),
 });
 
 const adminKeuanganRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: "/keuangan",
-  component: AdminFinancePage,
+  component: lazyRouteComponent(
+    () => import("@/routes/admin/keuangan"),
+    "AdminFinancePage"
+  ),
 });
 
 const adminTestimoniRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: "/testimoni",
-  component: AdminTestimonialsPage,
+  component: lazyRouteComponent(
+    () => import("@/routes/admin/testimoni"),
+    "AdminTestimonialsPage"
+  ),
 });
 
 const adminPengaturanRoute = createRoute({
   getParentRoute: () => adminLayoutRoute,
   path: "/pengaturan",
-  component: AdminSettingsPage,
+  component: lazyRouteComponent(
+    () => import("@/routes/admin/pengaturan"),
+    "AdminSettingsPage"
+  ),
 });
 
 const routeTree = rootRoute.addChildren([

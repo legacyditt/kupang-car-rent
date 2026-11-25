@@ -102,7 +102,7 @@ export function AboutSection() {
         <div className="overflow-hidden rounded-xl border border-hairline bg-carbon">
           <img
             data-about-img
-            src="/about.jpeg"
+            src="/about.webp"
             alt="Unit Toyota Avanza Aventra Rental Kupang siap antar jemput"
             loading="lazy"
             width={960}
