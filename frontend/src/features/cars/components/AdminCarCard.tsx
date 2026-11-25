@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useSubmitLock } from "@/hooks/useSubmitLock";
 import { cn, formatRupiah } from "@/lib/utils";
 import type { CarItem, CarStatus, CarUnitItem } from "../types/car.types";
 import {
@@ -65,24 +66,28 @@ export function AdminCarCard({
     car.transmission === "MATIC" ? "MATIC" : "MANUAL"
   );
   const [unitError, setUnitError] = useState<string | null>(null);
+  const { isSubmitting: isAddingUnit, runWithLock: runAddUnitLock } =
+    useSubmitLock();
 
   async function handleAddUnitSubmit(e: FormEvent) {
     e.preventDefault();
     if (!onAddUnit) return;
     setUnitError(null);
-    try {
-      await onAddUnit(car.id, {
-        label: unitLabel.trim() || `${car.name} #${units.length + 1}`,
-        plateNumber: plateNumber.trim().toUpperCase(),
-        transmission: unitTrans,
-      });
-      setPlateNumber("");
-      setShowAddUnit(false);
-    } catch (err) {
-      setUnitError(
-        err instanceof Error ? err.message : "Gagal menambah unit fisik."
-      );
-    }
+    await runAddUnitLock(async () => {
+      try {
+        await onAddUnit(car.id, {
+          label: unitLabel.trim() || `${car.name} #${units.length + 1}`,
+          plateNumber: plateNumber.trim().toUpperCase(),
+          transmission: unitTrans,
+        });
+        setPlateNumber("");
+        setShowAddUnit(false);
+      } catch (err) {
+        setUnitError(
+          err instanceof Error ? err.message : "Gagal menambah unit fisik."
+        );
+      }
+    });
   }
 
   return (
@@ -242,9 +247,10 @@ export function AdminCarCard({
               <Button
                 type="submit"
                 size="sm"
+                disabled={isAddingUnit}
                 className="h-8 bg-gold font-mono text-[10px] font-bold text-obsidian uppercase hover:bg-gold-light"
               >
-                Simpan
+                {isAddingUnit ? "Menyimpan..." : "Simpan"}
               </Button>
             </form>
           )}

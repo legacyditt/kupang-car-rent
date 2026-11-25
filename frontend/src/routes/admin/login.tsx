@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useAdminAuth } from "@/features/admin-auth/hooks/useAdminAuth";
 import { DEFAULT_ADMIN_CREDENTIALS } from "@/features/admin-auth/utils/admin-auth";
 import { useBusinessProfile } from "@/features/business-profile/hooks/useBusinessProfile";
+import { useSubmitLock } from "@/hooks/useSubmitLock";
 import {
   MOTION_EASE,
   MOTION_MEDIA,
@@ -124,6 +125,8 @@ export function AdminLoginPage() {
     return <Navigate to="/admin" replace />;
   }
 
+  const { isSubmitting, runWithLock } = useSubmitLock();
+
   async function openForgotOtp() {
     setErrorMsg(null);
     setInfoMsg(null);
@@ -131,12 +134,14 @@ export function AdminLoginPage() {
     const targetEmail = identifier.trim().includes("@")
       ? identifier.trim()
       : DEFAULT_ADMIN_CREDENTIALS.email;
-    const res = await requestOtpReset(targetEmail);
-    if (!res.ok) {
-      setErrorMsg(res.error);
-      return;
-    }
-    setView("otp");
+    await runWithLock(async () => {
+      const res = await requestOtpReset(targetEmail);
+      if (!res.ok) {
+        setErrorMsg(res.error);
+        return;
+      }
+      setView("otp");
+    });
   }
 
   function backToLogin(notice?: string) {
@@ -154,13 +159,15 @@ export function AdminLoginPage() {
     setErrorMsg(null);
     setInfoMsg(null);
 
-    const res = await login(identifier, password);
-    if (!res.ok) {
-      setErrorMsg(res.error);
-      return;
-    }
+    await runWithLock(async () => {
+      const res = await login(identifier, password);
+      if (!res.ok) {
+        setErrorMsg(res.error);
+        return;
+      }
 
-    navigate({ to: "/admin", replace: true });
+      navigate({ to: "/admin", replace: true });
+    });
   }
 
   function handleOtpChange(index: number, raw: string) {
@@ -206,16 +213,18 @@ export function AdminLoginPage() {
     const targetAccount = identifier.trim().includes("@")
       ? identifier.trim()
       : DEFAULT_ADMIN_CREDENTIALS.email;
-    const res = await resetPasswordWithOtp({
-      email: targetAccount,
-      otp: otpDigits.join(""),
-      newPassword,
+    await runWithLock(async () => {
+      const res = await resetPasswordWithOtp({
+        email: targetAccount,
+        otp: otpDigits.join(""),
+        newPassword,
+      });
+      if (!res.ok) {
+        setErrorMsg(res.error);
+        return;
+      }
+      backToLogin("Password berhasil diperbarui. Silakan login.");
     });
-    if (!res.ok) {
-      setErrorMsg(res.error);
-      return;
-    }
-    backToLogin("Password berhasil diperbarui. Silakan login.");
   }
 
   const maskStyle: CSSProperties = {
@@ -425,9 +434,10 @@ export function AdminLoginPage() {
 
               <Button
                 type="submit"
+                disabled={isSubmitting}
                 className="mt-1 h-11 w-full cursor-pointer bg-gold font-mono text-xs font-bold tracking-wider text-obsidian uppercase shadow-[0_0_24px_rgba(245,184,46,0.22)] transition-all duration-150 hover:bg-gold-light active:scale-[0.99]"
               >
-                Masuk Dashboard →
+                {isSubmitting ? "Memproses..." : "Masuk Dashboard →"}
               </Button>
             </form>
           )}
@@ -576,9 +586,10 @@ export function AdminLoginPage() {
 
               <Button
                 type="submit"
+                disabled={isSubmitting}
                 className="mt-1 h-11 w-full cursor-pointer bg-gold font-mono text-xs font-bold tracking-wider text-obsidian uppercase shadow-[0_0_24px_rgba(245,184,46,0.22)] transition-all duration-150 hover:bg-gold-light active:scale-[0.99]"
               >
-                Simpan Password Baru →
+                {isSubmitting ? "Menyimpan..." : "Simpan Password Baru →"}
               </Button>
 
               <div className="text-center">

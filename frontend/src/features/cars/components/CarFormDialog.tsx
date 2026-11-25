@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useSubmitLock } from "@/hooks/useSubmitLock";
 import type {
   CarItem,
   CarStatus,
@@ -118,25 +119,31 @@ export function CarFormDialog({
     }
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const { isSubmitting, runWithLock } = useSubmitLock();
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!imageUrl) {
       setImageError("Upload foto unit terlebih dahulu.");
       return;
     }
 
-    const parsedPrice = Math.max(50000, Number(pricePerDay) || 300000);
+    await runWithLock(async () => {
+      const parsedPrice = Math.max(50000, Number(pricePerDay) || 300000);
 
-    onSave({
-      id: editingCar?.id,
-      name,
-      transmission,
-      capacityLabel,
-      pricePerDay: parsedPrice,
-      imageUrl,
-      status,
+      await Promise.resolve(
+        onSave({
+          id: editingCar?.id,
+          name,
+          transmission,
+          capacityLabel,
+          pricePerDay: parsedPrice,
+          imageUrl,
+          status,
+        })
+      );
+      onOpenChange(false);
     });
-    onOpenChange(false);
   };
 
   return (
@@ -343,10 +350,14 @@ export function CarFormDialog({
             <Button
               type="submit"
               variant="accent"
-              disabled={isProcessingImage}
+              disabled={isProcessingImage || isSubmitting}
               className="font-display text-xs tracking-wider uppercase"
             >
-              {editingCar ? "Simpan Perubahan" : "Tambah Unit"}
+              {isSubmitting
+                ? "Menyimpan..."
+                : editingCar
+                  ? "Simpan Perubahan"
+                  : "Tambah Unit"}
             </Button>
           </DialogFooter>
         </form>

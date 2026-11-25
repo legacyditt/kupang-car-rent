@@ -11,6 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AvailabilityCalendar } from "@/features/cars/components/AvailabilityCalendar";
+import { useSubmitLock } from "@/hooks/useSubmitLock";
 import {
   calculateRentalDays,
   getCalendarCells,
@@ -170,6 +171,8 @@ export function AddBookingDialog({
     setErrorMsg(null);
   }
 
+  const { isSubmitting, runWithLock } = useSubmitLock();
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setErrorMsg(null);
@@ -183,31 +186,33 @@ export function AddBookingDialog({
       return;
     }
 
-    const parsedFinalPrice = Number(finalPriceInput);
-    const result = await onCreateBooking({
-      customerName,
-      customerPhone,
-      carId: selectedCar.id,
-      carName: selectedCar.name,
-      pricePerDay: selectedCar.pricePerDay,
-      startDate: ddmmyyyyToYyyymmdd(startDate),
-      endDate: ddmmyyyyToYyyymmdd(endDate),
-      serviceType,
-      transmissionPreference,
-      paymentScheme: canUseDownPayment(totalDays) ? paymentScheme : "FULL",
-      finalPrice:
-        Number.isFinite(parsedFinalPrice) && parsedFinalPrice >= 0
-          ? parsedFinalPrice
-          : estimatedPrice,
-      internalNote,
+    await runWithLock(async () => {
+      const parsedFinalPrice = Number(finalPriceInput);
+      const result = await onCreateBooking({
+        customerName,
+        customerPhone,
+        carId: selectedCar.id,
+        carName: selectedCar.name,
+        pricePerDay: selectedCar.pricePerDay,
+        startDate: ddmmyyyyToYyyymmdd(startDate),
+        endDate: ddmmyyyyToYyyymmdd(endDate),
+        serviceType,
+        transmissionPreference,
+        paymentScheme: canUseDownPayment(totalDays) ? paymentScheme : "FULL",
+        finalPrice:
+          Number.isFinite(parsedFinalPrice) && parsedFinalPrice >= 0
+            ? parsedFinalPrice
+            : estimatedPrice,
+        internalNote,
+      });
+
+      if (!result.ok) {
+        setErrorMsg(result.error);
+        return;
+      }
+
+      onOpenChange(false);
     });
-
-    if (!result.ok) {
-      setErrorMsg(result.error);
-      return;
-    }
-
-    onOpenChange(false);
   }
 
   return (
@@ -511,9 +516,10 @@ export function AddBookingDialog({
             </Button>
             <Button
               type="submit"
+              disabled={isSubmitting}
               className="h-10 bg-gold font-mono text-xs font-bold tracking-wider text-obsidian uppercase hover:bg-gold-light"
             >
-              Simpan Booking (Pending)
+              {isSubmitting ? "Menyimpan..." : "Simpan Booking (Pending)"}
             </Button>
           </div>
         </form>

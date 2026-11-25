@@ -63,6 +63,7 @@ export function BookingModal({ car, open, onOpenChange }: BookingModalProps) {
     totalDays,
     totalPrice,
     errorMsg,
+    isSubmitting,
     handleDateClick,
     handlePrevMonth,
     handleNextMonth,
@@ -303,9 +304,9 @@ export function BookingModal({ car, open, onOpenChange }: BookingModalProps) {
             type="submit"
             variant="accent"
             className="h-11 w-full rounded-md font-display text-xs tracking-wider uppercase"
-            disabled={!startDate || !endDate}
+            disabled={!startDate || !endDate || isSubmitting}
           >
-            Konfirmasi Booking →
+            {isSubmitting ? "Memproses..." : "Konfirmasi Booking →"}
           </Button>
         </form>
       </DialogContent>

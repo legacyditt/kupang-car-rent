@@ -19,6 +19,7 @@ import {
   type RentalServiceType,
   type TransmissionPreference,
 } from "@/features/cars/utils/booking";
+import { useSubmitLock } from "@/hooks/useSubmitLock";
 import { formatRupiah } from "@/lib/utils";
 import type {
   BookingItem,
@@ -112,6 +113,8 @@ export function BookingDetailSheet({
     setExtendEndDate(booking.endDate);
   }, [booking]);
 
+  const { isSubmitting: isActionSubmitting, runWithLock } = useSubmitLock();
+
   if (!booking) return null;
 
   const isPending = booking.status === "PENDING";
@@ -121,37 +124,41 @@ export function BookingDetailSheet({
 
   const handleSaveEdit = async () => {
     setActionError(null);
-    const chosenCar = cars.find((c) => c.id === editCarId);
-    const res = await onEditBooking(booking.id, {
-      customerName: editName,
-      customerPhone: editPhone,
-      carId: chosenCar?.id ?? booking.carId,
-      carName: chosenCar?.name ?? booking.carName,
-      pricePerDay: chosenCar?.pricePerDay,
-      startDate: editStartDate,
-      endDate: editEndDate,
-      serviceType: editServiceType,
-      transmissionPreference: editTransmission,
+    await runWithLock(async () => {
+      const chosenCar = cars.find((c) => c.id === editCarId);
+      const res = await onEditBooking(booking.id, {
+        customerName: editName,
+        customerPhone: editPhone,
+        carId: chosenCar?.id ?? booking.carId,
+        carName: chosenCar?.name ?? booking.carName,
+        pricePerDay: chosenCar?.pricePerDay,
+        startDate: editStartDate,
+        endDate: editEndDate,
+        serviceType: editServiceType,
+        transmissionPreference: editTransmission,
+      });
+      if (!res.ok) {
+        setActionError(res.error);
+        return;
+      }
+      setIsEditing(false);
     });
-    if (!res.ok) {
-      setActionError(res.error);
-      return;
-    }
-    setIsEditing(false);
   };
 
   const handleTransition = async (nextStatus: BookingStatus) => {
     setActionError(null);
-    const res = await onChangeStatus(booking.id, nextStatus, {
-      finalPrice: parsedPrice,
-      internalNote,
-      ...(nextStatus === "CONFIRMED" && selectedCarUnitId
-        ? { carUnitId: selectedCarUnitId }
-        : {}),
+    await runWithLock(async () => {
+      const res = await onChangeStatus(booking.id, nextStatus, {
+        finalPrice: parsedPrice,
+        internalNote,
+        ...(nextStatus === "CONFIRMED" && selectedCarUnitId
+          ? { carUnitId: selectedCarUnitId }
+          : {}),
+      });
+      if (!res.ok) {
+        setActionError(res.error);
+      }
     });
-    if (!res.ok) {
-      setActionError(res.error);
-    }
   };
 
   const customerWaUrl = `https://wa.me/${booking.customerPhone}?text=${encodeURIComponent(
@@ -285,10 +292,11 @@ export function BookingDetailSheet({
                 <Button
                   type="button"
                   size="sm"
+                  disabled={isActionSubmitting}
                   onClick={handleSaveEdit}
                   className="h-8 w-full bg-gold font-mono text-[11px] font-bold text-obsidian uppercase hover:bg-gold-light"
                 >
-                  Simpan Perubahan
+                  {isActionSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
                 </Button>
               </div>
             ) : (
@@ -416,15 +424,21 @@ export function BookingDetailSheet({
               <Button
                 type="button"
                 size="sm"
-                disabled={!extendEndDate || extendEndDate <= booking.endDate}
-                onClick={async () => {
-                  setActionError(null);
-                  const res = await onExtendBooking(booking.id, extendEndDate);
-                  if (!res.ok) setActionError(res.error);
-                }}
+                disabled={
+                  !extendEndDate ||
+                  extendEndDate <= booking.endDate ||
+                  isActionSubmitting
+                }
+                onClick={() =>
+                  runWithLock(async () => {
+                    setActionError(null);
+                    const res = await onExtendBooking(booking.id, extendEndDate);
+                    if (!res.ok) setActionError(res.error);
+                  })
+                }
                 className="h-9 w-full bg-sky-500 font-mono text-[11px] font-bold text-obsidian uppercase hover:bg-sky-400 disabled:opacity-45"
               >
-                Perpanjang Sewa →
+                {isActionSubmitting ? "Memproses..." : "Perpanjang Sewa →"}
               </Button>
             </div>
           )}
@@ -449,15 +463,18 @@ export function BookingDetailSheet({
               type="button"
               variant="outline"
               size="sm"
+              disabled={isActionSubmitting}
               onClick={() =>
-                onSaveDetails(booking.id, {
-                  finalPrice: parsedPrice,
-                  internalNote,
-                })
+                runWithLock(() =>
+                  onSaveDetails(booking.id, {
+                    finalPrice: parsedPrice,
+                    internalNote,
+                  })
+                )
               }
               className="h-8 border-hairline bg-obsidian font-mono text-[10px] text-brand-muted hover:text-white"
             >
-              Simpan Catatan
+              {isActionSubmitting ? "Menyimpan..." : "Simpan Catatan"}
             </Button>
           </div>
 
@@ -474,11 +491,11 @@ export function BookingDetailSheet({
                 <Button
                   type="button"
                   variant="accent"
-                  disabled={Boolean(conflict)}
+                  disabled={Boolean(conflict) || isActionSubmitting}
                   onClick={() => handleTransition("CONFIRMED")}
                   className="h-11 w-full font-display text-xs tracking-wider uppercase"
                 >
-                  Konfirmasi Booking →
+                  {isActionSubmitting ? "Memproses..." : "Konfirmasi Booking →"}
                 </Button>
                 <div className="grid grid-cols-2 gap-2.5">
                   <Button
@@ -499,10 +516,11 @@ export function BookingDetailSheet({
                   <Button
                     type="button"
                     variant="outline"
+                    disabled={isActionSubmitting}
                     onClick={() => handleTransition("REJECTED")}
                     className="h-10 border-red-400/40 bg-red-400/10 font-mono text-[11px] font-bold text-red-400 uppercase hover:bg-red-400/20 hover:text-red-300"
                   >
-                    Tolak
+                    {isActionSubmitting ? "Memproses..." : "Tolak"}
                   </Button>
                 </div>
               </>
@@ -513,10 +531,11 @@ export function BookingDetailSheet({
                 <Button
                   type="button"
                   variant="accent"
+                  disabled={isActionSubmitting}
                   onClick={() => handleTransition("IN_PROGRESS")}
                   className="h-11 w-full font-display text-xs tracking-wider uppercase"
                 >
-                  Mulai Sewa (Sedang Jalan) →
+                  {isActionSubmitting ? "Memproses..." : "Mulai Sewa (Sedang Jalan) →"}
                 </Button>
                 <div className="grid grid-cols-2 gap-2.5">
                   <Button
@@ -537,10 +556,11 @@ export function BookingDetailSheet({
                   <Button
                     type="button"
                     variant="outline"
+                    disabled={isActionSubmitting}
                     onClick={() => handleTransition("CANCELLED")}
                     className="h-10 border-red-400/40 bg-red-400/10 font-mono text-[11px] font-bold text-red-400 uppercase hover:bg-red-400/20"
                   >
-                    Batalkan
+                    {isActionSubmitting ? "Memproses..." : "Batalkan"}
                   </Button>
                 </div>
               </div>
@@ -564,11 +584,11 @@ export function BookingDetailSheet({
                     <Button
                       type="button"
                       variant="accent"
-                      disabled={!isPaid}
+                      disabled={!isPaid || isActionSubmitting}
                       onClick={() => handleTransition("COMPLETED")}
                       className="h-11 w-full font-display text-xs tracking-wider uppercase disabled:opacity-45"
                     >
-                      Tandai Selesai →
+                      {isActionSubmitting ? "Memproses..." : "Tandai Selesai →"}
                     </Button>
                     {!isPaid && (
                       <p className="text-center font-mono text-[10px] text-amber-300">
