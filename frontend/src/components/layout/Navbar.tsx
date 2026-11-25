@@ -31,10 +31,10 @@ export function Navbar() {
   return (
     <header
       ref={headerRef}
-      className={`sticky top-0 z-40 w-full border-b transition-colors duration-300 ${
+      className={`fixed inset-x-0 top-0 z-40 w-full transition-colors duration-300 md:sticky ${
         isScrolled
-          ? "border-gold/30 bg-obsidian/92 backdrop-blur-md"
-          : "border-white/10 bg-obsidian/75 backdrop-blur-sm"
+          ? "border-b border-gold/30 bg-obsidian/92 backdrop-blur-md"
+          : "border-b border-transparent bg-transparent md:border-white/10 md:bg-obsidian/75 md:backdrop-blur-sm"
       }`}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:h-20 lg:px-8">
