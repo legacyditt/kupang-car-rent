@@ -114,25 +114,25 @@ export function HeroSection() {
       id="beranda"
       className="relative min-h-[100dvh] overflow-hidden bg-obsidian text-white md:min-h-[680px] lg:min-h-[760px]"
     >
-      {/* Mobile: Full-bleed Hilux stage under transparent header with top/bottom contrast scrims */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden md:hidden">
+      {/* Mobile: Upper-half wide Hilux stage under transparent header so full truck silhouette shows above the fold */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[52svh] overflow-hidden md:hidden">
         <div className="hero-mobile-parallax h-full w-full">
           <img
             src="/hero-mobile.webp"
             alt="Unit Toyota Hilux Aventra Rental di Kota Kupang"
             fetchPriority="high"
-            width={820}
-            height={720}
-            className="hero-mobile-photo h-full w-full object-cover object-[50%_28%]"
+            width={840}
+            height={496}
+            className="hero-mobile-photo h-full w-full object-cover object-[46%_48%]"
           />
         </div>
         <div
           aria-hidden="true"
-          className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-obsidian/80 via-obsidian/30 to-transparent"
+          className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-obsidian/85 via-obsidian/35 to-transparent"
         />
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/80 via-45% to-transparent"
+          className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-obsidian via-obsidian/75 via-45% to-transparent"
         />
       </div>
 
