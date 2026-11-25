@@ -140,7 +140,7 @@ export function HeroSection() {
       {/* Mobile: Seamless editorial stage melting Hilux photo into obsidian */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[58%] overflow-hidden md:hidden">
         <img
-          src="/hero.jpeg"
+          src="/hero.webp"
           alt="Unit Toyota Hilux Aventra Rental di Kota Kupang"
           fetchPriority="high"
           width={1280}
@@ -157,7 +157,7 @@ export function HeroSection() {
       <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[78%] overflow-hidden md:block">
         <img
           ref={desktopImgRef}
-          src="/hero.jpeg"
+          src="/hero.webp"
           alt="Unit Toyota Hilux Aventra Rental di Kota Kupang"
           fetchPriority="high"
           width={1280}
