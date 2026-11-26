@@ -14,14 +14,18 @@ const phoneSchema = z
   .string()
   .trim()
   .transform(normalizeWhatsAppPhone)
-  .refine((v) => v.length >= 10, {
+  .refine((v) => v.length >= 10 && v.length <= 20, {
     message: "Nomor WhatsApp pelanggan tidak valid.",
   });
 
 export const createPublicBookingSchema = z
   .object({
-    carId: z.string().trim().min(1, "Unit mobil wajib dipilih."),
-    customerName: z.string().trim().min(1, "Nama pelanggan wajib diisi."),
+    carId: z.string().trim().min(1, "Unit mobil wajib dipilih.").max(100),
+    customerName: z
+      .string()
+      .trim()
+      .min(1, "Nama pelanggan wajib diisi.")
+      .max(120, "Nama pelanggan maksimal 120 karakter."),
     customerPhone: phoneSchema,
     startDate: z
       .string()
@@ -35,8 +39,16 @@ export const createPublicBookingSchema = z
       .optional()
       .default("MANUAL"),
     paymentScheme: z.enum(PaymentScheme).optional().default("FULL"),
-    pickupLocation: z.string().trim().optional(),
-    customerNotes: z.string().trim().optional(),
+    pickupLocation: z
+      .string()
+      .trim()
+      .max(250, "Lokasi jemput maksimal 250 karakter.")
+      .optional(),
+    customerNotes: z
+      .string()
+      .trim()
+      .max(1000, "Catatan pelanggan maksimal 1000 karakter.")
+      .optional(),
   })
   .refine((b) => b.endDate >= b.startDate, {
     message: "Tanggal selesai harus sama atau setelah tanggal mulai.",

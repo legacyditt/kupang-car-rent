@@ -4,6 +4,7 @@ import XLSX from "xlsx-js-style";
 import type { BusinessProfile } from "@/features/business-profile/types/business-profile.types";
 import { formatRupiah } from "@/lib/utils";
 import { formatMonthLabel, type FinanceReport } from "./finance-report";
+import { escapeSpreadsheetCell } from "./spreadsheet-sanitize";
 
 const THIN_BORDER = {
   top: { style: "thin", color: { rgb: "CBD5E1" } },
@@ -48,8 +49,8 @@ export function exportFinanceToExcel(
 ): void {
   const periodLabel = formatMonthLabel(monthFilter);
   const aoa: Array<Array<string | number>> = [
-    [`LAPORAN KEUANGAN — ${profile.name.toUpperCase()}`],
-    ["Lokasi", profile.location],
+    [`LAPORAN KEUANGAN — ${escapeSpreadsheetCell(profile.name.toUpperCase())}`],
+    ["Lokasi", escapeSpreadsheetCell(profile.location)],
     ["Periode", periodLabel],
     ["Total Uang Masuk", report.totalPaid],
     ["Sisa Tagihan DP", report.totalRemaining],
@@ -68,10 +69,10 @@ export function exportFinanceToExcel(
       "Sisa (Rp)",
     ],
     ...report.rows.map((r) => [
-      r.bookingCode,
-      r.customerName,
-      r.carName,
-      r.scheduleLabel,
+      escapeSpreadsheetCell(r.bookingCode),
+      escapeSpreadsheetCell(r.customerName),
+      escapeSpreadsheetCell(r.carName),
+      escapeSpreadsheetCell(r.scheduleLabel),
       r.totalDays,
       r.paymentSchemeLabel,
       r.paymentStatusLabel,

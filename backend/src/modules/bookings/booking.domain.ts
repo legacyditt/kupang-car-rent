@@ -5,6 +5,7 @@ import type {
 } from "../../generated/prisma/client.js";
 
 export const DOWN_PAYMENT_MIN_DAYS = 3;
+export const MAX_PUBLIC_BOOKING_DAYS = 90;
 
 export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
   PENDING: "Menunggu",
@@ -75,6 +76,10 @@ export function getAllowedPaymentStatuses(
   currentPaymentStatus: PaymentStatus = "UNPAID"
 ): PaymentStatus[] {
   if (bookingStatus === "CONFIRMED") {
+    if (currentPaymentStatus === "PAID") return ["PAID"];
+    if (currentPaymentStatus === "DP_PAID") {
+      return paymentScheme === "DP_50" ? ["DP_PAID", "PAID"] : ["PAID"];
+    }
     return paymentScheme === "DP_50"
       ? ["UNPAID", "DP_PAID", "PAID"]
       : ["UNPAID", "PAID"];
