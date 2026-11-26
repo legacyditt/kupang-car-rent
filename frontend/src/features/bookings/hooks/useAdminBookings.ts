@@ -14,6 +14,7 @@ import type {
 } from "../types/booking.types";
 import {
   BOOKING_STATUS_LABELS,
+  PAYMENT_STATUS_LABELS,
   countBookingsByStatus,
   filterBookings,
   hasScheduleConflict,
@@ -23,6 +24,16 @@ import {
 } from "../utils/booking-admin";
 
 export const ADMIN_BOOKINGS_QUERY_KEY = ["admin-bookings"] as const;
+
+function failMutation(
+  err: unknown,
+  title: string,
+  fallback: string
+): { ok: false; error: string } {
+  const message = err instanceof ApiError ? err.message : fallback;
+  notifyError(title, message);
+  return { ok: false, error: message };
+}
 
 export function useAdminBookings() {
   const qc = useQueryClient();
@@ -76,10 +87,7 @@ export function useAdminBookings() {
       notifySuccess(`Status diubah ke ${BOOKING_STATUS_LABELS[nextStatus]}`);
       return { ok: true };
     } catch (err) {
-      const message =
-        err instanceof ApiError ? err.message : "Gagal mengubah status.";
-      notifyError("Gagal mengubah status", message);
-      return { ok: false, error: message };
+      return failMutation(err, "Gagal mengubah status", "Gagal mengubah status.");
     }
   };
 
@@ -96,10 +104,11 @@ export function useAdminBookings() {
       notifySuccess("Catatan & harga disimpan");
       return { ok: true };
     } catch (err) {
-      const message =
-        err instanceof ApiError ? err.message : "Gagal menyimpan perubahan.";
-      notifyError("Gagal menyimpan perubahan", message);
-      return { ok: false, error: message };
+      return failMutation(
+        err,
+        "Gagal menyimpan perubahan",
+        "Gagal menyimpan perubahan."
+      );
     }
   };
 
@@ -140,10 +149,11 @@ export function useAdminBookings() {
       }
       return { ok: true, booking, conflict };
     } catch (err) {
-      const message =
-        err instanceof ApiError ? err.message : "Gagal menambahkan booking.";
-      notifyError("Gagal menambahkan booking", message);
-      return { ok: false, error: message };
+      return failMutation(
+        err,
+        "Gagal menambahkan booking",
+        "Gagal menambahkan booking."
+      );
     }
   };
 
@@ -170,10 +180,7 @@ export function useAdminBookings() {
       notifySuccess("Detail booking diperbarui");
       return { ok: true };
     } catch (err) {
-      const message =
-        err instanceof ApiError ? err.message : "Gagal mengedit booking.";
-      notifyError("Gagal mengedit booking", message);
-      return { ok: false, error: message };
+      return failMutation(err, "Gagal mengedit booking", "Gagal mengedit booking.");
     }
   };
 
@@ -189,20 +196,15 @@ export function useAdminBookings() {
       await invalidateAll();
       notifySuccess(
         "Pembayaran diperbarui",
-        `Status: ${
-          updates.paymentStatus === "PAID"
-            ? "Lunas"
-            : updates.paymentStatus === "DP_PAID"
-              ? "DP Terbayar"
-              : "Belum Bayar"
-        }`
+        `Status: ${PAYMENT_STATUS_LABELS[updates.paymentStatus]}`
       );
       return { ok: true };
     } catch (err) {
-      const message =
-        err instanceof ApiError ? err.message : "Gagal mengubah pembayaran.";
-      notifyError("Gagal mengubah pembayaran", message);
-      return { ok: false, error: message };
+      return failMutation(
+        err,
+        "Gagal mengubah pembayaran",
+        "Gagal mengubah pembayaran."
+      );
     }
   };
 
@@ -223,10 +225,11 @@ export function useAdminBookings() {
       );
       return { ok: true };
     } catch (err) {
-      const message =
-        err instanceof ApiError ? err.message : "Gagal memperpanjang sewa.";
-      notifyError("Gagal memperpanjang sewa", message);
-      return { ok: false, error: message };
+      return failMutation(
+        err,
+        "Gagal memperpanjang sewa",
+        "Gagal memperpanjang sewa."
+      );
     }
   };
 
