@@ -2,9 +2,9 @@
 @import "tw-animate-css";
 
 @theme inline {
-  --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-display: "Outfit Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono Variable", ui-monospace, SFMono-Regular, monospace;
+  --font-sans: "General Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: "Satoshi", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, monospace;
   --color-obsidian: #050608;
   --color-carbon: #0c0e13;
   --color-gold: #f5b82e;
