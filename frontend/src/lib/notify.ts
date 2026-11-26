@@ -28,9 +28,16 @@ export function notifyBookingSuccess(bookingCode: string) {
       label: "Salin",
       onClick: () => {
         if (typeof navigator !== "undefined" && navigator.clipboard) {
-          void navigator.clipboard.writeText(bookingCode).then(() => {
-            toast.success("Kode booking disalin", { description: bookingCode });
-          });
+          void navigator.clipboard
+            .writeText(bookingCode)
+            .then(() => {
+              toast.success("Kode booking disalin", { description: bookingCode });
+            })
+            .catch(() => {
+              notifyError("Gagal menyalin kode booking");
+            });
+        } else {
+          notifyError("Gagal menyalin kode booking");
         }
       },
     },
