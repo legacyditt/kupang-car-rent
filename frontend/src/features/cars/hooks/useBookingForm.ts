@@ -116,10 +116,16 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
     }
 
     if (!idempotencyKeyRef.current) {
-      idempotencyKeyRef.current =
-        typeof crypto !== "undefined" && "randomUUID" in crypto
-          ? crypto.randomUUID()
-          : `bk-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const webCrypto = globalThis.crypto;
+      if (typeof webCrypto?.randomUUID === "function") {
+        idempotencyKeyRef.current = webCrypto.randomUUID();
+      } else {
+        const bytes = new Uint8Array(16);
+        webCrypto.getRandomValues(bytes);
+        idempotencyKeyRef.current = Array.from(bytes, (b) =>
+          b.toString(16).padStart(2, "0")
+        ).join("");
+      }
     }
 
     submitLockRef.current = true;

@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAdminAuth } from "@/features/admin-auth/hooks/useAdminAuth";
-import { DEFAULT_ADMIN_CREDENTIALS } from "@/features/admin-auth/utils/admin-auth";
 import { useBusinessProfile } from "@/features/business-profile/hooks/useBusinessProfile";
 import { useSubmitLock } from "@/hooks/useSubmitLock";
 import { registerMotionPlugins } from "@/lib/motion-plugins";
@@ -133,7 +132,7 @@ export function AdminLoginPage() {
     setOtpDigits(["", "", "", "", "", ""]);
     const targetEmail = identifier.trim().includes("@")
       ? identifier.trim()
-      : DEFAULT_ADMIN_CREDENTIALS.email;
+      : "admin@aventrarental.id";
     await runWithLock(async () => {
       const res = await requestOtpReset(targetEmail);
       if (!res.ok) {
@@ -202,8 +201,8 @@ export function AdminLoginPage() {
   async function handleResetSubmit(e: FormEvent) {
     e.preventDefault();
     setErrorMsg(null);
-    if (newPassword.length < 6) {
-      setErrorMsg("Password minimal 6 karakter.");
+    if (newPassword.length < 10) {
+      setErrorMsg("Password minimal 10 karakter.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -212,7 +211,7 @@ export function AdminLoginPage() {
     }
     const targetAccount = identifier.trim().includes("@")
       ? identifier.trim()
-      : DEFAULT_ADMIN_CREDENTIALS.email;
+      : "admin@aventrarental.id";
     await runWithLock(async () => {
       const res = await resetPasswordWithOtp({
         email: targetAccount,
@@ -496,8 +495,9 @@ export function AdminLoginPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    setErrorMsg(null);
-                    setInfoMsg("Kode OTP baru telah dikirim ke WhatsApp Admin.");
+                    void openForgotOtp().then(() => {
+                      setInfoMsg("Kode OTP baru telah dikirim ke WhatsApp Admin.");
+                    });
                   }}
                   className="cursor-pointer text-gold transition-colors hover:text-gold-light"
                 >

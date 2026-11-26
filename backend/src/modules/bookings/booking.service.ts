@@ -599,6 +599,14 @@ export class BookingService {
         }
       }
 
+      if (input.status === "IN_PROGRESS" && !target.carUnitId) {
+        throw new AppError(
+          409,
+          "CAR_UNIT_REQUIRED",
+          "Unit fisik mobil wajib ditentukan sebelum status Sedang Jalan."
+        );
+      }
+
       if (input.status === "COMPLETED") {
         const payment = computePaymentSummary(
           target.finalPrice,

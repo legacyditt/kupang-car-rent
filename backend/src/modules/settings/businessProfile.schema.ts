@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { normalizeWhatsAppPhone } from "../../utils/phone.js";
+import { isSafeImageUrl } from "../../utils/safeImageUrl.js";
 
 export const updateBusinessProfileSchema = z
   .object({
@@ -15,7 +16,13 @@ export const updateBusinessProfileSchema = z
       .refine((v) => v.length >= 10, {
         message: "Nomor WhatsApp admin minimal 10 digit.",
       }),
-    logoPath: z.string().trim().optional(),
+    logoPath: z
+      .string()
+      .trim()
+      .refine((v) => v === "" || isSafeImageUrl(v), {
+        message: "Path logo harus berupa path relatif, HTTPS, atau gambar PNG/JPEG/WEBP.",
+      })
+      .optional(),
   })
   .strict();
 

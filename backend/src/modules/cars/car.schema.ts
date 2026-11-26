@@ -3,6 +3,7 @@ import {
   CarStatus,
   TransmissionPreference,
 } from "../../generated/prisma/client.js";
+import { isSafeImageUrl } from "../../utils/safeImageUrl.js";
 
 const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -24,7 +25,14 @@ export const createCarSchema = z.object({
   description: z.string().trim().optional(),
   capacityLabel: z.string().trim().min(1).default("— Kursi"),
   pricePerDay: z.coerce.number().int().nonnegative(),
-  imageUrl: z.string().trim().min(1).default("/Toyota Avanza.jpg"),
+  imageUrl: z
+    .string()
+    .trim()
+    .min(1)
+    .refine(isSafeImageUrl, {
+      message: "URL gambar harus berupa path relatif, HTTPS, atau gambar PNG/JPEG/WEBP.",
+    })
+    .default("/Toyota Avanza.jpg"),
   status: z.enum(CarStatus).default("AVAILABLE"),
   plateNumber: z.string().trim().optional(),
 });
