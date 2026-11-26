@@ -278,6 +278,7 @@ export function AdminCalendarPage() {
       <BookingDetailSheet
         booking={selectedBooking}
         conflict={selectedConflict}
+        allBookings={bookings}
         open={Boolean(selectedBooking)}
         onOpenChange={(open) => {
           if (!open) setSelectedId(null);

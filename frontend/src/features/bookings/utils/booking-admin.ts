@@ -2,6 +2,7 @@ import type {
   RentalServiceType,
   TransmissionPreference,
 } from "../../cars/utils/booking";
+import type { CarUnitItem } from "../../cars/types/car.types";
 import type {
   BookingItem,
   BookingStatus,
@@ -40,22 +41,67 @@ export function canTransitionStatus(
 }
 
 /**
- * BR-09: Checks if `target` overlaps any CONFIRMED or IN_PROGRESS booking for the same car.
+ * Checks if `target` overlaps any CONFIRMED or IN_PROGRESS booking on the same physical unit
+ * (or exhausts all matching available units when no specific `carUnitId` is assigned yet).
  */
 export function hasScheduleConflict(
   target: BookingItem,
-  allBookings: BookingItem[]
+  allBookings: BookingItem[],
+  carUnits?: CarUnitItem[]
 ): BookingItem | null {
-  return (
-    allBookings.find(
-      (other) =>
-        other.id !== target.id &&
-        other.carId === target.carId &&
-        (other.status === "CONFIRMED" || other.status === "IN_PROGRESS") &&
-        other.startDate <= target.endDate &&
-        other.endDate >= target.startDate
-    ) ?? null
+  const overlapping = allBookings.filter(
+    (other) =>
+      other.id !== target.id &&
+      other.carId === target.carId &&
+      (other.status === "CONFIRMED" || other.status === "IN_PROGRESS") &&
+      other.startDate <= target.endDate &&
+      other.endDate >= target.startDate
   );
+
+  if (overlapping.length === 0) return null;
+
+  if (target.carUnitId) {
+    const activeUnitCount =
+      carUnits?.filter((u) => u.status === "AVAILABLE").length ?? 0;
+    return (
+      overlapping.find(
+        (other) =>
+          other.carUnitId === target.carUnitId ||
+          (!other.carUnitId && activeUnitCount <= 1)
+      ) ?? null
+    );
+  }
+
+  const availableUnits = (carUnits ?? []).filter(
+    (u) => u.status === "AVAILABLE"
+  );
+  if (availableUnits.length > 0) {
+    const matchingUnits =
+      target.transmissionPreference === "MATIC" ||
+      target.transmissionPreference === "MANUAL"
+        ? availableUnits.filter(
+            (u) => u.transmission === target.transmissionPreference
+          )
+        : availableUnits;
+
+    const candidateUnits =
+      matchingUnits.length > 0 ? matchingUnits : availableUnits;
+    const occupiedUnitIds = new Set(
+      overlapping.map((o) => o.carUnitId).filter((id): id is string => Boolean(id))
+    );
+    const unassignedSamePref = overlapping.filter(
+      (o) =>
+        !o.carUnitId &&
+        (!target.transmissionPreference ||
+          o.transmissionPreference === target.transmissionPreference)
+    );
+    const freeUnits = candidateUnits.filter((u) => !occupiedUnitIds.has(u.id));
+    if (freeUnits.length - unassignedSamePref.length > 0) {
+      return null;
+    }
+  }
+
+  return overlapping[0] ?? null;
 }
 
 export function filterBookings(
