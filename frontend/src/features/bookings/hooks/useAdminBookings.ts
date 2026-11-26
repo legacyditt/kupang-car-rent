@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { ApiError, apiFetch } from "@/lib/api";
+import { notifyError, notifySuccess, notifyWarning } from "@/lib/notify";
 import {
   ADMIN_CARS_QUERY_KEY,
   PUBLIC_CARS_QUERY_KEY,
@@ -12,6 +13,8 @@ import type {
   PaymentStatus,
 } from "../types/booking.types";
 import {
+  BOOKING_STATUS_LABELS,
+  PAYMENT_STATUS_LABELS,
   countBookingsByStatus,
   filterBookings,
   hasScheduleConflict,
@@ -21,6 +24,16 @@ import {
 } from "../utils/booking-admin";
 
 export const ADMIN_BOOKINGS_QUERY_KEY = ["admin-bookings"] as const;
+
+function failMutation(
+  err: unknown,
+  title: string,
+  fallback: string
+): { ok: false; error: string } {
+  const message = err instanceof ApiError ? err.message : fallback;
+  notifyError(title, message);
+  return { ok: false, error: message };
+}
 
 export function useAdminBookings() {
   const qc = useQueryClient();
@@ -71,12 +84,10 @@ export function useAdminBookings() {
         body: JSON.stringify({ status: nextStatus, ...updates }),
       });
       await invalidateAll();
+      notifySuccess(`Status diubah ke ${BOOKING_STATUS_LABELS[nextStatus]}`);
       return { ok: true };
     } catch (err) {
-      return {
-        ok: false,
-        error: err instanceof ApiError ? err.message : "Gagal mengubah status.",
-      };
+      return failMutation(err, "Gagal mengubah status", "Gagal mengubah status.");
     }
   };
 
@@ -90,13 +101,14 @@ export function useAdminBookings() {
         body: JSON.stringify(updates),
       });
       await invalidateAll();
+      notifySuccess("Catatan & harga disimpan");
       return { ok: true };
     } catch (err) {
-      return {
-        ok: false,
-        error:
-          err instanceof ApiError ? err.message : "Gagal menyimpan perubahan.",
-      };
+      return failMutation(
+        err,
+        "Gagal menyimpan perubahan",
+        "Gagal menyimpan perubahan."
+      );
     }
   };
 
@@ -124,13 +136,24 @@ export function useAdminBookings() {
       });
       await invalidateAll();
       const conflict = hasScheduleConflict(booking, bookings);
+      if (conflict) {
+        notifyWarning(
+          "Booking ditambahkan dengan bentrok jadwal",
+          `Kode ${booking.bookingCode} bentrok dengan ${conflict.bookingCode}.`
+        );
+      } else {
+        notifySuccess(
+          "Booking berhasil ditambahkan",
+          `Kode ${booking.bookingCode}`
+        );
+      }
       return { ok: true, booking, conflict };
     } catch (err) {
-      return {
-        ok: false,
-        error:
-          err instanceof ApiError ? err.message : "Gagal menambahkan booking.",
-      };
+      return failMutation(
+        err,
+        "Gagal menambahkan booking",
+        "Gagal menambahkan booking."
+      );
     }
   };
 
@@ -154,12 +177,10 @@ export function useAdminBookings() {
         }),
       });
       await invalidateAll();
+      notifySuccess("Detail booking diperbarui");
       return { ok: true };
     } catch (err) {
-      return {
-        ok: false,
-        error: err instanceof ApiError ? err.message : "Gagal mengedit booking.",
-      };
+      return failMutation(err, "Gagal mengedit booking", "Gagal mengedit booking.");
     }
   };
 
@@ -173,13 +194,17 @@ export function useAdminBookings() {
         body: JSON.stringify(updates),
       });
       await invalidateAll();
+      notifySuccess(
+        "Pembayaran diperbarui",
+        `Status: ${PAYMENT_STATUS_LABELS[updates.paymentStatus]}`
+      );
       return { ok: true };
     } catch (err) {
-      return {
-        ok: false,
-        error:
-          err instanceof ApiError ? err.message : "Gagal mengubah pembayaran.",
-      };
+      return failMutation(
+        err,
+        "Gagal mengubah pembayaran",
+        "Gagal mengubah pembayaran."
+      );
     }
   };
 
@@ -194,13 +219,17 @@ export function useAdminBookings() {
         body: JSON.stringify({ newEndDate, overrideFinalPrice }),
       });
       await invalidateAll();
+      notifySuccess(
+        "Sewa berhasil diperpanjang",
+        `Tanggal selesai baru: ${newEndDate}`
+      );
       return { ok: true };
     } catch (err) {
-      return {
-        ok: false,
-        error:
-          err instanceof ApiError ? err.message : "Gagal memperpanjang sewa.",
-      };
+      return failMutation(
+        err,
+        "Gagal memperpanjang sewa",
+        "Gagal memperpanjang sewa."
+      );
     }
   };
 

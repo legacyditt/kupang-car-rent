@@ -13,6 +13,7 @@ import {
   formatMonthLabel,
   getAvailableReportMonths,
 } from "@/features/finance/utils/finance-report";
+import { notifyError, notifyInfo } from "@/lib/notify";
 import { cn, formatRupiah } from "@/lib/utils";
 
 /** Halaman 05 / Keuangan: rekap pemasukan booking (DP_PAID & PAID), filter periode, serta export Excel & PDF. */
@@ -63,7 +64,14 @@ export function AdminFinancePage() {
             type="button"
             variant="outline"
             disabled={report.rows.length === 0}
-            onClick={() => exportFinanceToExcel(report, monthFilter, profile)}
+            onClick={() => {
+              try {
+                exportFinanceToExcel(report, monthFilter, profile);
+                notifyInfo("Laporan Excel diunduh", "File .xlsx siap dibuka.");
+              } catch {
+                notifyError("Gagal mengekspor Excel");
+              }
+            }}
             className="h-10 gap-2 border-emerald-400/35 bg-carbon font-mono text-xs text-emerald-300 hover:bg-emerald-400/10 hover:text-emerald-200 disabled:opacity-45"
           >
             <FileSpreadsheet className="h-4 w-4" aria-hidden="true" />
@@ -73,7 +81,14 @@ export function AdminFinancePage() {
           <Button
             type="button"
             disabled={report.rows.length === 0}
-            onClick={() => void exportFinanceToPdf(report, monthFilter, profile)}
+            onClick={async () => {
+              try {
+                await exportFinanceToPdf(report, monthFilter, profile);
+                notifyInfo("Laporan PDF diunduh", "File .pdf siap dibuka.");
+              } catch {
+                notifyError("Gagal mengekspor PDF");
+              }
+            }}
             className="h-10 gap-2 bg-gold font-mono text-xs font-bold tracking-wider text-obsidian uppercase hover:bg-gold-light disabled:opacity-45"
           >
             <FileText className="h-4 w-4" aria-hidden="true" />

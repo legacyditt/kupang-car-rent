@@ -1,11 +1,13 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState, type FormEvent } from "react";
+import { toast } from "sonner";
 import { ddmmyyyyToYyyymmdd } from "@/features/bookings/utils/booking-admin";
 import type {
   BookingItem,
   PaymentScheme,
 } from "@/features/bookings/types/booking.types";
 import { ApiError, apiFetch } from "@/lib/api";
+import { notifyBookingSuccess, notifyError, notifyLoading } from "@/lib/notify";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import type { CarItem } from "../types/car.types";
 import {
@@ -131,6 +133,10 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
     submitLockRef.current = true;
     setIsSubmitting(true);
     setErrorMsg(null);
+    const toastId = notifyLoading(
+      "Mengirim permintaan booking...",
+      "Sedang memeriksa ketersediaan unit."
+    );
     try {
       const booking = await apiFetch<BookingItem>("/bookings", {
         method: "POST",
@@ -150,6 +156,8 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
       });
 
       await qc.invalidateQueries({ queryKey: PUBLIC_CARS_QUERY_KEY });
+      toast.dismiss(toastId);
+      notifyBookingSuccess(booking.bookingCode);
 
       const message = buildBookingMessage({
         car,
@@ -175,11 +183,13 @@ export function useBookingForm(car: CarItem, onSuccess: () => void) {
       resetIdempotencyKey();
       onSuccess();
     } catch (err) {
-      setErrorMsg(
+      toast.dismiss(toastId);
+      const message =
         err instanceof ApiError
           ? err.message
-          : "Gagal mengirim booking. Silakan coba lagi."
-      );
+          : "Gagal mengirim booking. Coba lagi.";
+      setErrorMsg(message);
+      notifyError("Booking gagal dikirim", message);
     } finally {
       submitLockRef.current = false;
       setIsSubmitting(false);

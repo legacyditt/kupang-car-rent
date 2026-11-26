@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError, apiFetch } from "@/lib/api";
+import { notifyError, notifySuccess } from "@/lib/notify";
 import type {
   TestimonialItem,
   TestimonialStatus,
@@ -57,11 +58,21 @@ export function useTestimonials() {
   };
 
   const changeStatus = async (id: string, status: TestimonialStatus) => {
-    await apiFetch<TestimonialItem>(`/admin/testimonials/${id}/status`, {
-      method: "PATCH",
-      body: JSON.stringify({ status }),
-    });
-    await invalidate();
+    try {
+      await apiFetch<TestimonialItem>(`/admin/testimonials/${id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      });
+      await invalidate();
+      notifySuccess("Status ulasan diperbarui");
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : "Gagal mengubah status ulasan.";
+      notifyError("Gagal mengubah status ulasan", message);
+      throw err;
+    }
   };
 
   const saveTestimonial = async (input: UpsertTestimonialInput) => {
@@ -74,23 +85,41 @@ export function useTestimonials() {
       status: input.status,
     };
 
-    if (input.id) {
-      await apiFetch<TestimonialItem>(`/admin/testimonials/${input.id}`, {
-        method: "PATCH",
-        body: JSON.stringify(body),
-      });
-    } else {
-      await apiFetch<TestimonialItem>("/admin/testimonials", {
-        method: "POST",
-        body: JSON.stringify(body),
-      });
+    try {
+      if (input.id) {
+        await apiFetch<TestimonialItem>(`/admin/testimonials/${input.id}`, {
+          method: "PATCH",
+          body: JSON.stringify(body),
+        });
+      } else {
+        await apiFetch<TestimonialItem>("/admin/testimonials", {
+          method: "POST",
+          body: JSON.stringify(body),
+        });
+      }
+      await invalidate();
+      notifySuccess(
+        input.id ? "Testimoni diperbarui" : "Testimoni ditambahkan"
+      );
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : "Gagal menyimpan testimoni.";
+      notifyError("Gagal menyimpan testimoni", message);
+      throw err;
     }
-    await invalidate();
   };
 
   const removeTestimonial = async (id: string) => {
-    await apiFetch(`/admin/testimonials/${id}`, { method: "DELETE" });
-    await invalidate();
+    try {
+      await apiFetch(`/admin/testimonials/${id}`, { method: "DELETE" });
+      await invalidate();
+      notifySuccess("Testimoni dihapus");
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : "Gagal menghapus testimoni.";
+      notifyError("Gagal menghapus testimoni", message);
+      throw err;
+    }
   };
 
   return {

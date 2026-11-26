@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useBusinessProfile } from "@/features/business-profile/hooks/useBusinessProfile";
 import { useSubmitLock } from "@/hooks/useSubmitLock";
 import { ApiError, apiFetch } from "@/lib/api";
+import { notifyError, notifySuccess } from "@/lib/notify";
 import { useDocumentMeta } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
@@ -85,10 +86,15 @@ export function CustomerReviewPage() {
           }),
         });
         setSubmittedName(created.customerName);
-      } catch (err) {
-        setErrorMsg(
-          err instanceof ApiError ? err.message : "Gagal mengirim ulasan."
+        notifySuccess(
+          "Terima kasih atas ulasan Anda!",
+          "Ulasan diterima dan menunggu peninjauan admin."
         );
+      } catch (err) {
+        const message =
+          err instanceof ApiError ? err.message : "Gagal mengirim ulasan.";
+        setErrorMsg(message);
+        notifyError("Gagal mengirim ulasan", message);
       }
     });
   }
