@@ -1,6 +1,5 @@
-import "@fontsource-variable/outfit";
-import "@fontsource-variable/plus-jakarta-sans";
-import "@fontsource-variable/jetbrains-mono";
+import "./assets/fonts/fonts.css";
+import "@fontsource-variable/geist-mono";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
 import { LazyMotion, MotionConfig } from "motion/react";
