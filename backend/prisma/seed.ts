@@ -380,6 +380,14 @@ async function main() {
   const adminUsername = (
     process.env.SEED_ADMIN_USERNAME ?? "admin"
   ).toLowerCase();
+  if (
+    process.env.NODE_ENV === "production" &&
+    !process.env.SEED_ADMIN_PASSWORD
+  ) {
+    throw new Error(
+      "SEED_ADMIN_PASSWORD wajib diisi saat menjalankan seed di production."
+    );
+  }
   const adminPassword =
     process.env.SEED_ADMIN_PASSWORD ?? "aventra-admin-2026";
 

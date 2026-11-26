@@ -2,7 +2,8 @@ import { toNodeHandler } from "better-auth/node";
 import cors from "cors";
 import express, { type Express } from "express";
 import helmet from "helmet";
-import { pinoHttp } from "pino-http";
+import { pinoHttp, type HttpLogger } from "pino-http";
+import type { DestinationStream } from "pino";
 import type { PrismaClient } from "./generated/prisma/client.js";
 import type { AuthInstance } from "./lib/auth.js";
 import type { ImageStorage } from "./lib/imageStorage.js";
@@ -16,6 +17,22 @@ export interface CreateAppOptions {
   auth?: AuthInstance;
   prisma?: PrismaClient;
   imageStorage?: ImageStorage;
+  logStream?: DestinationStream;
+}
+
+/** Creates the HTTP request logger with sensitive auth headers redacted. */
+export function createHttpLogger(stream?: DestinationStream): HttpLogger {
+  const opts = {
+    redact: {
+      paths: [
+        "req.headers.cookie",
+        "req.headers.authorization",
+        'res.headers["set-cookie"]',
+      ],
+      censor: "[REDACTED]",
+    },
+  };
+  return stream ? pinoHttp(opts, stream) : pinoHttp(opts);
 }
 
 /** Builds and configures the Express 5 application instance. */
@@ -32,7 +49,7 @@ export function createApp(options: CreateAppOptions): Express {
   );
 
   if (options.nodeEnv !== "test") {
-    app.use(pinoHttp());
+    app.use(createHttpLogger(options.logStream));
   }
 
   // Better Auth handler MUST be mounted before express.json() (Express 5 *splat syntax).

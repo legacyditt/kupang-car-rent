@@ -14,11 +14,19 @@ const envSchema = z
     COOKIE_SAME_SITE: z.enum(["lax", "none", "strict"]).default("lax"),
     OTP_PROVIDER: z.enum(["console", "fonnte"]).default("console"),
     FONNTE_TOKEN: z.string().optional().default(""),
+    ADMIN_OTP_WHATSAPP: z.string().optional().default(""),
     CLOUDINARY_CLOUD_NAME: z.string().optional().default(""),
     CLOUDINARY_API_KEY: z.string().optional().default(""),
     CLOUDINARY_API_SECRET: z.string().optional().default(""),
   })
   .superRefine((data, ctx) => {
+    if (data.NODE_ENV === "production" && data.OTP_PROVIDER === "console") {
+      ctx.addIssue({
+        code: "custom",
+        path: ["OTP_PROVIDER"],
+        message: "OTP_PROVIDER=console tidak diizinkan saat NODE_ENV=production",
+      });
+    }
     if (data.OTP_PROVIDER === "fonnte" && data.FONNTE_TOKEN.trim().length === 0) {
       ctx.addIssue({
         code: "custom",
