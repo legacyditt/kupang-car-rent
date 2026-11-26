@@ -1,3 +1,4 @@
+import { randomInt } from "node:crypto";
 import {
   Prisma,
   type Booking,
@@ -17,6 +18,7 @@ import {
   canUseDownPayment,
   computePaymentSummary,
   getAllowedPaymentStatuses,
+  MAX_PUBLIC_BOOKING_DAYS,
 } from "./booking.domain.js";
 import { BookingRepository } from "./booking.repository.js";
 import type {
@@ -102,18 +104,49 @@ function toPublicBookingDto(b: Booking): PublicBookingDto {
   return pub;
 }
 
+function assertIdempotencyMatch(
+  existing: Booking,
+  input: CreatePublicBookingInput | AdminCreateBookingInput
+): void {
+  const matches =
+    existing.carId === input.carId &&
+    formatUtcDateYyyyMmDd(existing.startDate) === input.startDate &&
+    formatUtcDateYyyyMmDd(existing.endDate) === input.endDate &&
+    existing.customerPhone === input.customerPhone &&
+    existing.serviceType === input.serviceType;
+
+  if (!matches) {
+    throw new AppError(
+      409,
+      "IDEMPOTENCY_KEY_CONFLICT",
+      "Idempotency-Key sudah digunakan untuk permintaan yang berbeda."
+    );
+  }
+}
+
 export class BookingService {
   constructor(private readonly repo: BookingRepository) {}
 
   async createBooking(
     input: CreatePublicBookingInput | AdminCreateBookingInput,
     options?: { idempotencyKey?: string; isAdmin?: boolean }
-  ): Promise<{ booking: BookingDto; deduplicated: boolean }> {
+  ): Promise<{ booking: BookingDto | PublicBookingDto; deduplicated: boolean }> {
+    const projectDto = (row: Booking) =>
+      options?.isAdmin ? toBookingDto(row) : toPublicBookingDto(row);
+
     const idemKey = options?.idempotencyKey?.trim();
     if (idemKey) {
+      if (idemKey.length > 128) {
+        throw new AppError(
+          400,
+          "INVALID_IDEMPOTENCY_KEY",
+          "Idempotency-Key terlalu panjang."
+        );
+      }
       const existing = await this.repo.findByIdempotencyKey(idemKey);
       if (existing) {
-        return { booking: toBookingDto(existing), deduplicated: true };
+        assertIdempotencyMatch(existing, input);
+        return { booking: projectDto(existing), deduplicated: true };
       }
     }
 
@@ -137,6 +170,23 @@ export class BookingService {
         "Tanggal selesai harus sama atau setelah tanggal mulai."
       );
     }
+    if (!options?.isAdmin) {
+      const todayStr = formatUtcDateYyyyMmDd(new Date());
+      if (input.startDate < todayStr) {
+        throw new AppError(
+          400,
+          "INVALID_DATE_RANGE",
+          "Tanggal mulai sewa tidak boleh di masa lalu."
+        );
+      }
+      if (totalDays > MAX_PUBLIC_BOOKING_DAYS) {
+        throw new AppError(
+          400,
+          "INVALID_DATE_RANGE",
+          `Durasi sewa maksimal ${MAX_PUBLIC_BOOKING_DAYS} hari.`
+        );
+      }
+    }
 
     const startDate = parseYyyyMmDdToUtc(input.startDate);
     const endDate = parseYyyyMmDdToUtc(input.endDate);
@@ -146,10 +196,16 @@ export class BookingService {
     const availableUnits = units.filter((u) => u.status === "AVAILABLE");
 
     if (availableUnits.length > 0) {
-      const preferred = availableUnits.filter(
+      const candidateUnits = availableUnits.filter(
         (u) => u.transmission === (input.transmissionPreference ?? "MANUAL")
       );
-      const candidateUnits = preferred.length > 0 ? preferred : availableUnits;
+      if (candidateUnits.length === 0) {
+        throw new AppError(
+          409,
+          "SCHEDULE_CONFLICT",
+          "Tidak ada unit tersedia untuk pilihan transmisi tersebut."
+        );
+      }
       const busyIds = await this.repo.findBusyUnitIds({
         excludeBookingId: "",
         unitIds: candidateUnits.map((u) => u.id),
@@ -173,6 +229,13 @@ export class BookingService {
     }
 
     const estimatedPrice = totalDays * Math.max(0, car.pricePerDay);
+    if (!Number.isSafeInteger(estimatedPrice) || estimatedPrice > 2_147_483_647) {
+      throw new AppError(
+        400,
+        "INVALID_DATE_RANGE",
+        "Total estimasi harga melebihi batas maksimum."
+      );
+    }
     const adminInput = options?.isAdmin
       ? (input as AdminCreateBookingInput)
       : undefined;
@@ -191,9 +254,8 @@ export class BookingService {
     const prefix = `BK-${todayCompact}-A`;
 
     for (let attempt = 0; attempt < 5; attempt++) {
-      const count = await this.repo.countByCodePrefix(prefix);
-      const seq = count + 1 + attempt;
-      const bookingCode = `${prefix}${String(seq).padStart(3, "0")}`;
+      const randomSuffix = String(randomInt(100_000, 1_000_000));
+      const bookingCode = `${prefix}${randomSuffix}`;
 
       try {
         const created = await this.repo.create({
@@ -220,7 +282,7 @@ export class BookingService {
           status: "PENDING",
           internalNote: adminInput?.internalNote ?? "",
         });
-        return { booking: toBookingDto(created), deduplicated: false };
+        return { booking: projectDto(created), deduplicated: false };
       } catch (err) {
         if (
           err instanceof Prisma.PrismaClientKnownRequestError &&
@@ -229,7 +291,8 @@ export class BookingService {
           if (idemKey) {
             const raceExisting = await this.repo.findByIdempotencyKey(idemKey);
             if (raceExisting) {
-              return { booking: toBookingDto(raceExisting), deduplicated: true };
+              assertIdempotencyMatch(raceExisting, input);
+              return { booking: projectDto(raceExisting), deduplicated: true };
             }
           }
           continue;
@@ -295,6 +358,13 @@ export class BookingService {
         if (!car) {
           throw new AppError(404, "CAR_NOT_FOUND", "Unit mobil tidak ditemukan.");
         }
+        if (car.status === "MAINTENANCE" || car.status === "INACTIVE") {
+          throw new AppError(
+            409,
+            "CAR_UNAVAILABLE",
+            `Unit ${car.name} sedang berstatus ${car.status} dan tidak dapat dipilih.`
+          );
+        }
         carNameSnapshot = car.name;
         pricePerDay = car.pricePerDay;
       }
@@ -321,11 +391,33 @@ export class BookingService {
             ? target.finalPrice
             : estimatedPrice + additionalFee;
 
+      if (finalPrice < target.paidAmount) {
+        throw new AppError(
+          400,
+          "FINAL_PRICE_BELOW_PAID",
+          "Total biaya tidak boleh lebih kecil dari jumlah yang sudah dibayar."
+        );
+      }
+
+      let nextPaymentStatus: PaymentStatus = target.paymentStatus;
+      if (nextPaymentStatus === "PAID" && finalPrice > target.paidAmount) {
+        nextPaymentStatus = target.paidAmount > 0 ? "DP_PAID" : "UNPAID";
+      }
+
       const startDate = parseYyyyMmDdToUtc(startStr);
       const endDate = parseYyyyMmDdToUtc(endStr);
 
-      let nextCarUnitId = patch.carUnitId ?? target.carUnitId;
-      let nextUnitLabel = target.carUnitLabelSnapshot;
+      const carChanged = Boolean(patch.carId && patch.carId !== target.carId);
+      let nextCarUnitId = patch.carUnitId ?? (carChanged ? null : target.carUnitId);
+      let nextUnitLabel = carChanged && !patch.carUnitId ? null : target.carUnitLabelSnapshot;
+
+      if (carChanged && !patch.carUnitId && target.status === "CONFIRMED") {
+        throw new AppError(
+          400,
+          "INVALID_CAR_UNIT",
+          "Pilih unit fisik mobil pengganti untuk booking yang sudah dikonfirmasi."
+        );
+      }
 
       if (patch.carUnitId) {
         const chosenUnit = await this.repo.findUnitById(patch.carUnitId, tx);
@@ -334,6 +426,13 @@ export class BookingService {
             400,
             "INVALID_CAR_UNIT",
             "Unit fisik tidak sesuai dengan model mobil."
+          );
+        }
+        if (chosenUnit.status !== "AVAILABLE") {
+          throw new AppError(
+            409,
+            "CAR_UNAVAILABLE",
+            "Unit fisik yang dipilih sedang perawatan atau nonaktif."
           );
         }
         nextCarUnitId = chosenUnit.id;
@@ -375,7 +474,12 @@ export class BookingService {
                 carUnit: { connect: { id: nextCarUnitId } },
                 carUnitLabelSnapshot: nextUnitLabel,
               }
-            : {}),
+            : target.carUnitId
+              ? {
+                  carUnit: { disconnect: true },
+                  carUnitLabelSnapshot: null,
+                }
+              : {}),
           carNameSnapshot,
           pricePerDaySnapshot: pricePerDay,
           startDate,
@@ -390,6 +494,9 @@ export class BookingService {
           estimatedPrice,
           additionalFee,
           finalPrice,
+          ...(nextPaymentStatus !== target.paymentStatus
+            ? { paymentStatus: nextPaymentStatus }
+            : {}),
           ...(patch.internalNote !== undefined
             ? { internalNote: patch.internalNote }
             : {}),
@@ -492,6 +599,14 @@ export class BookingService {
         }
       }
 
+      if (input.status === "IN_PROGRESS" && !target.carUnitId) {
+        throw new AppError(
+          409,
+          "CAR_UNIT_REQUIRED",
+          "Unit fisik mobil wajib ditentukan sebelum status Sedang Jalan."
+        );
+      }
+
       if (input.status === "COMPLETED") {
         const payment = computePaymentSummary(
           target.finalPrice,
@@ -508,6 +623,26 @@ export class BookingService {
         }
       }
 
+      if (
+        input.finalPrice !== undefined &&
+        input.finalPrice < target.paidAmount
+      ) {
+        throw new AppError(
+          400,
+          "FINAL_PRICE_BELOW_PAID",
+          "Total biaya tidak boleh lebih kecil dari jumlah yang sudah dibayar."
+        );
+      }
+
+      let nextPaymentStatusFromPrice: PaymentStatus | undefined;
+      if (
+        input.finalPrice !== undefined &&
+        target.paymentStatus === "PAID" &&
+        input.finalPrice > target.paidAmount
+      ) {
+        nextPaymentStatusFromPrice = target.paidAmount > 0 ? "DP_PAID" : "UNPAID";
+      }
+
       return this.repo.update(
         id,
         {
@@ -520,6 +655,9 @@ export class BookingService {
             : {}),
           ...(input.finalPrice !== undefined
             ? { finalPrice: input.finalPrice }
+            : {}),
+          ...(nextPaymentStatusFromPrice !== undefined
+            ? { paymentStatus: nextPaymentStatusFromPrice }
             : {}),
           ...(input.internalNote !== undefined
             ? { internalNote: input.internalNote }
@@ -559,7 +697,7 @@ export class BookingService {
     const effectiveStatus: PaymentStatus =
       target.status === "PENDING" ? "UNPAID" : input.paymentStatus;
 
-    if (target.status !== "PENDING" && effectiveStatus !== target.paymentStatus) {
+    if (target.status !== "PENDING") {
       const allowed = getAllowedPaymentStatuses(
         target.status,
         effectiveScheme,
@@ -569,7 +707,7 @@ export class BookingService {
         throw new AppError(
           400,
           "PAYMENT_REGRESSION_FORBIDDEN",
-          "Status pembayaran tidak dapat dikembalikan ke tahap sebelumnya saat sewa sedang jalan."
+          "Kombinasi skema atau perubahan status pembayaran tidak valid."
         );
       }
     }
@@ -635,6 +773,14 @@ export class BookingService {
         target.paymentStatus,
         target.paidAmount
       ).paidAmount;
+
+      if (finalPrice < prevPaid) {
+        throw new AppError(
+          400,
+          "FINAL_PRICE_BELOW_PAID",
+          "Total biaya perpanjangan tidak boleh lebih kecil dari jumlah yang sudah dibayar."
+        );
+      }
 
       let nextPaymentStatus: PaymentStatus = target.paymentStatus;
       if (nextPaymentStatus === "PAID" && finalPrice > prevPaid) {

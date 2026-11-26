@@ -38,6 +38,7 @@ export function bootstrapApp(): BootstrappedApp {
     cookieSameSite: env.COOKIE_SAME_SITE,
     isProduction: env.NODE_ENV === "production",
     otpSender,
+    adminOtpWhatsapp: env.ADMIN_OTP_WHATSAPP,
   });
 
   const app = createApp({

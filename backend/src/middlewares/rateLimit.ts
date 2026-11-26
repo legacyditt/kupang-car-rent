@@ -20,5 +20,6 @@ function createJsonRateLimiter(maxRequests: number, windowMinutes: number) {
 
 export const bookingRateLimiter = createJsonRateLimiter(10, 15);
 export const testimonialRateLimiter = createJsonRateLimiter(5, 15);
+export const publicLookupRateLimiter = createJsonRateLimiter(20, 15);
 export const authRateLimiter = createJsonRateLimiter(30, 15);
 

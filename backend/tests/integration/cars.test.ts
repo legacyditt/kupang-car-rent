@@ -138,7 +138,7 @@ describe("Cars & Availability API", () => {
     );
     expect(multiUnitAvail.status).toBe(200);
     expect(multiUnitAvail.body.data.available).toBe(true);
-    expect(multiUnitAvail.body.data.availableUnitCount).toBe(1);
+    expect(multiUnitAvail.body.data.availableUnitCount).toBeUndefined();
 
     // Availability check for MANUAL (unit #1 booked) -> false, while MATIC (unit #2) -> true
     const conflictAvail = await request(app).get(

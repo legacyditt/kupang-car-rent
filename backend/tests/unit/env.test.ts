@@ -47,5 +47,27 @@ describe("parseEnv", () => {
     const { DATABASE_URL: _, ...withoutDb } = validBaseEnv;
     expect(() => parseEnv(withoutDb)).toThrow(/DATABASE_URL/);
   });
+
+  it("throws when NODE_ENV is production and OTP_PROVIDER is console", () => {
+    expect(() =>
+      parseEnv({
+        ...validBaseEnv,
+        NODE_ENV: "production",
+        OTP_PROVIDER: "console",
+      })
+    ).toThrow(/OTP_PROVIDER/);
+  });
+
+  it("accepts NODE_ENV=production with OTP_PROVIDER=fonnte and non-empty FONNTE_TOKEN", () => {
+    const env = parseEnv({
+      ...validBaseEnv,
+      NODE_ENV: "production",
+      OTP_PROVIDER: "fonnte",
+      FONNTE_TOKEN: "test-fonnte-token",
+    });
+
+    expect(env.NODE_ENV).toBe("production");
+    expect(env.OTP_PROVIDER).toBe("fonnte");
+  });
 });
 

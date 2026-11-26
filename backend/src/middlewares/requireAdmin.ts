@@ -41,7 +41,7 @@ export function createRequireAdmin(auth: AuthInstance) {
       return;
     }
 
-    const role = (session.user as { role?: string }).role ?? "ADMIN";
+    const role = (session.user as { role?: string }).role;
     if (role !== "ADMIN") {
       next(
         new AppError(403, "FORBIDDEN", "Akun tidak memiliki akses admin.")

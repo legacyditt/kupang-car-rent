@@ -9,9 +9,9 @@ import { PrismaClient } from "../src/generated/prisma/client.js";
  */
 async function main() {
   const [, , emailArg, newPassword] = process.argv;
-  if (!emailArg || !newPassword || newPassword.length < 6) {
+  if (!emailArg || !newPassword || newPassword.length < 10) {
     console.error(
-      "Usage: npm run admin:reset-password -- <email> <newPassword (min 6 chars)>"
+      "Usage: npm run admin:reset-password -- <email> <newPassword (min 10 chars)>"
     );
     process.exit(1);
   }
@@ -35,12 +35,19 @@ async function main() {
     }
 
     const passwordHash = await hashPassword(newPassword);
-    await prisma.account.updateMany({
-      where: { userId: user.id, providerId: "credential" },
-      data: { password: passwordHash },
-    });
+    await prisma.$transaction([
+      prisma.account.updateMany({
+        where: { userId: user.id, providerId: "credential" },
+        data: { password: passwordHash },
+      }),
+      prisma.session.deleteMany({
+        where: { userId: user.id },
+      }),
+    ]);
 
-    console.log(`[admin:reset-password] Password updated for ${user.email}`);
+    console.log(
+      `[admin:reset-password] Password updated and sessions revoked for ${user.email}`
+    );
   } finally {
     await prisma.$disconnect();
   }

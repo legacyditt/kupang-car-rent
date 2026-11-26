@@ -55,6 +55,8 @@ interface UploadSignatureResponse {
   cloudName: string;
   folder: string;
   allowedFormats: string;
+  publicId?: string;
+  uploadPreset?: string;
 }
 
 const UPLOAD_POLICIES = {
@@ -118,6 +120,12 @@ export async function uploadAdminImage(
   formData.append("signature", sig.signature);
   formData.append("folder", sig.folder);
   formData.append("allowed_formats", sig.allowedFormats);
+  if (sig.publicId) {
+    formData.append("public_id", sig.publicId);
+  }
+  if (sig.uploadPreset) {
+    formData.append("upload_preset", sig.uploadPreset);
+  }
 
   const uploadRes = await fetch(
     `https://api.cloudinary.com/v1_1/${sig.cloudName}/image/upload`,

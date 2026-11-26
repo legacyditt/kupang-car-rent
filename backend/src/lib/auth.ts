@@ -12,6 +12,7 @@ export interface CreateAuthOptions {
   cookieSameSite: "lax" | "none" | "strict";
   isProduction: boolean;
   otpSender: OtpSender;
+  adminOtpWhatsapp?: string;
 }
 
 /** Creates the Better Auth instance with username login, blocked public sign-up, and WA OTP reset. */
@@ -27,7 +28,8 @@ export function createAuth(options: CreateAuthOptions) {
     emailAndPassword: {
       enabled: true,
       disableSignUp: true,
-      minPasswordLength: 6,
+      minPasswordLength: 10,
+      revokeSessionsOnPasswordReset: true,
     },
     user: {
       additionalFields: {
@@ -43,12 +45,23 @@ export function createAuth(options: CreateAuthOptions) {
       emailOTP({
         otpLength: 6,
         expiresIn: 300,
+        disableSignUp: true,
+        resendStrategy: "reuse",
         async sendVerificationOTP({ otp, type }) {
-          const profile = await options.prisma.businessProfile.findUnique({
-            where: { id: "default" },
-            select: { whatsappNumber: true },
-          });
-          const adminWa = profile?.whatsappNumber ?? "6281238989891";
+          const dedicatedWa = options.adminOtpWhatsapp?.trim();
+          let adminWa = dedicatedWa;
+          if (!adminWa) {
+            const profile = await options.prisma.businessProfile.findUnique({
+              where: { id: "default" },
+              select: { whatsappNumber: true },
+            });
+            adminWa = profile?.whatsappNumber?.trim();
+          }
+          if (!adminWa) {
+            throw new Error(
+              "Nomor WhatsApp admin untuk OTP belum dikonfigurasi."
+            );
+          }
           await options.otpSender.send({ to: adminWa, otp, type });
         },
       }),
@@ -56,7 +69,14 @@ export function createAuth(options: CreateAuthOptions) {
     session: {
       expiresIn: 60 * 60 * 24, // 24 hours
     },
+    rateLimit: {
+      window: 60,
+      max: 30,
+    },
     advanced: {
+      ipAddress: {
+        ipAddressHeaders: ["x-real-ip", "x-forwarded-for"],
+      },
       defaultCookieAttributes: {
         httpOnly: true,
         secure: options.isProduction,
