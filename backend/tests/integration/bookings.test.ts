@@ -110,6 +110,7 @@ describe("Bookings API, Payment Rules, Extend & BR-09 Concurrency", () => {
         startDate: "2026-12-05",
         endDate: "2026-12-07",
         serviceType: "WITH_DRIVER",
+        transmissionPreference: "MATIC",
         paymentScheme: "DP_50",
         internalNote: "Jemput jam 08.00",
       });
@@ -199,6 +200,7 @@ describe("Bookings API, Payment Rules, Extend & BR-09 Concurrency", () => {
         startDate: "2026-12-15",
         endDate: "2026-12-17",
         serviceType: "SELF_DRIVE",
+        transmissionPreference: "MATIC",
       }),
       request(app).post("/api/v1/bookings").send({
         carId: testCarId,
@@ -207,6 +209,7 @@ describe("Bookings API, Payment Rules, Extend & BR-09 Concurrency", () => {
         startDate: "2026-12-16",
         endDate: "2026-12-18",
         serviceType: "SELF_DRIVE",
+        transmissionPreference: "MATIC",
       }),
     ]);
 
