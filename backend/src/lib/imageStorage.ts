@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { v2 as cloudinary } from "cloudinary";
 import { AppError } from "../utils/AppError.js";
 
@@ -21,11 +22,16 @@ export interface UploadSignatureResult {
   cloudName: string;
   folder: string;
   allowedFormats: string;
+  publicId: string;
+  uploadPreset?: string;
 }
 
 export interface ImageStorage {
   uploadBuffer(input: UploadBufferInput): Promise<UploadResult>;
-  createUploadSignature(folder: string): UploadSignatureResult;
+  createUploadSignature(
+    folder: string,
+    uploadPreset?: string
+  ): UploadSignatureResult;
 }
 
 /** Cloudinary v2 image storage adapter using upload_stream and signed direct-upload parameters. */
@@ -55,7 +61,10 @@ export class CloudinaryImageStorage implements ImageStorage {
    * Generates a short-lived Cloudinary signature so the browser can upload
    * directly to Cloudinary without routing up to 5 MB payloads through Vercel Serverless.
    */
-  createUploadSignature(folder: string): UploadSignatureResult {
+  createUploadSignature(
+    folder: string,
+    uploadPreset?: string
+  ): UploadSignatureResult {
     if (!this.cloudName || !this.apiKey || !this.apiSecret) {
       throw new AppError(
         503,
@@ -66,10 +75,14 @@ export class CloudinaryImageStorage implements ImageStorage {
 
     const timestamp = Math.floor(Date.now() / 1000);
     const allowedFormats = ALLOWED_IMAGE_FORMATS.join(",");
-    const paramsToSign = {
+    const publicId = `${timestamp}-${randomUUID()}`;
+    const preset = uploadPreset?.trim() || undefined;
+    const paramsToSign: Record<string, string | number> = {
       allowed_formats: allowedFormats,
       folder,
+      public_id: publicId,
       timestamp,
+      ...(preset ? { upload_preset: preset } : {}),
     };
 
     const signature = cloudinary.utils.api_sign_request(
@@ -84,6 +97,8 @@ export class CloudinaryImageStorage implements ImageStorage {
       cloudName: this.cloudName,
       folder,
       allowedFormats,
+      publicId,
+      ...(preset ? { uploadPreset: preset } : {}),
     };
   }
 

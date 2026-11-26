@@ -69,7 +69,14 @@ export function createAuth(options: CreateAuthOptions) {
     session: {
       expiresIn: 60 * 60 * 24, // 24 hours
     },
+    rateLimit: {
+      window: 60,
+      max: 30,
+    },
     advanced: {
+      ipAddress: {
+        ipAddressHeaders: ["x-real-ip", "x-forwarded-for"],
+      },
       defaultCookieAttributes: {
         httpOnly: true,
         secure: options.isProduction,

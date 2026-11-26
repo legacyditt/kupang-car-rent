@@ -206,16 +206,16 @@ export class CarService {
   async checkAvailability(
     slug: string,
     query: AvailabilityQuery
-  ): Promise<{ available: boolean; availableUnitCount?: number; reason?: string }> {
+  ): Promise<{ available: boolean; reason?: string }> {
     const car = await this.repo.findBySlug(slug);
-    if (!car) {
+    if (!car || car.status === "INACTIVE") {
       throw new AppError(404, "CAR_NOT_FOUND", "Unit mobil tidak ditemukan.");
     }
 
-    if (car.status === "MAINTENANCE" || car.status === "INACTIVE") {
+    if (car.status === "MAINTENANCE") {
       return {
         available: false,
-        reason: `Unit sedang berstatus ${car.status}.`,
+        reason: "Unit sedang dalam perawatan.",
       };
     }
 
@@ -228,7 +228,6 @@ export class CarService {
     if (matchingUnits.length === 0) {
       return {
         available: false,
-        availableUnitCount: 0,
         reason: "Tidak ada unit fisik tersedia untuk tipe transmisi tersebut.",
       };
     }
@@ -247,12 +246,11 @@ export class CarService {
     if (freeCount === 0) {
       return {
         available: false,
-        availableUnitCount: 0,
         reason: "Semua unit pada rentang tanggal tersebut sudah dipesan.",
       };
     }
 
-    return { available: true, availableUnitCount: freeCount };
+    return { available: true };
   }
 
   async createCar(input: CreateCarInput): Promise<CarDto> {

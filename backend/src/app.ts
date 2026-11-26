@@ -9,6 +9,7 @@ import type { AuthInstance } from "./lib/auth.js";
 import type { ImageStorage } from "./lib/imageStorage.js";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler.js";
 import { authRateLimiter } from "./middlewares/rateLimit.js";
+import { createRequireSameOrigin } from "./middlewares/requireSameOrigin.js";
 import { createV1Router } from "./routes/v1.js";
 
 export interface CreateAppOptions {
@@ -59,6 +60,8 @@ export function createApp(options: CreateAppOptions): Express {
   }
 
   app.use(express.json({ limit: "1mb" }));
+
+  app.use("/api/v1/admin", createRequireSameOrigin(options.corsOrigin));
 
   app.use(
     "/api/v1",
