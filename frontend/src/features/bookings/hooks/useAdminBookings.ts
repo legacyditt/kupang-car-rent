@@ -6,6 +6,7 @@ import {
   ADMIN_CARS_QUERY_KEY,
   PUBLIC_CARS_QUERY_KEY,
 } from "@/features/cars/hooks/useAdminCars";
+import type { CarItem } from "@/features/cars/types/car.types";
 import type {
   BookingItem,
   BookingStatus,
@@ -67,11 +68,12 @@ export function useAdminBookings() {
     [bookings, selectedId]
   );
 
-  const selectedConflict = useMemo(
-    () =>
-      selectedBooking ? hasScheduleConflict(selectedBooking, bookings) : null,
-    [selectedBooking, bookings]
-  );
+  const selectedConflict = useMemo(() => {
+    if (!selectedBooking) return null;
+    const cars = qc.getQueryData<CarItem[]>(ADMIN_CARS_QUERY_KEY) ?? [];
+    const units = cars.find((c) => c.id === selectedBooking.carId)?.units;
+    return hasScheduleConflict(selectedBooking, bookings, units);
+  }, [selectedBooking, bookings, qc]);
 
   const changeStatus = async (
     bookingId: string,

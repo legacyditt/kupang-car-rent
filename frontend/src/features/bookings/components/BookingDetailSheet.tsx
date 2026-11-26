@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -29,6 +29,7 @@ import type {
 } from "../types/booking.types";
 import {
   computePaymentSummary,
+  hasScheduleConflict,
   yyyymmddToDdmmyyyy,
   type UpdateBookingDetailsInput,
 } from "../utils/booking-admin";
@@ -40,6 +41,7 @@ import { BookingStatusBadge } from "./BookingStatusBadge";
 interface BookingDetailSheetProps {
   booking: BookingItem | null;
   conflict: BookingItem | null;
+  allBookings?: BookingItem[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onChangeStatus: (
@@ -68,6 +70,7 @@ interface BookingDetailSheetProps {
 export function BookingDetailSheet({
   booking,
   conflict,
+  allBookings,
   open,
   onOpenChange,
   onChangeStatus,
@@ -93,8 +96,23 @@ export function BookingDetailSheet({
   const [extendEndDate, setExtendEndDate] = useState("");
 
   const { cars } = useAdminCars();
-  const bookingCarUnits =
-    cars.find((c) => c.id === booking?.carId)?.units ?? [];
+  const bookingCarUnits = useMemo(
+    () => cars.find((c) => c.id === booking?.carId)?.units ?? [],
+    [cars, booking?.carId]
+  );
+
+  const effectiveConflict = useMemo(() => {
+    if (!booking) return null;
+    if (!allBookings) return conflict;
+    return hasScheduleConflict(
+      {
+        ...booking,
+        carUnitId: selectedCarUnitId || booking.carUnitId || null,
+      },
+      allBookings,
+      bookingCarUnits
+    );
+  }, [booking, allBookings, conflict, selectedCarUnitId, bookingCarUnits]);
 
   useEffect(() => {
     if (!booking) return;
@@ -351,15 +369,19 @@ export function BookingDetailSheet({
 
             {isPending && (
               <div className="pt-1">
-                {conflict ? (
+                {effectiveConflict ? (
                   <p className="flex items-start gap-1.5 font-mono text-[11px] font-bold text-red-400">
                     <AlertTriangle
                       className="mt-0.5 h-3.5 w-3.5 shrink-0"
                       aria-hidden="true"
                     />
                     <span>
-                      Bentrok jadwal (BR-09) dengan {conflict.bookingCode} (
-                      {conflict.customerName})
+                      Unit sedang dipakai {effectiveConflict.bookingCode} (
+                      {effectiveConflict.customerName}
+                      {effectiveConflict.carUnitLabel
+                        ? ` · ${effectiveConflict.carUnitLabel}`
+                        : ""}
+                      ). Pilih unit lain atau ubah tanggal.
                     </span>
                   </p>
                 ) : (
@@ -368,7 +390,7 @@ export function BookingDetailSheet({
                       className="h-3.5 w-3.5 shrink-0"
                       aria-hidden="true"
                     />
-                    <span>Tidak ada bentrok jadwal (BR-09)</span>
+                    <span>Unit tersedia untuk tanggal ini</span>
                   </p>
                 )}
               </div>
@@ -491,7 +513,7 @@ export function BookingDetailSheet({
                 <Button
                   type="button"
                   variant="accent"
-                  disabled={Boolean(conflict) || isActionSubmitting}
+                  disabled={Boolean(effectiveConflict) || isActionSubmitting}
                   onClick={() => handleTransition("CONFIRMED")}
                   className="h-11 w-full font-display text-xs tracking-wider uppercase"
                 >
