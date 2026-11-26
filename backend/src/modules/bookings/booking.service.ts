@@ -1,3 +1,4 @@
+import { randomInt } from "node:crypto";
 import {
   Prisma,
   type Booking,
@@ -102,18 +103,49 @@ function toPublicBookingDto(b: Booking): PublicBookingDto {
   return pub;
 }
 
+function assertIdempotencyMatch(
+  existing: Booking,
+  input: CreatePublicBookingInput | AdminCreateBookingInput
+): void {
+  const matches =
+    existing.carId === input.carId &&
+    formatUtcDateYyyyMmDd(existing.startDate) === input.startDate &&
+    formatUtcDateYyyyMmDd(existing.endDate) === input.endDate &&
+    existing.customerPhone === input.customerPhone &&
+    existing.serviceType === input.serviceType;
+
+  if (!matches) {
+    throw new AppError(
+      409,
+      "IDEMPOTENCY_KEY_CONFLICT",
+      "Idempotency-Key sudah digunakan untuk permintaan yang berbeda."
+    );
+  }
+}
+
 export class BookingService {
   constructor(private readonly repo: BookingRepository) {}
 
   async createBooking(
     input: CreatePublicBookingInput | AdminCreateBookingInput,
     options?: { idempotencyKey?: string; isAdmin?: boolean }
-  ): Promise<{ booking: BookingDto; deduplicated: boolean }> {
+  ): Promise<{ booking: BookingDto | PublicBookingDto; deduplicated: boolean }> {
+    const projectDto = (row: Booking) =>
+      options?.isAdmin ? toBookingDto(row) : toPublicBookingDto(row);
+
     const idemKey = options?.idempotencyKey?.trim();
     if (idemKey) {
+      if (idemKey.length > 128) {
+        throw new AppError(
+          400,
+          "INVALID_IDEMPOTENCY_KEY",
+          "Idempotency-Key terlalu panjang."
+        );
+      }
       const existing = await this.repo.findByIdempotencyKey(idemKey);
       if (existing) {
-        return { booking: toBookingDto(existing), deduplicated: true };
+        assertIdempotencyMatch(existing, input);
+        return { booking: projectDto(existing), deduplicated: true };
       }
     }
 
@@ -191,9 +223,8 @@ export class BookingService {
     const prefix = `BK-${todayCompact}-A`;
 
     for (let attempt = 0; attempt < 5; attempt++) {
-      const count = await this.repo.countByCodePrefix(prefix);
-      const seq = count + 1 + attempt;
-      const bookingCode = `${prefix}${String(seq).padStart(3, "0")}`;
+      const randomSuffix = String(randomInt(100_000, 1_000_000));
+      const bookingCode = `${prefix}${randomSuffix}`;
 
       try {
         const created = await this.repo.create({
@@ -220,7 +251,7 @@ export class BookingService {
           status: "PENDING",
           internalNote: adminInput?.internalNote ?? "",
         });
-        return { booking: toBookingDto(created), deduplicated: false };
+        return { booking: projectDto(created), deduplicated: false };
       } catch (err) {
         if (
           err instanceof Prisma.PrismaClientKnownRequestError &&
@@ -229,7 +260,8 @@ export class BookingService {
           if (idemKey) {
             const raceExisting = await this.repo.findByIdempotencyKey(idemKey);
             if (raceExisting) {
-              return { booking: toBookingDto(raceExisting), deduplicated: true };
+              assertIdempotencyMatch(raceExisting, input);
+              return { booking: projectDto(raceExisting), deduplicated: true };
             }
           }
           continue;

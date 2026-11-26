@@ -4,6 +4,7 @@ import type { AuthInstance } from "../lib/auth.js";
 import type { ImageStorage } from "../lib/imageStorage.js";
 import {
   bookingRateLimiter,
+  publicLookupRateLimiter,
   testimonialRateLimiter,
 } from "../middlewares/rateLimit.js";
 import { createRequireAdmin } from "../middlewares/requireAdmin.js";
@@ -133,11 +134,13 @@ export function createV1Router(deps: V1RouterDeps = {}): Router {
     );
     router.get(
       "/bookings/code/:bookingCode",
+      publicLookupRateLimiter,
       bookingController.getPublicByCode
     );
     router.get("/testimonials", testimonialController.listPublic);
     router.get(
       "/testimonials/eligibility",
+      publicLookupRateLimiter,
       validateQuery(eligibilityQuerySchema),
       testimonialController.checkEligibility
     );

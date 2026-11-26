@@ -27,6 +27,8 @@ export interface TestimonialDto {
   createdAt: string;
 }
 
+export type PublicTestimonialDto = Omit<TestimonialDto, "bookingCode">;
+
 function toDto(t: Testimonial): TestimonialDto {
   return {
     id: t.id,
@@ -41,12 +43,17 @@ function toDto(t: Testimonial): TestimonialDto {
   };
 }
 
+function toPublicDto(t: Testimonial): PublicTestimonialDto {
+  const { bookingCode: _code, ...pub } = toDto(t);
+  return pub;
+}
+
 export class TestimonialService {
   constructor(private readonly repo: TestimonialRepository) {}
 
-  async listPublished(): Promise<TestimonialDto[]> {
+  async listPublished(): Promise<PublicTestimonialDto[]> {
     const rows = await this.repo.findPublished();
-    return rows.map(toDto);
+    return rows.map(toPublicDto);
   }
 
   async listAllAdmin(): Promise<TestimonialDto[]> {
@@ -61,13 +68,11 @@ export class TestimonialService {
     }
 
     const booking = await this.repo.findBookingByCode(code);
-    if (!booking) {
-      return { eligible: false, reason: "Kode booking tidak ditemukan." };
-    }
-    if (booking.status !== "COMPLETED") {
+    if (!booking || booking.status !== "COMPLETED") {
       return {
         eligible: false,
-        reason: "Testimoni hanya dapat diisi setelah penyewaan berstatus Selesai.",
+        reason:
+          "Kode booking tidak ditemukan atau penyewaan belum berstatus Selesai.",
       };
     }
 
@@ -92,7 +97,7 @@ export class TestimonialService {
 
   async submitPublic(
     input: SubmitPublicTestimonialInput
-  ): Promise<TestimonialDto> {
+  ): Promise<PublicTestimonialDto> {
     const booking = await this.repo.findBookingByCode(input.bookingCode);
     if (!booking) {
       throw new AppError(404, "BOOKING_NOT_FOUND", "Kode booking tidak ditemukan.");
@@ -119,13 +124,13 @@ export class TestimonialService {
       bookingCode: booking.bookingCode,
       customerName: input.customerName ?? booking.customerName,
       carName: booking.carNameSnapshot,
-      tripLabel: input.tripLabel || SERVICE_TYPE_LABELS[booking.serviceType],
+      tripLabel: SERVICE_TYPE_LABELS[booking.serviceType],
       rating: input.rating,
       quote: input.quote,
       status: "PENDING",
     });
 
-    return toDto(created);
+    return toPublicDto(created);
   }
 
   async createAdmin(input: AdminUpsertTestimonialInput): Promise<TestimonialDto> {
