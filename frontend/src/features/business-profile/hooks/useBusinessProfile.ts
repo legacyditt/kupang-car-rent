@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError, apiFetch } from "@/lib/api";
+import { notifyError, notifySuccess } from "@/lib/notify";
 import type {
   BusinessProfile,
   BusinessProfileInput,
@@ -29,12 +30,14 @@ export function useBusinessProfile() {
         }
       );
       qc.setQueryData(BUSINESS_PROFILE_QUERY_KEY, updated);
+      notifySuccess("Profil bisnis disimpan");
       return { ok: true, profile: updated };
     } catch (err) {
       const message =
         err instanceof ApiError
           ? err.message
           : "Gagal menyimpan profil bisnis.";
+      notifyError("Gagal menyimpan profil bisnis", message);
       return { ok: false, error: message };
     }
   };
@@ -48,10 +51,12 @@ export function useBusinessProfile() {
         { method: "POST" }
       );
       qc.setQueryData(BUSINESS_PROFILE_QUERY_KEY, updated);
+      notifySuccess("Logo direset ke default");
       return { ok: true, profile: updated };
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : "Gagal mereset logo.";
+      notifyError("Gagal mereset logo", message);
       return { ok: false, error: message };
     }
   };

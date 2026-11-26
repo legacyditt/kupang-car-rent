@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { apiFetch } from "@/lib/api";
+import { ApiError, apiFetch } from "@/lib/api";
+import { notifyError, notifySuccess } from "@/lib/notify";
 import { INITIAL_CARS } from "../data/cars.mock";
 import type { CarItem, CarStatus, CarUnitItem } from "../types/car.types";
 import {
@@ -53,27 +54,47 @@ export function useAdminCars() {
       status: payload.status,
     };
 
-    if (payload.id) {
-      await apiFetch<CarItem>(`/admin/cars/${payload.id}`, {
-        method: "PATCH",
-        body: JSON.stringify(body),
-      });
-    } else {
-      await apiFetch<CarItem>("/admin/cars", {
-        method: "POST",
-        body: JSON.stringify(body),
-      });
-    }
+    try {
+      if (payload.id) {
+        await apiFetch<CarItem>(`/admin/cars/${payload.id}`, {
+          method: "PATCH",
+          body: JSON.stringify(body),
+        });
+      } else {
+        await apiFetch<CarItem>("/admin/cars", {
+          method: "POST",
+          body: JSON.stringify(body),
+        });
+      }
 
-    await invalidateCars();
+      await invalidateCars();
+      notifySuccess(
+        payload.id ? "Unit armada diperbarui" : "Unit armada ditambahkan"
+      );
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : "Gagal menyimpan unit armada.";
+      notifyError("Gagal menyimpan armada", message);
+      throw err;
+    }
   };
 
   const changeCarStatus = async (carId: string, status: CarStatus) => {
-    await apiFetch<CarItem>(`/admin/cars/${carId}/status`, {
-      method: "PATCH",
-      body: JSON.stringify({ status }),
-    });
-    await invalidateCars();
+    try {
+      await apiFetch<CarItem>(`/admin/cars/${carId}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      });
+      await invalidateCars();
+      notifySuccess("Status armada diperbarui");
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : "Gagal mengubah status armada.";
+      notifyError("Gagal mengubah status armada", message);
+      throw err;
+    }
   };
 
   const addCarUnit = async (
@@ -85,11 +106,19 @@ export function useAdminCars() {
       status?: CarStatus;
     }
   ) => {
-    await apiFetch<CarUnitItem>(`/admin/cars/${carId}/units`, {
-      method: "POST",
-      body: JSON.stringify(input),
-    });
-    await invalidateCars();
+    try {
+      await apiFetch<CarUnitItem>(`/admin/cars/${carId}/units`, {
+        method: "POST",
+        body: JSON.stringify(input),
+      });
+      await invalidateCars();
+      notifySuccess("Unit fisik ditambahkan");
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : "Gagal menambahkan unit fisik.";
+      notifyError("Gagal menambahkan unit fisik", message);
+      throw err;
+    }
   };
 
   const updateCarUnit = async (
@@ -101,18 +130,34 @@ export function useAdminCars() {
       status: CarStatus;
     }>
   ) => {
-    await apiFetch<CarUnitItem>(`/admin/car-units/${unitId}`, {
-      method: "PATCH",
-      body: JSON.stringify(input),
-    });
-    await invalidateCars();
+    try {
+      await apiFetch<CarUnitItem>(`/admin/car-units/${unitId}`, {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      });
+      await invalidateCars();
+      notifySuccess("Unit fisik diperbarui");
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : "Gagal memperbarui unit fisik.";
+      notifyError("Gagal memperbarui unit fisik", message);
+      throw err;
+    }
   };
 
   const deleteCarUnit = async (unitId: string) => {
-    await apiFetch(`/admin/car-units/${unitId}`, {
-      method: "DELETE",
-    });
-    await invalidateCars();
+    try {
+      await apiFetch(`/admin/car-units/${unitId}`, {
+        method: "DELETE",
+      });
+      await invalidateCars();
+      notifySuccess("Unit fisik dihapus");
+    } catch (err) {
+      const message =
+        err instanceof ApiError ? err.message : "Gagal menghapus unit fisik.";
+      notifyError("Gagal menghapus unit fisik", message);
+      throw err;
+    }
   };
 
   return {

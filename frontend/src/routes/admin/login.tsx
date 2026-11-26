@@ -15,6 +15,7 @@ import {
   MOTION_MEDIA,
 } from "@/lib/motion";
 import { useDocumentMeta } from "@/lib/seo";
+import { notifyError, notifySuccess } from "@/lib/notify";
 
 registerMotionPlugins();
 
@@ -137,8 +138,10 @@ export function AdminLoginPage() {
       const res = await requestOtpReset(targetEmail);
       if (!res.ok) {
         setErrorMsg(res.error);
+        notifyError("Gagal mengirim OTP", res.error);
         return;
       }
+      notifySuccess("Kode OTP dikirim", "Cek WhatsApp admin terdaftar.");
       setView("otp");
     });
   }
@@ -162,9 +165,11 @@ export function AdminLoginPage() {
       const res = await login(identifier, password);
       if (!res.ok) {
         setErrorMsg(res.error);
+        notifyError("Login gagal", res.error);
         return;
       }
 
+      notifySuccess("Login berhasil", "Selamat datang kembali.");
       navigate({ to: "/admin", replace: true });
     });
   }
@@ -220,8 +225,13 @@ export function AdminLoginPage() {
       });
       if (!res.ok) {
         setErrorMsg(res.error);
+        notifyError("Reset password gagal", res.error);
         return;
       }
+      notifySuccess(
+        "Password berhasil direset",
+        "Silakan login dengan password baru."
+      );
       backToLogin("Password berhasil diperbarui. Silakan login.");
     });
   }

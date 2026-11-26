@@ -1,4 +1,4 @@
-import { CheckCircle2, Save } from "lucide-react";
+import { Save } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +21,6 @@ export function AdminSettingsPage() {
   const [tagline, setTagline] = useState(profile.tagline);
   const [description, setDescription] = useState(profile.description);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [savedToast, setSavedToast] = useState(false);
 
   useEffect(() => {
     setName(profile.name);
@@ -35,7 +34,6 @@ export function AdminSettingsPage() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setErrorMsg(null);
-    setSavedToast(false);
 
     await runWithLock(async () => {
       const res = await saveProfile({
@@ -50,10 +48,7 @@ export function AdminSettingsPage() {
 
       if (!res.ok) {
         setErrorMsg(res.error);
-        return;
       }
-
-      setSavedToast(true);
     });
   }
 
@@ -84,16 +79,6 @@ export function AdminSettingsPage() {
         <p className="rounded-xl border border-red-400/35 bg-red-400/10 p-3 font-mono text-xs text-red-300">
           {errorMsg}
         </p>
-      )}
-
-      {savedToast && (
-        <div className="flex items-center gap-2 rounded-xl border border-emerald-400/35 bg-emerald-400/10 p-3 font-mono text-xs text-emerald-300">
-          <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
-          <span>
-            Perubahan tersimpan dan langsung disinkronkan ke Landing Page &amp;
-            Sidebar.
-          </span>
-        </div>
       )}
 
       {/* 2-Column Layout */}
@@ -185,7 +170,6 @@ export function AdminSettingsPage() {
               businessName={name || profile.name}
               logoPath={profile.logoPath}
               onLogoChange={async (dataUrl) => {
-                setSavedToast(false);
                 setErrorMsg(null);
                 const res = await saveProfile({
                   name,
@@ -198,14 +182,14 @@ export function AdminSettingsPage() {
                 });
                 if (!res.ok) {
                   setErrorMsg(res.error);
-                  return;
                 }
-                setSavedToast(true);
               }}
               onResetLogo={async () => {
-                setSavedToast(false);
-                await resetLogo();
-                setSavedToast(true);
+                setErrorMsg(null);
+                const res = await resetLogo();
+                if (!res.ok) {
+                  setErrorMsg(res.error);
+                }
               }}
             />
 
